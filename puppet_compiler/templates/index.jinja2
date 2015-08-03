@@ -1,0 +1,30 @@
+{% extends "hostpage.jinja2" %}
+{% block body %}
+  <h1>Results for change <a href="https://gerrit.wikimedia.org/r/#/c/{{ ch_id }}/" target="_blank">{{ chid }}</a></h1>
+  <div id="list">
+    <h2>Hosts that have no differences (or compile correctly only with the change)</h2>
+    <ul>
+      {% for host in state.noop %}
+        <li> <a href="{{ host }}/">{{ host }}</a>
+      {% endfor %}
+    </ul>
+    <h2>Hosts that have changes</h2>
+    <ul>
+      {% for host in state.diff %}
+        <li> <a href="{{ host }}/">{{ host }}</a>
+      {% endfor %}
+    </ul>
+    <h2>Hosts that fail to compile when the change is applied</h2>
+    <ul>
+      {% for host in state.err %}
+        <li> <a href="{{ host }}/">{{ host }}</a>
+      {% endfor %}
+    </ul>
+    <h2>Hosts that have failed to compile completely</h2>
+    <ul>
+      {% for host in state.fail %}
+        <li> <a href="{{ host }}/">{{ host }}</a>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}

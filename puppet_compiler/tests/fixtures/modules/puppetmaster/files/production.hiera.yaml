@@ -1,0 +1,2 @@
+test1 = "/etc/puppet/hieradata"
+test2 = "/etc/puppet/private/hieradata"
