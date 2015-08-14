@@ -36,7 +36,7 @@ class ThreadExecutor(threading.Thread):
                 return
             _log.debug('Executing payload %s', payload)
             try:
-                retval = payload(*args, **kwdargs)
+                retval = payload(*args, **kwargs)
                 msg = Msg(is_error=False, value=retval, args=args, kwargs=kwargs)
                 _log.debug(msg)
                 self.out_queue.put(msg)
