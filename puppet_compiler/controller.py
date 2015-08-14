@@ -99,6 +99,8 @@ class Controller(object):
         index = html.Index(self.outdir)
         index.render(self.state)
         _log.info('Run finished; see your results at %s/%s/', self.config['http_url'], html.job_id)
+        # Remove the source and the diffs etc, we just need the output.
+        self.m.cleanup()
         return self.success
 
     @property
