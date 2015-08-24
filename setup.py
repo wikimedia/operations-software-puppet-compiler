@@ -17,7 +17,7 @@ setup(
     author_email='glavagetto@wikimedia.org',
     install_requires=['jinja2', 'requests', 'pyyaml'],
     test_suite='nose.collector',
-    tests_require=['mock', 'nose'],
+    tests_require=['mock<1.1.0', 'nose'],
     zip_safe=True,
     packages=find_packages(),
     package_data={'puppet_compiler': all_files("puppet_compiler", "templates")},
