@@ -2,7 +2,6 @@ import os
 import re
 import subprocess
 from tempfile import SpooledTemporaryFile as spoolfile
-from puppet_compiler import _log
 
 
 def compile(hostname, basedir, vardir):
@@ -24,7 +23,7 @@ def compile(hostname, basedir, vardir):
            '--templatedir=%s' % tpldir,
            '--compile=%s' % hostname,
            '--color=false'
-    ]
+           ]
     hostfile = os.path.join(catalogdir, hostname)
 
     with open(hostfile + ".err", 'w') as err:
@@ -52,8 +51,8 @@ def diff(basedir, hostname):
                                   'catalogs',
                                   hostname + '.pson')
     output = os.path.join(basedir, 'diffs', hostname + '.diff')
-    cmd = [ 'puppet', 'catalog', 'diff', '--show_resource_diff',
-            '--content_diff', prod_catalog, change_catalog]
+    cmd = ['puppet', 'catalog', 'diff', '--show_resource_diff',
+           '--content_diff', prod_catalog, change_catalog]
     temp = spoolfile()
     subprocess.check_call(cmd, stdout=temp)
     with open(output, 'w') as out:

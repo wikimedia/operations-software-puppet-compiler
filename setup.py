@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 def all_files(cwd, path):
     return reduce(lambda x, y: x + y,
-                  [[('%s/%s' % (x[0], y))[len(cwd)+1:]
+                  [[('%s/%s' % (x[0], y))[len(cwd) + 1:]
                     for y in x[2]] for x in os.walk(cwd + '/' + path)])
 
 

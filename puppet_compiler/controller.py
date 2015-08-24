@@ -36,7 +36,7 @@ class Controller(object):
             'puppet_private': 'https://gerrit.wikimedia.org/r/labs/private',
             # Directory hosting all of puppet's runtime files usually
             # under /var/lib/puppet on debian-derivatives
-            'puppet_var':  '/var/lib/catalog-differ/puppet'
+            'puppet_var': '/var/lib/catalog-differ/puppet'
         }
         try:
             if configfile is not None:
@@ -115,7 +115,7 @@ class Controller(object):
             # We still didn't run
             return True
         f = len(self.state['fail'])
-        return (2*f < self.count)
+        return (2 * f < self.count)
 
     def on_node_compiled(self, payload):
         """
@@ -158,12 +158,12 @@ class HostWorker(object):
                                         hostname + '.pson'),
                 'errors': os.path.join(self.m.prod_dir, 'catalogs',
                                        hostname + '.err')
-                },
+            },
             'change': {
                 'catalog': os.path.join(self.m.change_dir, 'catalogs',
                                         hostname + '.pson'),
-                'errors':  os.path.join(self.m.change_dir, 'catalogs',
-                                        hostname + '.err')
+                'errors': os.path.join(self.m.change_dir, 'catalogs',
+                                       hostname + '.err')
             }
         }
         self.hostname = hostname
@@ -222,7 +222,7 @@ class HostWorker(object):
         """
         if errors == self.E_OK:
             # Both nodes compiled correctly
-            _log.info("Calculating diffs for %s",self.hostname)
+            _log.info("Calculating diffs for %s", self.hostname)
             try:
                 puppet.diff(self.m.base_dir, self.hostname)
             except subprocess.CalledProcessError as e:

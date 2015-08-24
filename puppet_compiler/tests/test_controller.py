@@ -20,7 +20,7 @@ class TestController(unittest.TestCase):
     def test_parse_config(self):
         filename = os.path.join(self.fixtures, 'test_config.yaml')
         c = controller.Controller(filename, 19, 224570, ['test.eqiad.wmnet'])
-        self.assertEquals(len(c.config['test_non_existent']),2)
+        self.assertEquals(len(c.config['test_non_existent']), 2)
         self.assertEquals(c.config['http_url'],
                           'http://www.example.com/garbagehere')
 

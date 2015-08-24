@@ -1,5 +1,4 @@
 import threading
-import logging
 import time
 from collections import namedtuple
 from puppet_compiler import _log

@@ -22,7 +22,6 @@ def nodelist(facts_dir):
             yield node.replace('.yaml', '')
 
 
-
 class NodeFinder(object):
     regexp_node = re.compile('^node\s+/([^/]+)/')
     exact_node = re.compile("node\s*\'([^\']+)\'")
@@ -57,7 +56,7 @@ class NodeFinder(object):
                     _log.debug('Found match for node %s: %s', node,
                                regex.pattern)
                     nodes.append(node)
-                    discarded=regex
+                    discarded = regex
                     continue
 
             if discarded is not None:

@@ -136,7 +136,7 @@ class ManageCode(object):
             'Downloading patch for change %d, revision %d',
             self.change_id, revision)
         git.fetch('-q', 'https://gerrit.wikimedia.org/r/operations/puppet',
-                 ref)
+                  ref)
         git.cherry_pick('FETCH_HEAD')
 
     def _sh(command):
