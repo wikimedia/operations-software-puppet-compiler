@@ -63,7 +63,8 @@ class TestManageCode(unittest.TestCase):
         self.m._fetch_change()
         calls = [
             mock.call(['git', 'fetch', '-q', 'https://gerrit.wikimedia.org/r/operations/puppet', 'refs/changes/50/227450/1']),
-            mock.call(['git', 'cherry-pick', 'FETCH_HEAD'])
+            mock.call(['git', 'checkout', 'FETCH_HEAD']),
+            mock.call(['git', 'pull', '--rebase', 'origin', 'production'])
         ]
         mocker.assert_has_calls(calls)
 

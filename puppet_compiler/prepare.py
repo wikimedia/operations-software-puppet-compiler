@@ -137,7 +137,8 @@ class ManageCode(object):
             self.change_id, revision)
         git.fetch('-q', 'https://gerrit.wikimedia.org/r/operations/puppet',
                   ref)
-        git.cherry_pick('FETCH_HEAD')
+        git.checkout('FETCH_HEAD')
+        git.pull('--rebase', 'origin', 'production')
 
     def _sh(command):
         try:
