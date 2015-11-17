@@ -13,7 +13,7 @@ def get_nodes(config):
     # Read site.pp
     with open(site_pp, 'r') as sitepp:
         n = NodeFinder(sitepp)
-    n.match_physical_nodes(nodelist(facts_dir))
+    return n.match_physical_nodes(nodelist(facts_dir))
 
 
 def nodelist(facts_dir):
