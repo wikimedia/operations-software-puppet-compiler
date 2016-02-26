@@ -2,7 +2,6 @@ import argparse
 import logging
 import os
 import sys
-import re
 from puppet_compiler import _log, controller
 
 parser = argparse.ArgumentParser(
@@ -11,11 +10,9 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--debug', action='store_true', default=False, help="Print debug output")
 
 change = int(os.environ.get('CHANGE'))
-nodes = os.environ.get('NODES', [])
+nodes = os.environ.get('NODES', None)
 job_id = int(os.environ.get('BUILD_NUMBER'))
 configfile = os.environ.get('PC_CONFIG', '/etc/puppet-compiler.conf')
-if nodes:
-    nodes = re.split('\s*,\s*', nodes)
 
 
 def main():

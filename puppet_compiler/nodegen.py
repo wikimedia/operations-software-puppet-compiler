@@ -16,6 +16,17 @@ def get_nodes(config):
     return n.match_physical_nodes(nodelist(facts_dir))
 
 
+def get_nodes_regex(config, regex):
+    nodes = []
+    r = re.compile(regex)
+    facts_dir = os.path.join(config['puppet_var'], 'yaml', 'facts')
+    _log.info("Walking dir %s", facts_dir)
+    for node in nodelist(facts_dir):
+        if r.search(node):
+            nodes.append(node)
+    return nodes
+
+
 def nodelist(facts_dir):
     for subdir in os.walk(facts_dir):
         for node in subdir[2]:

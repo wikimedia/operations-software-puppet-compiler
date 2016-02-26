@@ -49,12 +49,7 @@ class Controller(object):
             _log.exception("Couldn't load the configuration from %s", configfile)
 
         self.count = 0
-        if not host_list:
-            _log.info("No host list provided, generating the nodes list")
-            self.hosts = nodegen.get_nodes(self.config)
-        else:
-            self.hosts = host_list
-
+        self.pick_hosts(host_list)
         self.m = prepare.ManageCode(self.config, job_id, change_id)
         self.outdir = os.path.join(self.config['base'], 'output', str(job_id))
         # State of all nodes
@@ -63,6 +58,17 @@ class Controller(object):
         # Set up variables to be used by the html output class
         html.change_id = change_id
         html.job_id = job_id
+
+    def pick_hosts(self, host_list):
+        if not host_list:
+            _log.info("No host list provided, generating the nodes list")
+            self.hosts = nodegen.get_nodes(self.config)
+        elif host_list.startswith("re:"):
+            host_regex = host_list[3:]
+            self.hosts = nodegen.get_nodes_regex(self.config, host_regex)
+        else:
+            # Standard comma-separated list of hosts
+            self.hosts = re.split('\s*,\s*', host_list)
 
     def _parse_conf(self, configfile):
         with open(configfile, 'r') as f:

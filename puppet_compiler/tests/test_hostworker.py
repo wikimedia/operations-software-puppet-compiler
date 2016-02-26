@@ -9,7 +9,7 @@ class TestHostWorker(unittest.TestCase):
 
     def setUp(self):
         self.fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
-        self.c = controller.Controller(None, 19, 224570, ['test.eqiad.wmnet'])
+        self.c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
         self.m = self.c.m
         self.hw = controller.HostWorker(self.m,
                                         'test.codfw.wmnet', '/what/you/want')
