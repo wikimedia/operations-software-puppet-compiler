@@ -64,7 +64,7 @@ class TestManageCode(unittest.TestCase):
         calls = [
             mock.call(['git', 'fetch', '-q', 'https://gerrit.wikimedia.org/r/operations/puppet', 'refs/changes/50/227450/1']),
             mock.call(['git', 'checkout', 'FETCH_HEAD']),
-            mock.call(['git', 'pull', '--rebase', 'origin', 'production'])
+            mock.call(['git', 'pull', '--rebase', 'origin', 'production', '--recurse-submodules=yes'])
         ]
         mocker.assert_has_calls(calls)
 

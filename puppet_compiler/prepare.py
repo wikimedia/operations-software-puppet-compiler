@@ -138,7 +138,7 @@ class ManageCode(object):
         git.fetch('-q', 'https://gerrit.wikimedia.org/r/operations/puppet',
                   ref)
         git.checkout('FETCH_HEAD')
-        git.pull('--rebase', 'origin', 'production')
+        git.pull('--rebase', 'origin', 'production', '--recurse-submodules=yes')
 
     def _sh(command):
         try:
