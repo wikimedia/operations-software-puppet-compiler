@@ -138,7 +138,9 @@ class ManageCode(object):
         git.fetch('-q', 'https://gerrit.wikimedia.org/r/operations/puppet',
                   ref)
         git.checkout('FETCH_HEAD')
-        git.pull('--rebase', 'origin', 'production', '--recurse-submodules=yes')
+        git.pull('--rebase', 'origin', 'production')
+        # Update submodules according to the last hash of the parent repo.
+        git.submodule('update', '--init')
 
     def _sh(command):
         try:
