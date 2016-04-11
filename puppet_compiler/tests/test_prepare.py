@@ -34,7 +34,8 @@ class TestManageCode(unittest.TestCase):
         cls.base = tempfile.mkdtemp(prefix='puppet-compiler')
 
     def setUp(self):
-        fixtures = os.path.join(os.path.dirname(__file__), 'fixtures', 'puppet_var')
+        fixtures = os.path.join(os.path.dirname(__file__),
+                                'fixtures', 'puppet_var')
         self.m = prepare.ManageCode(
             {'base': self.base,
              'puppet_src': 'https://gerrit.wikimedia.org/r/operations/puppet',
@@ -49,7 +50,8 @@ class TestManageCode(unittest.TestCase):
 
     def test_copy_hiera(self):
         """Check the hiera file gets copied"""
-        with prepare.pushd(os.path.join(os.path.dirname(__file__), 'fixtures')):
+        with prepare.pushd(os.path.join(os.path.dirname(__file__),
+                                        'fixtures')):
             self.m._copy_hiera(self.base)
             with open('hiera.yaml') as f:
                 data = f.readlines()
@@ -62,12 +64,35 @@ class TestManageCode(unittest.TestCase):
         """The change can be downloaded"""
         self.m._fetch_change()
         calls = [
-            mock.call(['git', 'fetch', '-q', 'https://gerrit.wikimedia.org/r/operations/puppet', 'refs/changes/50/227450/1']),
+            mock.call(['git', 'fetch', '-q',
+                       'https://gerrit.wikimedia.org/r/operations/puppet',
+                       'refs/changes/50/227450/1']),
             mock.call(['git', 'checkout', 'FETCH_HEAD']),
             mock.call(['git', 'pull', '--rebase', 'origin', 'production']),
             mock.call(['git', 'submodule', 'update', '--init'])
         ]
         mocker.assert_has_calls(calls)
+
+    @mock.patch('subprocess.call')
+    @mock.patch('os.chdir', return_value=None)
+    def test_fetch_change_submodule(self, os_chdir_mocker, subprocess_mocker):
+        """The submodule change can be downloaded"""
+        self.m.change_id = 280690
+        self.m._fetch_change()
+        subprocess_calls = [
+            mock.call(['git', 'fetch', '-q',
+                       'https://gerrit.wikimedia.org/r/operations'
+                       '/puppet/varnishkafka',
+                       'refs/changes/90/280690/1']),
+            mock.call(['git', 'checkout', 'FETCH_HEAD'])
+        ]
+        subprocess_mocker.assert_has_calls(subprocess_calls)
+
+        # Checking that os.path.exists and os.chdir are called with
+        # the correct submodule dir.
+        submodule_dir = os.path.join(os.getcwd(), 'modules', 'varnishkafka')
+        os_chdir_calls = mock.call(submodule_dir)
+        assert os_chdir_calls in os_chdir_mocker.mock_calls
 
     @mock.patch('os.symlink')
     @mock.patch('shutil.copytree')
@@ -87,6 +112,8 @@ class TestManageCode(unittest.TestCase):
         mock_copy.assert_called_with(self.m.puppet_var + '/ssl',
                                      prod_src + '/ssl')
         assert 3 == mock_symlink.call_count
-        exim_priv = os.path.join(self.m.prod_dir, 'private/modules/privateexim')
-        exim_pub = os.path.join(self.m.prod_dir, 'src/modules/privateexim')
+        exim_priv = os.path.join(self.m.prod_dir,
+                                 'private/modules/privateexim')
+        exim_pub = os.path.join(self.m.prod_dir,
+                                'src/modules/privateexim')
         mock_symlink.assert_any_call(exim_priv, exim_pub)

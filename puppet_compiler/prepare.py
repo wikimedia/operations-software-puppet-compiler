@@ -116,7 +116,6 @@ class ManageCode(object):
 
     def _fetch_change(self):
         """get changes from the change directly"""
-        git = Git()
         headers = {'Accept': 'application/json',
                    'Content-Type': 'application/json; charset=UTF-8'}
         change = requests.get(
@@ -128,19 +127,62 @@ class ManageCode(object):
         json_data = change.text.split("\n")[-2:][0]
         res = json.loads(json_data)
         revision = res["revisions"].values()[0]["_number"]
+        project = res["project"]
         ref = 'refs/changes/%02d/%d/%d' % (
             self.change_id % 100,
             self.change_id,
             revision)
         _log.debug(
-            'Downloading patch for change %d, revision %d',
-            self.change_id, revision)
-        git.fetch('-q', 'https://gerrit.wikimedia.org/r/operations/puppet',
-                  ref)
-        git.checkout('FETCH_HEAD')
-        git.pull('--rebase', 'origin', 'production')
-        # Update submodules according to the last hash of the parent repo.
-        git.submodule('update', '--init')
+            'Downloading patch for project %s, change %d, revision %d',
+            project, self.change_id, revision)
+
+        # Assumption:
+        # Gerrit suported repo names and branches:
+        # 1) operations/puppet - origin/production
+        # 2) operations/puppet/submodulename - origin/master
+        if project == 'operations/puppet':
+            self._checkout_gerrit_revision(project, ref)
+            self._pull_rebase_origin('production')
+            # Update submodules according to the last hash of the parent repo.
+            _log.debug('Running submodule init')
+            self.git.submodule('update', '--init')
+        elif project.startswith('operations/puppet'):
+            # Checking out the submodules before proceeding
+            _log.debug('Running submodule init')
+            self.git.submodule('update', '--init')
+            self._update_submodule_repo(project, ref, 'master')
+        else:
+            raise RuntimeError("Unsupported Gerrit project: " + project)
+
+    def _update_submodule_repo(self, project, gerrit_rev,
+                               gerrit_origin_branch):
+        """Update a target submodule directory with a Gerrit patch.
+        """
+        _log.debug('The change has not been filed for the main puppet repo. '
+                   'Checking submodule repository matching '
+                   'operations/puppet/$submodulename')
+
+        # Updating a submodule requires the following procedure:
+        # 1) changing directory to modules/submodulename
+        # 2) fetch + checkout of the gerrit change (will create a
+        #    DETACHED_HEAD state)
+        # 3) returning to the main directory
+        submodule_name = project.split('/')[-1]
+        submodule_path = os.path.join(os.getcwd(),
+                                      'modules', submodule_name)
+        _log.debug('Submodule repository name: %s path: %s',
+                   submodule_name, submodule_path)
+        with pushd(submodule_path):
+            _log.debug('Executing git checkout of the gerrit revision')
+            self._checkout_gerrit_revision(project, gerrit_rev)
+
+    def _checkout_gerrit_revision(self, project, revision):
+        self.git.fetch(
+            '-q', 'https://gerrit.wikimedia.org/r/' + project, revision)
+        self.git.checkout('FETCH_HEAD')
+
+    def _pull_rebase_origin(self, origin_branch):
+        self.git.pull('--rebase', 'origin', origin_branch)
 
     def _sh(command):
         try:
