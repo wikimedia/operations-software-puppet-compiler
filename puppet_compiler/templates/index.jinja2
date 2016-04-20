@@ -4,25 +4,25 @@
   <div id="list">
     <h2>Hosts that have no differences (or compile correctly only with the change)</h2>
     <ul>
-      {% for host in state.noop %}
+      {% for host in state.noop|sort %}
         <li> <a href="{{ host }}/">{{ host }}</a>
       {% endfor %}
     </ul>
     <h2>Hosts that have changes</h2>
     <ul>
-      {% for host in state.diff %}
+      {% for host in state.diff|sort %}
         <li> <a href="{{ host }}/">{{ host }}</a>
       {% endfor %}
     </ul>
     <h2>Hosts that fail to compile when the change is applied</h2>
     <ul>
-      {% for host in state.err %}
+      {% for host in state.err|sort %}
         <li> <a href="{{ host }}/">{{ host }}</a>
       {% endfor %}
     </ul>
     <h2>Hosts that have failed to compile completely</h2>
     <ul>
-      {% for host in state.fail %}
+      {% for host in state.fail|sort %}
         <li> <a href="{{ host }}/">{{ host }}</a>
       {% endfor %}
     </ul>
