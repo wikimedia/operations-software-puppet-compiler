@@ -23,11 +23,11 @@ def main():
         else:
             lvl = logging.INFO
 
-            logging.basicConfig(
-                format='%(asctime)s %(levelname)s: %(message)s',
-                level=lvl,
-                datefmt='[ %Y-%m-%dT%H:%M:%S ]'
-            )
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s: %(message)s',
+            level=lvl,
+            datefmt='[ %Y-%m-%dT%H:%M:%S ]'
+        )
         if not change:
             _log.critical("No change provided, we cannot do anything")
             sys.exit(2)
