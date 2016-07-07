@@ -1,0 +1,6 @@
+basedn: "dc=wikimedia,dc=org"
+password: not_the_password
+servers:
+  - ldap-labs.eqiad.wikimedia.org
+  - ldap-labs.codfw.wikimedia.org
+user: "cn=proxyagent,ou=profile,dc=wikimedia,dc=org"

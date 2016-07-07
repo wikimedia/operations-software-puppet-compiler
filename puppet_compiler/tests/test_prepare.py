@@ -48,16 +48,38 @@ class TestManageCode(unittest.TestCase):
     def tearDownClass(cls):
         shutil.rmtree(cls.base)
 
-    def test_copy_hiera(self):
+    def _test_copy_hiera(self, realm):
         """Check the hiera file gets copied"""
         with prepare.pushd(os.path.join(os.path.dirname(__file__),
                                         'fixtures')):
-            self.m._copy_hiera(self.base)
+            self.m._copy_hiera(self.base, realm)
             with open('hiera.yaml') as f:
                 data = f.readlines()
             os.unlink('hiera.yaml')
         self.assertIn(os.path.join(self.base, 'src', 'hieradata'), data[0])
         self.assertIn(os.path.join(self.base, 'private'), data[1])
+        self.assertIn(realm, data[2])
+
+    def test_copy_hiera(self):
+        self._test_copy_hiera('production')
+        self._test_copy_hiera('labs')
+
+    @mock.patch('puppet_compiler.prepare.LDAP_YAML_PATH', 'ldap.yaml')
+    def test_create_puppetconf(self):
+        fn = 'puppet.conf'
+        with prepare.pushd(os.path.join(os.path.dirname(__file__),
+                                        'fixtures')):
+            if os.path.isfile(fn):
+                os.unlink(fn)
+            self.m._create_puppetconf(self, 'production')
+            self.assertFalse(os.path.isfile(fn))
+
+            self.m._create_puppetconf(self, 'labs')
+            with open(fn) as f:
+                data = f.read()
+            os.unlink(fn)
+        self.assertIn('ldapuser = cn=proxyagent', data)
+        self.assertIn('password = not_the_password', data)
 
     @mock.patch('subprocess.call')
     def test_fetch_change(self, mocker):

@@ -70,6 +70,13 @@ class Controller(object):
             # Standard comma-separated list of hosts
             self.hosts = re.split('\s*,\s*', host_list)
 
+        is_labs = [host.endswith('.wmflabs') for host in self.hosts]
+        if any(is_labs) and not all(is_labs):
+            _log.critical("Cannot compile production and labs hosts in the "
+                          "same run. Please run puppet-compiler twice.")
+            sys.exit(2)
+        self.realm = 'labs' if any(is_labs) else 'production'
+
     def _parse_conf(self, configfile):
         with open(configfile, 'r') as f:
             data = yaml.load(f)
