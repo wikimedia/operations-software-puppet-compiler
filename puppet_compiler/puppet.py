@@ -21,6 +21,7 @@ def compile(hostname, basedir, vardir):
                                    os.path.join(srcdir, 'modules')),
            '--confdir=%s' % srcdir,
            '--templatedir=%s' % tpldir,
+           '--trusted_node_data',
            '--compile=%s' % hostname,
            '--color=false'
            ]

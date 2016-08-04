@@ -27,6 +27,7 @@ class TestPuppetCalls(unittest.TestCase):
              '%(basedir)s/src/modules' % {'basedir': self.fixtures},
              '--confdir=%s/%s' % (self.fixtures, 'src'),
              '--templatedir=%s/%s' % (self.fixtures, 'src/templates'),
+             '--trusted_node_data',
              '--compile=test.codfw.wmnet',
              '--color=false'],
             env=env,
