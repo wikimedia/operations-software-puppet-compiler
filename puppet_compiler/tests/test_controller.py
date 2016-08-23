@@ -74,3 +74,15 @@ class TestController(unittest.TestCase):
         s2 = set(['test.eqiad.wmnet', 'test2.eqiad.wmnet'])
         s = set(c.hosts)
         assert (s == s1 or s == s2)
+
+    def test_realm_detection(self):
+        c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
+        self.assertEquals(c.realm, 'production')
+
+        c.pick_hosts('test.tools.eqiad.wmflabs')
+        self.assertEquals(c.realm, 'labs')
+
+        with self.assertRaises(SystemExit) as cm:
+            c.pick_hosts('test.eqiad.wmnet,test.tools.eqiad.wmflabs')
+
+        self.assertEqual(cm.exception.code, 2)
