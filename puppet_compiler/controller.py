@@ -216,11 +216,15 @@ class HostWorker(object):
             _log.info("Compilation exited with code %d", e.returncode)
             _log.debug("Failed command: %s", e.cmd)
             errors += self.E_PROD
+        args = []
+        if os.path.isfile(os.path.join(self.m.prod_dir, '.future')):
+            args.append('--parser=future')
         try:
             _log.info("Compiling host %s (change)", self.hostname)
             puppet.compile(self.hostname,
                            self.m.change_dir,
-                           self.m.puppet_var)
+                           self.m.puppet_var,
+                           *args)
         except subprocess.CalledProcessError as e:
             _log.error("Compilation failed for hostname %s "
                        " with the change.", self.hostname)
