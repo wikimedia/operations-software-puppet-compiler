@@ -4,7 +4,7 @@ import subprocess
 from tempfile import SpooledTemporaryFile as spoolfile
 
 
-def compile(hostname, basedir, vardir):
+def compile(hostname, basedir, vardir, *extra_flags):
     """
     Compile the catalog
     """
@@ -25,6 +25,7 @@ def compile(hostname, basedir, vardir):
            '--compile=%s' % hostname,
            '--color=false'
            ]
+    cmd.extend(extra_flags)
     hostfile = os.path.join(catalogdir, hostname)
 
     with open(hostfile + ".err", 'w') as err:
