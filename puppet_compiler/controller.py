@@ -60,7 +60,7 @@ class Controller(object):
         self.count = defaultdict(int)
         self.pick_hosts(host_list)
         directories.FHS.setup(job_id, self.config['base'])
-        self.m = prepare.ManageCode(self.config, job_id, change_id)
+        self.m = prepare.ManageCode(self.config, job_id, change_id, self.realm)
         self.outdir = directories.FHS.output_dir
         # State of all nodes
         self.state = state.StatesCollection()

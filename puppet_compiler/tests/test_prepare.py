@@ -80,8 +80,7 @@ class TestManageCode(unittest.TestCase):
             with open(fn) as f:
                 data = f.read()
             os.unlink(fn)
-        self.assertIn('ldapuser = cn=proxyagent', data)
-        self.assertIn('password = not_the_password', data)
+        self.assertIn('node_terminus = exec', data)
 
     @mock.patch('subprocess.call')
     def test_fetch_change(self, mocker):
