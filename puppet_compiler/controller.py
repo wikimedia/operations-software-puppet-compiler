@@ -217,7 +217,7 @@ class HostWorker(object):
             _log.debug("Failed command: %s", e.cmd)
             errors += self.E_PROD
         args = []
-        if os.path.isfile(os.path.join(self.m.prod_dir, '.future')):
+        if os.path.isfile(os.path.join(self.m.change_dir, '.future')):
             args.append('--parser=future')
         try:
             _log.info("Compiling host %s (change)", self.hostname)
