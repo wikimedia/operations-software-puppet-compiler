@@ -222,7 +222,7 @@ class HostWorker(object):
                 configs = f.readlines()
                 # Make sure every item has exactly 2 dashes prepended
                 configs = map(lambda x: "--{}".format(x.lstrip('-')), configs)
-                args.append(configs)
+                args.extend(configs)
         try:
             _log.info("Compiling host %s (change)", self.hostname)
             puppet.compile(self.hostname,
