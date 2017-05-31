@@ -221,7 +221,7 @@ class HostWorker(object):
             with open(os.path.join(self.m.change_dir, 'src', '.configs')) as f:
                 configs = f.readlines()
                 # Make sure every item has exactly 2 dashes prepended
-                configs = map(lambda x: "--{}".format(x.lstrip('-'), configs))
+                configs = map(lambda x: "--{}".format(x.lstrip('-')), configs)
                 args.append(configs)
         try:
             _log.info("Compiling host %s (change)", self.hostname)
