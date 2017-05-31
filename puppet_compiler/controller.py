@@ -217,8 +217,12 @@ class HostWorker(object):
             _log.debug("Failed command: %s", e.cmd)
             errors += self.E_PROD
         args = []
-        if os.path.isfile(os.path.join(self.m.change_dir, 'src', '.future')):
-            args.append('--parser=future')
+        if os.path.isfile(os.path.join(self.m.change_dir, 'src', '.configs')):
+            with open(os.path.join(self.m.change_dir, 'src', '.configs')) as f:
+                configs = f.readlines()
+                # Make sure every item has exactly 2 dashes prepended
+                configs = map(lambda x: "--{}".format(x.lstrip('-'), configs))
+                args.append(configs)
         try:
             _log.info("Compiling host %s (change)", self.hostname)
             puppet.compile(self.hostname,
