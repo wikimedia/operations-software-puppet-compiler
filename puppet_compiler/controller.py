@@ -22,7 +22,7 @@ How data are organized:
 
 class Controller(object):
 
-    def __init__(self, configfile, job_id, change_id, host_list=[]):
+    def __init__(self, configfile, job_id, change_id, host_list=[], nthreads=2):
         self.config = {
             # Url under which results will be found
             'http_url': 'https://puppet-compiler.wmflabs.org/html',
@@ -36,7 +36,8 @@ class Controller(object):
             'puppet_private': 'https://gerrit.wikimedia.org/r/labs/private',
             # Directory hosting all of puppet's runtime files usually
             # under /var/lib/puppet on debian-derivatives
-            'puppet_var': '/var/lib/catalog-differ/puppet'
+            'puppet_var': '/var/lib/catalog-differ/puppet',
+            'pool_size': nthreads,
         }
         try:
             if configfile is not None:
@@ -98,7 +99,7 @@ class Controller(object):
         self.m.prepare()
 
         threadpool = threads.ThreadOrchestrator(
-            self.config.get('pool_size', 2))
+            self.config['pool_size'])
 
         # For each host, the threadpool will execute
         # Controller._run_host with the host as the only argument.

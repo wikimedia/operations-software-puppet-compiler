@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from functools import reduce
 import os
 from setuptools import setup, find_packages
 

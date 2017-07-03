@@ -11,7 +11,7 @@ class TestController(unittest.TestCase):
         cls.fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
 
     def test_initialize_no_configfile(self):
-        c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
+        c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet', nthreads=2)
         self.assertEquals(c.hosts, ['test.eqiad.wmnet'])
         self.assertEquals(c.config['http_url'],
                           'https://puppet-compiler.wmflabs.org/html')
@@ -19,7 +19,7 @@ class TestController(unittest.TestCase):
 
     def test_parse_config(self):
         filename = os.path.join(self.fixtures, 'test_config.yaml')
-        c = controller.Controller(filename, 19, 224570, 'test.eqiad.wmnet')
+        c = controller.Controller(filename, 19, 224570, 'test.eqiad.wmnet', nthreads=2)
         self.assertEquals(len(c.config['test_non_existent']), 2)
         self.assertEquals(c.config['http_url'],
                           'http://www.example.com/garbagehere')
