@@ -25,7 +25,7 @@ class TestController(unittest.TestCase):
                           'http://www.example.com/garbagehere')
 
     @mock.patch('puppet_compiler.presentation.html.Index')
-    @mock.patch('puppet_compiler.controller.HostWorker.run_host')
+    @mock.patch('puppet_compiler.worker.HostWorker.run_host')
     def test_run_single_host(self, mocker, html_mocker):
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
         mocker.return_value = 'fail'

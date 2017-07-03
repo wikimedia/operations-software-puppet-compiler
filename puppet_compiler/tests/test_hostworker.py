@@ -1,7 +1,7 @@
 import unittest
 import mock
 import os
-from puppet_compiler import controller
+from puppet_compiler import controller, worker
 import subprocess
 
 
@@ -11,8 +11,8 @@ class TestHostWorker(unittest.TestCase):
         self.fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         self.c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
         self.m = self.c.m
-        self.hw = controller.HostWorker(self.m,
-                                        'test.codfw.wmnet', '/what/you/want')
+        self.hw = worker.HostWorker(self.m,
+                                    'test.codfw.wmnet', '/what/you/want')
 
     def test_initialize(self):
 
