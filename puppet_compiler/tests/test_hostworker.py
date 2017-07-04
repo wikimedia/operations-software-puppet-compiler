@@ -10,33 +10,22 @@ class TestHostWorker(unittest.TestCase):
     def setUp(self):
         self.fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         self.c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
-        self.m = self.c.m
-        self.hw = worker.HostWorker(self.m,
-                                    'test.codfw.wmnet', '/what/you/want')
+        self.hw = worker.HostWorker(self.c.config['puppet_var'],
+                                    'test.example.com')
 
     def test_initialize(self):
 
-        self.assertEquals(self.hw.hostname, 'test.codfw.wmnet')
-        self.assertItemsEqual(['prod', 'change'], self.hw.files.keys())
-        self.assertEquals(
-            '/mnt/jenkins-workspace/19/change/catalogs/test.codfw.wmnet.err',
-            self.hw.files['change']['errors']
-        )
-        self.assertEquals(
-            '/mnt/jenkins-workspace/19/production/catalogs/test.codfw.wmnet.pson',
-            self.hw.files['prod']['catalog']
-        )
-        self.assertEquals('/what/you/want/test.codfw.wmnet',
-                          self.hw.outdir)
+        self.assertEquals(self.hw.hostname, 'test.example.com')
+        self.assertItemsEqual(['prod', 'change'], self.hw._envs)
 
     @mock.patch('puppet_compiler.puppet.compile')
     def test_compile_all(self, mocker):
         # Verify simple calls
         err = self.hw._compile_all()
         calls = [
-            mock.call('test.codfw.wmnet', '/mnt/jenkins-workspace/19/production',
+            mock.call('test.example.com', 'prod',
                       '/var/lib/catalog-differ/puppet'),
-            mock.call('test.codfw.wmnet', '/mnt/jenkins-workspace/19/change',
+            mock.call('test.example.com', 'change',
                       '/var/lib/catalog-differ/puppet'),
         ]
         mocker.assert_has_calls(calls)
@@ -51,7 +40,7 @@ class TestHostWorker(unittest.TestCase):
 
         # Verify only the change is wrong
         def complicated_side_effect(*args, **kwdargs):
-            if '/mnt/jenkins-workspace/19/production' in args:
+            if 'prod' in args:
                 return True
             else:
                 raise subprocess.CalledProcessError(cmd="ehehe", returncode=30)
@@ -65,7 +54,7 @@ class TestHostWorker(unittest.TestCase):
         mocker.return_value = True
         self.hw._get_diff = mock.Mock(return_value=True)
         retval = self.hw._make_diff(0)
-        mocker.assert_called_with('/mnt/jenkins-workspace/19', 'test.codfw.wmnet')
+        mocker.assert_called_with('change', 'test.example.com')
         self.assertEquals(retval, 'diff')
         self.hw._get_diff = mock.Mock(return_value=False)
         self.assertEquals(self.hw._make_diff(0), 'noop')
@@ -85,12 +74,12 @@ class TestHostWorker(unittest.TestCase):
     def test_make_output(self, mock_copy, mock_makedirs, mock_isfile):
         mock_isfile.return_value = False
         self.hw._make_output()
-        mock_makedirs.assert_called_with('/what/you/want/test.codfw.wmnet', 0755)
+        mock_makedirs.assert_called_with(self.hw._files.outdir, 0755)
         assert not mock_copy.called
         mock_isfile.return_value = True
         mock_copy.assert_called_any(
-            '/mnt/jenkins-workspace/19/production/catalogs/test.codfw.wmnet.pson',
-            '/what/you/want/test.codfw.wmnet/production.test.codfw.wmnet.pson',
+            '/mnt/jenkins-workspace/19/production/catalogs/test.example.com.pson',
+            '/what/you/want/test.example.com/production.test.example.com.pson',
         )
 
     @mock.patch('os.path')
@@ -107,15 +96,15 @@ class TestHostWorker(unittest.TestCase):
         pass
 
     def test_run_host(self):
-        self.hw.m.find_yaml = mock.Mock(return_value=False)
+        self.hw.facts_file = mock.Mock(return_value=False)
         self.assertEquals(self.hw.run_host(), 'fail')
-        self.hw.m.find_yaml = mock.Mock(return_value=True)
+        self.hw.facts_file = mock.Mock(return_value=True)
         self.hw._compile_all = mock.Mock(return_value=0)
         self.hw._make_diff = mock.Mock(return_value='diff')
         self.hw._make_output = mock.Mock(return_value=None)
         self.hw._build_html = mock.Mock(return_value=None)
         self.assertEquals(self.hw.run_host(), 'diff')
-        assert self.hw.m.find_yaml.called
+        assert self.hw.facts_file.called
         assert self.hw._compile_all.called
         self.hw._make_diff.assert_called_with(0)
         assert self.hw._make_output.called

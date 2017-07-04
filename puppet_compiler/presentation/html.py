@@ -9,13 +9,13 @@ job_id = None
 
 class Host(object):
 
-    def __init__(self, hostname, diff_dir, outdir, retcode):
+    def __init__(self, hostname, files, retcode):
         self.retcode = retcode
         self.hostname = hostname
-        self.outdir = outdir
-        self.diff_file = os.path.join(diff_dir, hostname + '.diff')
+        self.outdir = files.outdir
+        self.diff_file = files.file_for('change', 'diff')
 
-    def htmlpage(self, files):
+    def htmlpage(self):
         """
         Create the html page
         """
@@ -24,7 +24,6 @@ class Host(object):
         if self.retcode == 'diff':
             with open(self.diff_file, 'r') as f:
                 data['diffs'] = f.read()
-        data['files'] = files
         if self.retcode == 'noop':
             data['desc'] = 'no change'
         elif self.retcode == 'diff':

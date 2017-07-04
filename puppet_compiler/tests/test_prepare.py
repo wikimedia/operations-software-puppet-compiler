@@ -4,6 +4,7 @@ import unittest
 import tempfile
 import shutil
 from puppet_compiler import prepare
+from puppet_compiler.directories import FHS
 
 
 class TestGit(unittest.TestCase):
@@ -32,6 +33,7 @@ class TestManageCode(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.base = tempfile.mkdtemp(prefix='puppet-compiler')
+        FHS.setup(19, cls.base)
 
     def setUp(self):
         fixtures = os.path.join(os.path.dirname(__file__),

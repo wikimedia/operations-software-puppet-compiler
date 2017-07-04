@@ -6,6 +6,7 @@ import os
 import shutil
 import requests
 from puppet_compiler import _log
+from puppet_compiler.directories import FHS
 
 LDAP_YAML_PATH = '/etc/ldap.yaml'
 
@@ -22,18 +23,17 @@ class ManageCode(object):
     private_modules = ['passwords', 'contacts', 'privateexim']
 
     def __init__(self, config, jobid, changeid, realm='production'):
-        self.base_dir = os.path.join(config['base'],
-                                     str(jobid))
+        self.base_dir = FHS.base_dir
         self.puppet_src = config['puppet_src']
         self.puppet_private = config['puppet_private']
         self.puppet_var = config['puppet_var']
         self.change_id = changeid
         self.realm = realm
 
-        self.change_dir = os.path.join(self.base_dir, 'change')
-        self.prod_dir = os.path.join(self.base_dir, 'production')
-        self.diff_dir = os.path.join(self.base_dir, 'diffs')
-        self.output_dir = os.path.join(config['base'], 'output', str(jobid))
+        self.change_dir = FHS.change_dir
+        self.prod_dir = FHS.prod_dir
+        self.diff_dir = FHS.diff_dir
+        self.output_dir = FHS.output_dir
         self.git = Git()
 
     def find_yaml(self, hostname):
