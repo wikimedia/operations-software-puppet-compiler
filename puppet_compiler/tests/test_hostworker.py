@@ -53,20 +53,14 @@ class TestHostWorker(unittest.TestCase):
     def test_make_diff(self, mocker):
         mocker.return_value = True
         self.hw._get_diff = mock.Mock(return_value=True)
-        retval = self.hw._make_diff(0)
+        retval = self.hw._make_diff()
         mocker.assert_called_with('change', 'test.example.com')
-        self.assertEquals(retval, 'diff')
+        self.assertEquals(retval, True)
         self.hw._get_diff = mock.Mock(return_value=False)
-        self.assertEquals(self.hw._make_diff(0), 'noop')
+        self.assertEquals(self.hw._make_diff(), None)
         mocker.reset_mock()
-        self.assertEquals(self.hw._make_diff(1), 'noop')
-        assert not mocker.called
-        mocker.reset_mock()
-        self.assertEquals(self.hw._make_diff(2), 'err')
-        assert not mocker.called
         mocker.side_effect = subprocess.CalledProcessError(cmd="ehehe", returncode=30)
-        self.assertEquals(self.hw._make_diff(0), 'fail')
-        self.assertEquals(self.hw._make_diff(3), 'fail')
+        self.assertEquals(self.hw._make_diff(), False)
 
     @mock.patch('os.path.isfile')
     @mock.patch('os.makedirs')
@@ -100,12 +94,16 @@ class TestHostWorker(unittest.TestCase):
         self.assertEquals(self.hw.run_host(), 'fail')
         self.hw.facts_file = mock.Mock(return_value=True)
         self.hw._compile_all = mock.Mock(return_value=0)
-        self.hw._make_diff = mock.Mock(return_value='diff')
+        self.hw._make_diff = mock.Mock(return_value=True)
         self.hw._make_output = mock.Mock(return_value=None)
         self.hw._build_html = mock.Mock(return_value=None)
-        self.assertEquals(self.hw.run_host(), 'diff')
+        self.assertEquals(self.hw.run_host(), (False, False, True))
         assert self.hw.facts_file.called
         assert self.hw._compile_all.called
-        self.hw._make_diff.assert_called_with(0)
+        assert self.hw._make_diff.called
         assert self.hw._make_output.called
         assert self.hw._build_html.called
+        self.hw._compile_all.return_value = 1
+        self.hw._make_diff.reset_mock()
+        self.assertEquals(self.hw.run_host(), (True, False, None))
+        assert not self.hw._make_diff.called

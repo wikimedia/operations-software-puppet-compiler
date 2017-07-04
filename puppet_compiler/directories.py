@@ -46,5 +46,5 @@ class HostFiles(object):
         return os.path.join(base, 'catalogs', self.hostname + suffix + ext)
 
     def outfile_for(self, env, what):
-        name = os.basename(self.file_for(env, what))
-        return os.path.join(self.output_dir, env + '.' + name)
+        name = os.path.basename(self.file_for(env, what))
+        return os.path.join(self.outdir, env + '.' + name)

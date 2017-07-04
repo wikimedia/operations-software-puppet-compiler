@@ -28,7 +28,7 @@ class Host(object):
             data['desc'] = 'no change'
         elif self.retcode == 'diff':
             data['desc'] = 'changes detected'
-        elif self.retcode == 'err':
+        elif self.retcode == 'error':
             data['desc'] = 'change fails'
         else:
             data['desc'] = 'compiler failure'
@@ -39,8 +39,16 @@ class Host(object):
 
 
 class Index(object):
-    def __init__(self, outdir):
-        self.outfile = os.path.join(outdir, 'index.html')
+
+    def __init__(self, outdir, mode):
+        # Hack! generalize somehow
+        if mode == 'change':
+            filename = "index.html"
+            self.url = ""
+        else:
+            self.url = 'index%s.html' % mode
+            filename = self.url
+        self.outfile = os.path.join(outdir, filename)
 
     def render(self, state):
         """
@@ -48,6 +56,7 @@ class Index(object):
         """
         _log.debug("Rendering the main index page")
         t = env.get_template('index.jinja2')
+        # TODO: support multiple modes
         page = t.render(state=state, jid=job_id, chid=change_id)
         with open(self.outfile, 'w') as f:
             f.write(page)

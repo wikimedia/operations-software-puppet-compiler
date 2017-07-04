@@ -6,12 +6,16 @@ import subprocess
 from puppet_compiler import puppet, _log
 from puppet_compiler.directories import HostFiles, FHS
 from puppet_compiler.presentation import html
+from puppet_compiler.state import ChangeState
 
 
 class HostWorker(object):
     E_OK = 0
     E_PROD = 1
     E_CHANGE = 2
+    state = ChangeState
+    html_page = html.Host
+    html_index = html.Index
 
     def __init__(self, vardir, hostname):
         self.puppet_var = vardir
@@ -36,14 +40,20 @@ class HostWorker(object):
                        self.hostname)
             return 'fail'
         errors = self._compile_all()
-        retcode = self._make_diff(errors)
+        if errors == self.E_OK:
+            diff = self._make_diff()
+        else:
+            diff = None
+        base = errors & self.E_PROD
+        change = errors & self.E_CHANGE
         try:
             self._make_output()
-            self._build_html(retcode)
+            state = self.state('', self.hostname, base, change, diff)
+            self._build_html(state.name)
         except Exception as e:
             _log.error('Error preparing output for %s: %s', self.hostname, e,
                        exc_info=True)
-        return retcode
+        return (base, change, diff)
 
     def _compile_all(self):
         """
@@ -83,36 +93,24 @@ class HostWorker(object):
         # Now test for regressions with the future parser
         return errors
 
-    def _make_diff(self, errors):
+    def _make_diff(self):
         """
-        Based on the outcome of compilation, will or will not produce diffs
+        Will produce diffs.
         """
-        if errors == self.E_OK:
-            # Both nodes compiled correctly
-            _log.info("Calculating diffs for %s", self.hostname)
-            try:
-                puppet.diff(self._envs[1], self.hostname)
-            except subprocess.CalledProcessError as e:
-                _log.error("Diffing the catalogs failed: %s", self.hostname)
-                _log.info("Diffing exited with code %d", e.returncode)
-                _log.debug("Failed command: %s", e.cmd)
-                return 'fail'
-            else:
-                if self._get_diff():
-                    return 'diff'
-                else:
-                    return 'noop'
-        elif errors == self.E_PROD:
-            # Production didn't compile, the changed tree did.
-            # Declare this a success
-            return 'noop'
-        elif errors == self.E_CHANGE:
-            # Ouch, the change didn't work
-            return 'err'
+        # Both nodes compiled correctly
+        _log.info("Calculating diffs for %s", self.hostname)
+        try:
+            puppet.diff(self._envs[1], self.hostname)
+        except subprocess.CalledProcessError as e:
+            _log.error("Diffing the catalogs failed: %s", self.hostname)
+            _log.info("Diffing exited with code %d", e.returncode)
+            _log.debug("Failed command: %s", e.cmd)
+            return False
         else:
-            # This is most probably the compiler's fault,
-            # let's call this a fail
-            return 'fail'
+            if self._get_diff():
+                return True
+            else:
+                return None
 
     def _make_output(self):
         """
@@ -157,5 +155,5 @@ class HostWorker(object):
         build the HTML output
         """
         # TODO: implement the actual html parsing
-        host = html.Host(self.hostname, self._files, retcode)
+        host = self.html_page(self.hostname, self._files, retcode)
         host.htmlpage()

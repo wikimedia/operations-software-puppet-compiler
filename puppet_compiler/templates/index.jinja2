@@ -16,7 +16,7 @@
     </ul>
     <h2>Hosts that fail to compile when the change is applied</h2>
     <ul>
-      {% for host in state.err|sort %}
+      {% for host in state.error|sort %}
         <li> <a href="{{ host }}/">{{ host }}</a>
       {% endfor %}
     </ul>
