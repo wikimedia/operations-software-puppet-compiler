@@ -39,3 +39,9 @@ class TestHostFiles(unittest.TestCase):
         )
         # Now something we don't have
         self.assertRaises(ValueError, self.hostfiles.file_for, 'test', 'none')
+
+    def test_outfile_for(self):
+        self.assertEqual(
+            self.hostfiles.outfile_for('prod', 'catalog'),
+            '/mnt/jenkins-workspace/output/19/test.example.com/prod.test.example.com.pson'
+        )

@@ -96,6 +96,9 @@ class TestManageCode(unittest.TestCase):
             mock.call(['git', 'submodule', 'update', '--init'])
         ]
         mocker.assert_has_calls(calls)
+        # Now test a change to another repository
+        self.m.change_id = 363216
+        self.assertRaises(RuntimeError, self.m._fetch_change)
 
     @mock.patch('subprocess.call')
     @mock.patch('os.chdir', return_value=None)
@@ -141,3 +144,25 @@ class TestManageCode(unittest.TestCase):
         exim_pub = os.path.join(self.m.prod_dir,
                                 'src/modules/privateexim')
         mock_symlink.assert_any_call(exim_priv, exim_pub)
+
+    @mock.patch('puppet_compiler.prepare.pushd')
+    def test_refresh(self, pushd):
+        self.m.git = mock.MagicMock()
+        self.m.refresh('/__test')
+        pushd.assert_called_with('/__test')
+        self.m.git.pull.assert_called_with('-q', '--rebase')
+
+    @mock.patch('puppet_compiler.prepare.pushd')
+    def test_prepare(self, pushd):
+        self.m._prepare_dir = mock.MagicMock()
+        self.m._fetch_change = mock.MagicMock()
+        self.m._copy_hiera = mock.MagicMock()
+        self.m._create_puppetconf = mock.MagicMock()
+        self.m.prepare()
+        for dirname in self.m.base_dir, self.m.prod_dir, self.m.change_dir:
+            assert os.path.isdir(dirname)
+        self.m._prepare_dir.assert_has_calls(
+            [mock.call(self.m.prod_dir)],
+            [mock.call(self.m.change_dir)],
+        )
+        assert self.m._fetch_change.called

@@ -45,7 +45,7 @@ class Controller(object):
         try:
             if configfile is not None:
                 self._parse_conf(configfile)
-        except yaml.parser.ParserError as e:
+        except yaml.error.YAMLError as e:
             _log.exception("Configuration file %s contains malformed yaml: %s",
                            configfile, e)
             sys.exit(2)

@@ -36,14 +36,6 @@ class ManageCode(object):
         self.output_dir = FHS.output_dir
         self.git = Git()
 
-    def find_yaml(self, hostname):
-        """ Finds facts file for the current hostname """
-        facts_file = os.path.join(self.puppet_var, 'yaml', 'facts',
-                                  '{}.yaml'.format(hostname))
-        if os.path.isfile(facts_file):
-            return facts_file
-        return None
-
     def cleanup(self):
         """
         Remove the whole change tree.
@@ -216,14 +208,6 @@ class ManageCode(object):
 
     def _pull_rebase_origin(self, origin_branch):
         self.git.pull('--rebase', 'origin', origin_branch)
-
-    def _sh(command):
-        try:
-            subprocess.check_call(command, shell=True)
-        except subprocess.CalledProcessError as e:
-            _log.error("Command '%s' failed with exit code '%s'",
-                       e.cmd, e.returncode)
-            raise
 
 
 class Git():

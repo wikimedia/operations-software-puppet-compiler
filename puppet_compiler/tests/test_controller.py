@@ -24,6 +24,9 @@ class TestController(unittest.TestCase):
         self.assertEquals(len(c.config['test_non_existent']), 2)
         self.assertEquals(c.config['http_url'],
                           'http://www.example.com/garbagehere')
+        # This will log an error, but not raise an exception
+        controller.Controller('unexistent', 19, 224570, 'test.eqiad.wmnet', nthreads=2)
+        self.assertRaises(SystemExit, controller.Controller, filename + '.invalid', 1, 1, 'test.eqiad.wmnet')
 
     @mock.patch('puppet_compiler.worker.HostWorker.html_index')
     @mock.patch('puppet_compiler.worker.HostWorker.run_host')
@@ -39,6 +42,13 @@ class TestController(unittest.TestCase):
         c.m.prepare.assert_called_once_with()
         c.m.refresh.assert_not_called()
         self.assertEquals(c.state.modes['change']['fail'], set(['test.eqiad.wmnet']))
+        c.m.refresh.reset_mocks()
+        c.config['puppet_src'] = '/src'
+        c.config['puppet_private'] = '/private'
+        mocker.return_value = (False, False, None)
+        c.run()
+        c.m.refresh.assert_has_calls([mock.call('/src'), mock.call('/private')])
+        self.assertEquals(c.state.modes['change']['noop'], set(['test.eqiad.wmnet']))
 
     def test_node_callback(self):
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
@@ -60,6 +70,17 @@ class TestController(unittest.TestCase):
         c.on_node_compiled(response)
         self.assertIn('test2.eqiad.wmnet', c.state.modes['change']['noop'])
         self.assertEquals(c.count['change'], 7)
+        with mock.patch('puppet_compiler.presentation.html.Index') as mocker:
+            response = threads.Msg(
+                is_error=False, value=(False, False, None), args=None,
+                kwargs={
+                    'hostname': 'test2.eqiad.wmnet',
+                    'classes': (state.ChangeState, html.Index),
+                    'mode': 'change'}
+            )
+            c.count['change'] = 4
+            c.on_node_compiled(response)
+            mocker.assert_called_with(c.outdir, mode='change')
 
     def test_pick_hosts(self):
         # Initialize a simple controller
@@ -93,3 +114,12 @@ class TestController(unittest.TestCase):
             c.pick_hosts('test.eqiad.wmnet,test.tools.eqiad.wmflabs')
 
         self.assertEqual(cm.exception.code, 2)
+
+    def test_success(self):
+        c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
+        # let's add just a successful run
+        c.count['change'] = 2
+        c.state.modes = {'change': {'noop': 1}}
+        self.assertTrue(c.success)
+        c.count['change'] = 0
+        self.assertTrue(c.success)

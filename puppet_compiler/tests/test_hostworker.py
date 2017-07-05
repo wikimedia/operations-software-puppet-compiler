@@ -18,6 +18,15 @@ class TestHostWorker(unittest.TestCase):
         self.assertEquals(self.hw.hostname, 'test.example.com')
         self.assertItemsEqual(['prod', 'change'], self.hw._envs)
 
+    @mock.patch('os.path.isfile')
+    def test_facts_file(self, isfile):
+        isfile.return_value = True
+        self.assertEqual(
+            self.hw.facts_file(),
+            '/var/lib/catalog-differ/puppet/yaml/facts/test.example.com.yaml')
+        isfile.return_value = False
+        self.assertIsNone(self.hw.facts_file())
+
     @mock.patch('puppet_compiler.puppet.compile')
     def test_compile_all(self, mocker):
         # Verify simple calls
@@ -71,9 +80,17 @@ class TestHostWorker(unittest.TestCase):
         mock_makedirs.assert_called_with(self.hw._files.outdir, 0755)
         assert not mock_copy.called
         mock_isfile.return_value = True
-        mock_copy.assert_called_any(
-            '/mnt/jenkins-workspace/19/production/catalogs/test.example.com.pson',
-            '/what/you/want/test.example.com/production.test.example.com.pson',
+        self.hw._get_diff = mock.MagicMock(return_value=False)
+        self.hw._make_output()
+        mock_copy.assert_called_with(
+            '/mnt/jenkins-workspace/19/change/catalogs/test.example.com.err',
+            '/mnt/jenkins-workspace/output/19/test.example.com/change.test.example.com.err',
+        )
+        self.hw._get_diff = mock.MagicMock(return_value='test_value')
+        self.hw._make_output()
+        mock_copy.assert_called_with(
+            'test_value',
+            '/mnt/jenkins-workspace/output/19/test.example.com'
         )
 
     @mock.patch('os.path')
@@ -107,3 +124,6 @@ class TestHostWorker(unittest.TestCase):
         self.hw._make_diff.reset_mock()
         self.assertEquals(self.hw.run_host(), (True, False, None))
         assert not self.hw._make_diff.called
+        # An exception writing the output doesn't make the payload fail
+        self.hw._make_output.side_effect = Exception('Boom!')
+        self.assertEquals(self.hw.run_host(), (True, False, None))
