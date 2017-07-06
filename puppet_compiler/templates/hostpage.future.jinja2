@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Parsers comparison for {{ host }}</title>
+    <style type="text/css">
+      h1, h2, h3, h4 {
+         font-family: "HelveticaNeue-CondensedBold","Helvetica Neue","Arial Narrow",Arial,sans-serif;
+      }
+      .source {
+          font-family: Consolas, "Andale Mono", "Courier New", monospace
+      }
+      .err .fail {
+          color: red;
+      }
+      .noop {
+          color: darkgreen;
+      }
+      .diff {
+          color: darkgoldenrod;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main">
+      {% block body %}
+        <h1>Compilation results for {{ host }}: <span class="{{retcode}}">{{ desc }}</span></h1>
+        {% if retcode == "diff" %}
+          <h2>Catalog differences</h2>
+          <textarea rows="20" cols="82" class="source">{{ diffs }}</textarea>
+        {% endif %}
+        <h2>Relevant files</h2>
+        <ul>
+          <li><a href="change.{{ host }}.pson">Old parser catalog</a></li>
+          <li><a href="future.{{ host  }}-future.pson">Future parser catalog</a></li>
+          <li><a href="change.{{ host }}-future.err">Old parser errors/warnings</a></li>
+          <li><a href="future.{{ host }}-future.err">Future parser errors/warnings</a></li>
+        </ul>
+      {% endblock %}
+      {% block extnav %}
+        <p>
+          <a href="https://integration.wikimedia.org/ci/job/operations-puppet-catalog-compiler/{{ jid }}/" target="_blank">Back to jenkins job</a>
+          <a href="https://gerrit.wikimedia.org/r/#/c/{{ chid }}/" target="_blank">See gerrit change</a>
+        </p>
+      {% endblock %}
+    </div>
+  </body>
+</html>

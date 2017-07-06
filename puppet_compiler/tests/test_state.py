@@ -48,3 +48,26 @@ class TestStatesCollection(unittest.TestCase):
         collection.add(test2)
         self.assertEqual(collection.mode_to_str('nonexistent'), '[nonexistent] Nodes: ')
         self.assertRegexpMatches(collection.mode_to_str('test'), ' 1 DIFF ')
+
+
+class TestFutureState(TestChangeState):
+
+    def test_name(self):
+        # Production works, future does not
+        test = state.FutureState('change', 'test.example.com', False, True, None)
+        self.assertEqual('error', test.name)
+        # Prod compiled, future too, no diffs
+        test.change_error = False
+        self.assertEqual(test.name, 'ok')
+        # Diff failed to be created
+        test.diff = False
+        self.assertEqual(test.name, 'error')
+        # There are diffs
+        test.diff = True
+        self.assertEqual(test.name, 'diff')
+        # Both prod and future failed
+        test = state.FutureState('change', 'test.example.com', True, True, None)
+        self.assertEqual(test.name, 'break')
+        # Prod failed, change didn't
+        test = state.FutureState('change', 'test.example.com', True, False, None)
+        self.assertEqual(test.name, 'break')

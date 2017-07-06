@@ -14,6 +14,7 @@ nodes = os.environ.get('NODES', None)
 job_id = int(os.environ.get('BUILD_NUMBER'))
 configfile = os.environ.get('PC_CONFIG', '/etc/puppet-compiler.conf')
 nthreads = os.environ.get('NUM_THREADS', 2)
+compiler_mode = os.environ.get('MODE', 'change').split(",")
 
 
 def main():
@@ -37,8 +38,9 @@ def main():
             sys.exit(2)
 
         _log.info("Working on change %d", change)
-        c = controller.Controller(configfile, job_id,
-                                  change, host_list=nodes, nthreads=nthreads)
+
+        c = controller.Controller(configfile, job_id, change, host_list=nodes,
+                                  nthreads=nthreads, modes=compiler_mode)
         success = c.run()
         # If the run is marked as failed, exit with a non-zero exit code
         if not success:

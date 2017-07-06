@@ -78,3 +78,17 @@ class ChangeState(object):
             return 'fail'
         else:
             return 'diff'
+
+
+class FutureState(ChangeState):
+
+    @property
+    def name(self):
+        if self.prod_error:
+            return 'break'
+        elif self.change_error or self.diff is False:
+            return 'error'
+        elif self.diff is None:
+            return 'ok'
+        else:
+            return 'diff'

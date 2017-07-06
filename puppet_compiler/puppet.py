@@ -45,12 +45,12 @@ def compile(hostname, label, vardir, *extra_flags):
                 f.write(line)
 
 
-def diff(env, hostname):
+def diff(env, hostname, base='prod'):
     """
     Compute the diffs between the two changes
     """
     hostfiles = HostFiles(hostname)
-    prod_catalog = hostfiles.file_for('prod', 'catalog')
+    prod_catalog = hostfiles.file_for(base, 'catalog')
     change_catalog = hostfiles.file_for(env, 'catalog')
     output = hostfiles.file_for(env, 'diff')
     cmd = ['puppet', 'catalog', 'diff', '--show_resource_diff',

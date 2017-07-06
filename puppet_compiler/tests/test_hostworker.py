@@ -127,3 +127,28 @@ class TestHostWorker(unittest.TestCase):
         # An exception writing the output doesn't make the payload fail
         self.hw._make_output.side_effect = Exception('Boom!')
         self.assertEquals(self.hw.run_host(), (True, False, None))
+
+
+class TestFutureHostWorker(unittest.TestCase):
+    def setUp(self):
+        self.fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
+        c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
+        self.hw = worker.FutureHostWorker(c.config['puppet_var'],
+                                          'test.example.com')
+
+    def test_initialize(self):
+        self.assertListEqual(self.hw._envs, ['change', 'future'])
+
+    def test_compile_all(self):
+        self.hw._compile = mock.Mock(return_value=True)
+        self.assertEquals(self.hw._compile_all(), 0)
+        future_parser = [
+            '--environment=future',
+            '--parser=future',
+            '--environmentpath=/mnt/jenkins-workspace/19/change/src/environments',
+            '--default_manifest=\$confdir/manifests/site.pp'
+        ]
+        self.hw._compile.assert_has_calls([
+            mock.call('change', []),
+            mock.call('future', future_parser)
+        ])

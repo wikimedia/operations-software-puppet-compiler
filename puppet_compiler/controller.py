@@ -23,8 +23,13 @@ How data are organized:
 
 
 class Controller(object):
+    available_run_modes = {
+        'change': worker.HostWorker,
+        'future': worker.FutureHostWorker,
+    }
 
-    def __init__(self, configfile, job_id, change_id, host_list=[], nthreads=2):
+    def __init__(self, configfile, job_id, change_id, host_list=[],
+                 nthreads=2, modes=['change']):
         self.config = {
             # Url under which results will be found
             'http_url': 'https://puppet-compiler.wmflabs.org/html',
@@ -41,7 +46,7 @@ class Controller(object):
             'puppet_var': '/var/lib/catalog-differ/puppet',
             'pool_size': nthreads,
         }
-        self.run_modes = {'change': worker.HostWorker}
+        self.run_modes = {m: w for m, w in self.available_run_modes.items() if m in modes}
         try:
             if configfile is not None:
                 self._parse_conf(configfile)
@@ -101,28 +106,30 @@ class Controller(object):
         _log.info("Creating directories under %s", self.config['base'])
         self.m.prepare()
 
-        threadpool = threads.ThreadOrchestrator(
-            self.config['pool_size'])
-
         # For each host, the threadpool will execute
         # Controller._run_host with the host as the only argument.
         # When this main payload is executed in a thread, the presentation
         # work is executed in the main thread via
         # Controller.on_node_compiled
-        for host in self.hosts:
-            for mode, worker_class in self.run_modes.items():
-                state_class = worker_class.state
-                html_class = worker_class.html_index
+        for mode, worker_class in self.run_modes.items():
+            threadpool = threads.ThreadOrchestrator(
+                self.config['pool_size'])
+            _log.info('Starting run in mode %s', mode)
+            state_class = worker_class.state
+            html_class = worker_class.html_index
+            for host in self.hosts:
                 h = worker_class(self.config['puppet_var'], host)
                 threadpool.add(h.run_host,
                                hostname=host,
                                mode=mode,
                                classes=(state_class, html_class))
-        threadpool.fetch(self.on_node_compiled)
-        for mode in self.run_modes.keys():
-            index = html_class(self.outdir, mode)
+            # Let's wait for all runs in this mode to complete
+            threadpool.fetch(self.on_node_compiled)
+            # Let's create the index for this mode
+            index = html_class(self.outdir)
             index.render(self.state.modes[mode])
-        _log.info('Run finished; see your results at %s', self.index_url(index))
+            _log.info('Run finished for mode %s; see your results at %s',
+                      mode, self.index_url(index))
         # Remove the source and the diffs etc, we just need the output.
         self.m.cleanup()
         return self.success

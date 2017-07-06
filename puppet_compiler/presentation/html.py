@@ -8,12 +8,24 @@ job_id = None
 
 
 class Host(object):
+    tpl = 'hostpage.jinja2'
+    page_name = 'index.html'
 
     def __init__(self, hostname, files, retcode):
         self.retcode = retcode
         self.hostname = hostname
         self.outdir = files.outdir
         self.diff_file = files.file_for('change', 'diff')
+
+    def _retcode_to_desc(self):
+        if self.retcode == 'noop':
+            return 'no change'
+        elif self.retcode == 'diff':
+            return 'changes detected'
+        elif self.retcode == 'error':
+            return 'change fails'
+        else:
+            return 'compiler failure'
 
     def htmlpage(self):
         """
@@ -24,39 +36,55 @@ class Host(object):
         if self.retcode == 'diff':
             with open(self.diff_file, 'r') as f:
                 data['diffs'] = f.read()
-        if self.retcode == 'noop':
-            data['desc'] = 'no change'
-        elif self.retcode == 'diff':
-            data['desc'] = 'changes detected'
-        elif self.retcode == 'error':
-            data['desc'] = 'change fails'
-        else:
-            data['desc'] = 'compiler failure'
-        t = env.get_template('hostpage.jinja2')
+        data['desc'] = self._retcode_to_desc()
+        t = env.get_template(self.tpl)
         page = t.render(host=self.hostname, jid=job_id, chid=change_id, **data)
-        with open(os.path.join(self.outdir, 'index.html'), 'w') as f:
+        with open(os.path.join(self.outdir, self.page_name), 'w') as f:
             f.write(page)
 
 
-class Index(object):
+class FutureHost(Host):
+    tpl = 'hostpage.future.jinja2'
+    page_name = 'index-future.html'
 
-    def __init__(self, outdir, mode):
-        # Hack! generalize somehow
-        if mode == 'change':
-            filename = "index.html"
+    def __init__(self, hostname, files, retcode):
+        super(FutureHost, self).__init__(hostname, files, retcode)
+        self.diff_file = files.file_for('future', 'diff')
+
+    def _retcode_to_desc(self):
+        if self.retcode == 'break':
+            return 'change breaks the current parser'
+        elif self.retcode == 'error':
+            return 'change is not compatible with the future parser'
+        elif self.retcode == 'ok':
+            return 'change works with both parsers'
+        elif self.retcode == 'diff':
+            return 'change works with both parsers, with diffs'
+
+
+class Index(object):
+    tpl = 'index.jinja2'
+    page_name = 'index.html'
+
+    def __init__(self, outdir):
+        if self.page_name == 'index.html':
             self.url = ""
         else:
-            self.url = 'index%s.html' % mode
-            filename = self.url
-        self.outfile = os.path.join(outdir, filename)
+            self.url = self.page_name
+        self.outfile = os.path.join(outdir, self.page_name)
 
     def render(self, state):
         """
         Render the index page with info coming from state
         """
         _log.debug("Rendering the main index page")
-        t = env.get_template('index.jinja2')
+        t = env.get_template(self.tpl)
         # TODO: support multiple modes
         page = t.render(state=state, jid=job_id, chid=change_id)
         with open(self.outfile, 'w') as f:
             f.write(page)
+
+
+class FutureIndex(Index):
+    tpl = 'index.future.jinja2'
+    page_name = 'index-future.html'
