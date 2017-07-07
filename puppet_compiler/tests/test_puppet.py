@@ -3,6 +3,7 @@ import mock
 import subprocess
 import os
 from puppet_compiler import puppet
+from puppet_compiler.directories import FHS, HostFiles
 
 
 class TestPuppetCalls(unittest.TestCase):
@@ -10,23 +11,24 @@ class TestPuppetCalls(unittest.TestCase):
     def setUp(self):
         subprocess.check_call = mock.Mock()
         self.fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
+        FHS.setup(10, self.fixtures)
 
     @mock.patch('puppet_compiler.puppet.spoolfile')
     def test_compile(self, tf_mocker):
         os.environ.copy = mock.Mock(return_value={'myenv': 'ishere!'})
         env = os.environ.copy()
-        env['RUBYLIB'] = self.fixtures + '/src/modules/wmflib/lib/'
+        env['RUBYLIB'] = FHS.prod_dir + '/src/modules/wmflib/lib/'
         m = mock.mock_open(read_data='wat')
         with mock.patch('__builtin__.open', m, True) as mocker:
-            puppet.compile('test.codfw.wmnet', self.fixtures, self.fixtures + '/puppet_var')
+            puppet.compile('test.codfw.wmnet', 'prod', self.fixtures + '/puppet_var')
         subprocess.check_call.assert_called_with(
             ['puppet',
              'master',
              '--vardir=%s' % self.fixtures + '/puppet_var',
              '--modulepath=%(basedir)s/private/modules:'
-             '%(basedir)s/src/modules' % {'basedir': self.fixtures},
-             '--confdir=%s/%s' % (self.fixtures, 'src'),
-             '--templatedir=%s/%s' % (self.fixtures, 'src/templates'),
+             '%(basedir)s/src/modules' % {'basedir': FHS.prod_dir},
+             '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
+             '--templatedir=%s/%s' % (FHS.prod_dir, 'src/templates'),
              '--trusted_node_data',
              '--compile=test.codfw.wmnet',
              '--color=false'],
@@ -34,7 +36,7 @@ class TestPuppetCalls(unittest.TestCase):
             stdout=tf_mocker.return_value,
             stderr=mocker.return_value
         )
-        hostfile = os.path.join(self.fixtures, 'catalogs', 'test.codfw.wmnet')
+        hostfile = os.path.join(self.fixtures, '10/production/catalogs', 'test.codfw.wmnet')
         calls = [
             mock.call(hostfile + '.pson', 'w'),
             mock.call(hostfile + '.err', 'w'),
@@ -45,28 +47,27 @@ class TestPuppetCalls(unittest.TestCase):
     def test_extra_args_compile(self, tf_mocker):
         os.environ.copy = mock.Mock(return_value={'myenv': 'ishere!'})
         env = os.environ.copy()
-        env['RUBYLIB'] = self.fixtures + '/src/modules/wmflib/lib/'
+        env['RUBYLIB'] = FHS.prod_dir + '/src/modules/wmflib/lib/'
         m = mock.mock_open(read_data='wat')
         with mock.patch('__builtin__.open', m, True) as mocker:
-            puppet.compile('test.codfw.wmnet', self.fixtures, self.fixtures +
+            puppet.compile('test.codfw.wmnet', 'prod', self.fixtures +
                            '/puppet_var', '--dummy')
         subprocess.check_call.assert_called_with(
             ['puppet',
              'master',
              '--vardir=%s' % self.fixtures + '/puppet_var',
              '--modulepath=%(basedir)s/private/modules:'
-             '%(basedir)s/src/modules' % {'basedir': self.fixtures},
-             '--confdir=%s/%s' % (self.fixtures, 'src'),
-             '--templatedir=%s/%s' % (self.fixtures, 'src/templates'),
+             '%(basedir)s/src/modules' % {'basedir': FHS.prod_dir},
+             '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
+             '--templatedir=%s/%s' % (FHS.prod_dir, 'src/templates'),
              '--trusted_node_data',
              '--compile=test.codfw.wmnet',
-             '--color=false',
-             '--dummy'],
+             '--color=false', '--dummy'],
             env=env,
             stdout=tf_mocker.return_value,
             stderr=mocker.return_value
         )
-        hostfile = os.path.join(self.fixtures, 'catalogs', 'test.codfw.wmnet')
+        hostfile = os.path.join(self.fixtures, '10/production/catalogs', 'test.codfw.wmnet')
         calls = [
             mock.call(hostfile + '.pson', 'w'),
             mock.call(hostfile + '.err', 'w'),
@@ -75,17 +76,19 @@ class TestPuppetCalls(unittest.TestCase):
 
     @mock.patch('puppet_compiler.puppet.spoolfile')
     def test_diff(self, tf_mocker):
+        hostfiles = HostFiles('test.codfw.wmnet')
         m = mock.mock_open(read_data='wat')
         with mock.patch('__builtin__.open', m, True) as mocker:
-            puppet.diff(self.fixtures, 'test.codfw.wmnet')
-        mocker.assert_called_with(self.fixtures + '/diffs/test.codfw.wmnet.diff', 'w')
+            puppet.diff('change', 'test.codfw.wmnet')
+        mocker.assert_called_with(hostfiles.file_for('change', 'diff'), 'w')
+
         subprocess.check_call.called_with(
             ['puppet',
              'catalog',
              'diff',
              '--show_resource_diff',
              '--content_diff',
-             self.fixtures + '/production/catalogs/test.codfw.wmnet.json',
-             self.fixtures + '/change/catalogs/test.codfw.wmnet.json'],
+             hostfiles.file_for('production', 'catalog'),
+             hostfiles.file_for('change', 'catalog')],
             stdout=tf_mocker.return_value
         )

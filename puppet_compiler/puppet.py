@@ -2,18 +2,23 @@ import os
 import re
 import subprocess
 from tempfile import SpooledTemporaryFile as spoolfile
+from directories import HostFiles, FHS
 
 
-def compile(hostname, basedir, vardir, *extra_flags):
+def compile(hostname, label, vardir, *extra_flags):
     """
     Compile the catalog
     """
     env = os.environ.copy()
+    if label == 'prod':
+        basedir = FHS.prod_dir
+    else:
+        basedir = FHS.change_dir
+
     srcdir = os.path.join(basedir, 'src')
     privdir = os.path.join(basedir, 'private')
     env['RUBYLIB'] = os.path.join(srcdir, 'modules/wmflib/lib/')
 
-    catalogdir = os.path.join(basedir, 'catalogs')
     tpldir = os.path.join(srcdir, 'templates')
     cmd = ['puppet', 'master',
            '--vardir=%s' % vardir,
@@ -26,33 +31,28 @@ def compile(hostname, basedir, vardir, *extra_flags):
            '--color=false'
            ]
     cmd.extend(extra_flags)
-    hostfile = os.path.join(catalogdir, hostname)
+    hostfiles = HostFiles(hostname)
 
-    with open(hostfile + ".err", 'w') as err:
+    with open(hostfiles.file_for(label, 'errors'), 'w') as err:
         out = spoolfile()
         subprocess.check_call(cmd, stdout=out, stderr=err, env=env)
 
     # Puppet outputs a lot of garbage to stdout...
-    with open(hostfile + ".pson", "w") as f:
+    with open(hostfiles.file_for(label, 'catalog'), "w") as f:
         out.seek(0)
         for line in out:
             if not re.match('(Info|[Nn]otice|[Ww]arning)', line):
                 f.write(line)
 
 
-def diff(basedir, hostname):
+def diff(env, hostname):
     """
     Compute the diffs between the two changes
     """
-    prod_catalog = os.path.join(basedir,
-                                'production',
-                                'catalogs',
-                                hostname + '.pson')
-    change_catalog = os.path.join(basedir,
-                                  'change',
-                                  'catalogs',
-                                  hostname + '.pson')
-    output = os.path.join(basedir, 'diffs', hostname + '.diff')
+    hostfiles = HostFiles(hostname)
+    prod_catalog = hostfiles.file_for('prod', 'catalog')
+    change_catalog = hostfiles.file_for(env, 'catalog')
+    output = hostfiles.file_for(env, 'diff')
     cmd = ['puppet', 'catalog', 'diff', '--show_resource_diff',
            '--content_diff', prod_catalog, change_catalog]
     temp = spoolfile()

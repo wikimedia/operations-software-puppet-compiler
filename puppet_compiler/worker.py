@@ -4,6 +4,7 @@ import shutil
 import subprocess
 
 from puppet_compiler import puppet, _log
+from puppet_compiler.directories import HostFiles, FHS
 from puppet_compiler.presentation import html
 
 
@@ -12,30 +13,25 @@ class HostWorker(object):
     E_PROD = 1
     E_CHANGE = 2
 
-    def __init__(self, manager, hostname, outdir):
-        self.m = manager
-        self.files = {
-            'prod': {
-                'catalog': os.path.join(self.m.prod_dir, 'catalogs',
-                                        hostname + '.pson'),
-                'errors': os.path.join(self.m.prod_dir, 'catalogs',
-                                       hostname + '.err')
-            },
-            'change': {
-                'catalog': os.path.join(self.m.change_dir, 'catalogs',
-                                        hostname + '.pson'),
-                'errors': os.path.join(self.m.change_dir, 'catalogs',
-                                       hostname + '.err')
-            }
-        }
+    def __init__(self, vardir, hostname):
+        self.puppet_var = vardir
+        self._files = HostFiles(hostname)
+        self._envs = ['prod', 'change']
         self.hostname = hostname
-        self.outdir = os.path.join(outdir, self.hostname)
+
+    def facts_file(self):
+        """ Finds facts file for the current hostname """
+        facts_file = os.path.join(self.puppet_var, 'yaml', 'facts',
+                                  '{}.yaml'.format(self.hostname))
+        if os.path.isfile(facts_file):
+            return facts_file
+        return None
 
     def run_host(self, *args, **kwdargs):
         """
         Compiles and diffs an host. Gets delegated to a worker thread
         """
-        if not self.m.find_yaml(self.hostname):
+        if not self.facts_file():
             _log.error('Unable to find facts for host %s, skipping',
                        self.hostname)
             return 'fail'
@@ -57,8 +53,8 @@ class HostWorker(object):
         try:
             _log.info("Compiling host %s (production)", self.hostname)
             puppet.compile(self.hostname,
-                           self.m.prod_dir,
-                           self.m.puppet_var)
+                           self._envs[0],
+                           self.puppet_var)
         except subprocess.CalledProcessError as e:
             _log.error("Compilation failed for hostname %s "
                        " with the current tree.", self.hostname)
@@ -66,8 +62,8 @@ class HostWorker(object):
             _log.debug("Failed command: %s", e.cmd)
             errors += self.E_PROD
         args = []
-        if os.path.isfile(os.path.join(self.m.change_dir, 'src', '.configs')):
-            with open(os.path.join(self.m.change_dir, 'src', '.configs')) as f:
+        if os.path.isfile(os.path.join(FHS.change_dir, 'src', '.configs')):
+            with open(os.path.join(FHS.change_dir, 'src', '.configs')) as f:
                 configs = f.readlines()
                 # Make sure every item has exactly 2 dashes prepended
                 configs = map(lambda x: "--{}".format(x.lstrip('-')), configs)
@@ -75,8 +71,8 @@ class HostWorker(object):
         try:
             _log.info("Compiling host %s (change)", self.hostname)
             puppet.compile(self.hostname,
-                           self.m.change_dir,
-                           self.m.puppet_var,
+                           self._envs[1],
+                           self.puppet_var,
                            *args)
         except subprocess.CalledProcessError as e:
             _log.error("Compilation failed for hostname %s "
@@ -95,7 +91,7 @@ class HostWorker(object):
             # Both nodes compiled correctly
             _log.info("Calculating diffs for %s", self.hostname)
             try:
-                puppet.diff(self.m.base_dir, self.hostname)
+                puppet.diff(self._envs[1], self.hostname)
             except subprocess.CalledProcessError as e:
                 _log.error("Diffing the catalogs failed: %s", self.hostname)
                 _log.info("Diffing exited with code %d", e.returncode)
@@ -123,18 +119,17 @@ class HostWorker(object):
         Prepare the node output, copying the relevant files in place
         in the output directory
         """
-        os.makedirs(self.outdir, 0755)
-        for env in self.files:
+        os.makedirs(self._files.outdir, 0o755)
+        for env in self._envs:
             for label in 'catalog', 'errors':
-                filename = self.files[env][label]
+                filename = self._files.file_for(env, label)
                 if os.path.isfile(filename):
-                    name = os.path.basename(filename)
-                    newname = os.path.join(self.outdir, env + '.' + name)
+                    newname = self._files.outfile_for(env, label)
                     shutil.copy(filename, newname)
 
         diff = self._get_diff()
         if diff:
-            shutil.copy(diff, self.outdir)
+            shutil.copy(diff, self._files.outdir)
             return True
 
         return False
@@ -143,7 +138,8 @@ class HostWorker(object):
         """
         Get diffs name if the file exists
         """
-        diff = os.path.join(self.m.diff_dir, self.hostname + '.diff')
+        diff = self._files.file_for(self._envs[1], 'diff')
+
         if os.path.isfile(diff) and os.path.getsize(diff) > 0:
             with open(diff, 'r') as f:
                 for line in f:
@@ -161,5 +157,5 @@ class HostWorker(object):
         build the HTML output
         """
         # TODO: implement the actual html parsing
-        host = html.Host(self.hostname, self.m.diff_dir, self.outdir, retcode)
-        host.htmlpage(self.files)
+        host = html.Host(self.hostname, self._files, retcode)
+        host.htmlpage()

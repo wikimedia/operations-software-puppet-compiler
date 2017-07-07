@@ -1,10 +1,9 @@
-import os
 import re
 import sys
 
 import yaml
 
-from puppet_compiler import prepare, _log, threads, worker, nodegen
+from puppet_compiler import prepare, _log, threads, worker, nodegen, directories
 from puppet_compiler.presentation import html
 """
 How data are organized:
@@ -51,8 +50,9 @@ class Controller(object):
 
         self.count = 0
         self.pick_hosts(host_list)
+        directories.FHS.setup(job_id, self.config['base'])
         self.m = prepare.ManageCode(self.config, job_id, change_id)
-        self.outdir = os.path.join(self.config['base'], 'output', str(job_id))
+        self.outdir = directories.FHS.output_dir
         # State of all nodes
         self.state = {'noop': set(), 'diff': set(),
                       'err': set(), 'fail': set()}
@@ -107,7 +107,7 @@ class Controller(object):
         # work is executed in the main thread via
         # Controller.on_node_compiled
         for host in self.hosts:
-            h = worker.HostWorker(self.m, host, self.outdir)
+            h = worker.HostWorker(self.config['puppet_var'], host)
             threadpool.add(h.run_host, hostname=host)
         threadpool.fetch(self.on_node_compiled)
         index = html.Index(self.outdir)
