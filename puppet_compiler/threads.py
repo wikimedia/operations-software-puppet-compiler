@@ -53,7 +53,7 @@ class ThreadExecutor(threading.Thread):
 class ThreadOrchestrator(object):
 
     def __init__(self, pool_size=4):
-        self.pool_size = pool_size
+        self.pool_size = int(pool_size)
         self._TP = []
         self._payload_queue = queue.Queue()
         self._incoming_queue = queue.Queue()
