@@ -63,7 +63,7 @@ class TestHostWorker(unittest.TestCase):
         mocker.return_value = True
         self.hw._get_diff = mock.Mock(return_value=True)
         retval = self.hw._make_diff()
-        mocker.assert_called_with('change', 'test.example.com')
+        mocker.assert_called_with('change', 'test.example.com', base='prod')
         self.assertEquals(retval, True)
         self.hw._get_diff = mock.Mock(return_value=False)
         self.assertEquals(self.hw._make_diff(), None)

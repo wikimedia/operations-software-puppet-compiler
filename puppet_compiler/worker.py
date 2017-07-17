@@ -115,7 +115,7 @@ class HostWorker(object):
         # Both nodes compiled correctly
         _log.info("Calculating diffs for %s", self.hostname)
         try:
-            puppet.diff(self._envs[1], self.hostname)
+            puppet.diff(self._envs[1], self.hostname, base=self._envs[0])
         except subprocess.CalledProcessError as e:
             _log.error("Diffing the catalogs failed: %s", self.hostname)
             _log.info("Diffing exited with code %d", e.returncode)
