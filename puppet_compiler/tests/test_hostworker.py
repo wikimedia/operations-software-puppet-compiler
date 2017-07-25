@@ -141,6 +141,8 @@ class TestFutureHostWorker(unittest.TestCase):
 
     def test_compile_all(self):
         self.hw._compile = mock.Mock(return_value=True)
+        self.hw.filter_future.run = mock.Mock()
+        self.hw.filter_change.run = mock.Mock()
         self.assertEquals(self.hw._compile_all(), 0)
         future_parser = [
             '--environment=future',
@@ -152,3 +154,5 @@ class TestFutureHostWorker(unittest.TestCase):
             mock.call('change', []),
             mock.call('future', future_parser)
         ])
+        self.hw.filter_future.run.assert_called_with()
+        self.hw.filter_change.run.assert_called_with()

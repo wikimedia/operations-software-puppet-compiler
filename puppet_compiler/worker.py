@@ -4,6 +4,7 @@ import shutil
 import subprocess
 
 from puppet_compiler import puppet, _log
+from puppet_compiler.filter import FilterFutureParser
 from puppet_compiler.directories import HostFiles, FHS
 from puppet_compiler.presentation import html
 from puppet_compiler.state import ChangeState, FutureState
@@ -195,6 +196,8 @@ class FutureHostWorker(HostWorker):
     def __init__(self, vardir, hostname):
         super(FutureHostWorker, self).__init__(vardir, hostname)
         self._envs = ['change', 'future']
+        self.filter_future = FilterFutureParser(self._files.file_for('future', 'catalog'))
+        self.filter_change = FilterFutureParser(self._files.file_for('change', 'catalog'))
 
     def _compile_all(self):
         future_args = [
@@ -209,4 +212,8 @@ class FutureHostWorker(HostWorker):
             errors += self.E_BASE
         if not self._compile(self._envs[1], future_args):
             errors += self.E_CHANGED
+        _log.info("Filtering the future catalog (%s)", self.hostname)
+        self.filter_change.run()
+        self.filter_future.run()
+
         return errors
