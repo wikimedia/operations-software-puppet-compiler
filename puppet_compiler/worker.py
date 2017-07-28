@@ -208,12 +208,15 @@ class FutureHostWorker(HostWorker):
         ]
         args = []
         errors = self.E_OK
-        if not self._compile(self._envs[0], args):
+        if self._compile(self._envs[0], args):
+            _log.info("Filtering the change catalog (%s)", self.hostname)
+            self.filter_change.run()
+        else:
             errors += self.E_BASE
-        if not self._compile(self._envs[1], future_args):
+        if self._compile(self._envs[1], future_args):
+            _log.info("Filtering the future catalog (%s)", self.hostname)
+            self.filter_future.run()
+        else:
             errors += self.E_CHANGED
-        _log.info("Filtering the future catalog (%s)", self.hostname)
-        self.filter_change.run()
-        self.filter_future.run()
 
         return errors
