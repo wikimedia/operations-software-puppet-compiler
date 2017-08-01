@@ -12,11 +12,11 @@ def all_files(cwd, path):
 
 setup(
     name='puppet_compiler',
-    version='0.2.3',
+    version='0.3.0',
     description='Tools to compile puppet catalogs as a service',
     author='Joe',
     author_email='glavagetto@wikimedia.org',
-    install_requires=['jinja2', 'requests', 'pyyaml'],
+    install_requires=['jinja2', 'requests', 'pyyaml', 'datadiff>=2.0.0'],
     test_suite='nose.collector',
     tests_require=['mock<1.1.0', 'nose'],
     zip_safe=True,

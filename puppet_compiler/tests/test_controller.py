@@ -40,7 +40,8 @@ class TestController(unittest.TestCase):
         c.m.refresh = mock.MagicMock()
         c.m.refresh.return_value = True
 
-        c.run()
+        with mock.patch('time.sleep'):
+            c.run()
         c.m.prepare.assert_called_once_with()
         c.m.refresh.assert_not_called()
         self.assertEquals(c.state.modes['change']['fail'], set(['test.eqiad.wmnet']))
@@ -48,7 +49,8 @@ class TestController(unittest.TestCase):
         c.config['puppet_src'] = '/src'
         c.config['puppet_private'] = '/private'
         mocker.return_value = (False, False, None)
-        c.run()
+        with mock.patch('time.sleep'):
+            c.run()
         c.m.refresh.assert_has_calls([mock.call('/src'), mock.call('/private')])
         self.assertEquals(c.state.modes['change']['noop'], set(['test.eqiad.wmnet']))
 
@@ -82,7 +84,7 @@ class TestController(unittest.TestCase):
             )
             c.count['change'] = 4
             c.on_node_compiled(response)
-            mocker.assert_called_with(c.outdir, mode='change')
+            mocker.assert_called_with(c.outdir)
 
     def test_pick_hosts(self):
         # Initialize a simple controller

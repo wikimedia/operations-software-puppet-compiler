@@ -178,7 +178,7 @@ class Controller(object):
             self.state.add(host_state)
 
         if not self.count[mode] % 5:
-            index = html_class(self.outdir, mode=mode)
+            index = html_class(self.outdir)
             index.render(self.state.modes[mode])
             _log.info('Index updated, you can see detailed progress for your work at %s', self.index_url(index))
         _log.info(self.state.mode_to_str(mode))

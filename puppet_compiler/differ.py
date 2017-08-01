@@ -1,0 +1,113 @@
+import difflib
+import json
+
+import datadiff
+
+
+class PuppetResource(object):
+
+    def __init__(self, data, resource_filter=None):
+        self.resource_type = data['type']
+        self.title = data['title']
+        self.exported = data['exported']
+        if resource_filter is None:
+            self._filter = lambda x: x
+        else:
+            self._filter = resource_filter
+        self._init_params(data.get('parameters', {}))
+
+    def _init_params(self, kwargs):
+        self.parameters = {}
+        self.content = ''
+        self.source = None
+        # Let's first look for special
+        for k, v in kwargs.items():
+            # Filter out null values
+            if v is None:
+                pass
+            elif k == 'content':
+                self.content = v
+            else:
+                self.parameters[k] = self._filter(v)
+
+    def __str__(self):
+        return "{res}[{title}]".format(res=self.resource_type,
+                                       title=self.title)
+
+    def is_same_of(self, other):
+        """
+        True if it designates the same resource
+        """
+        return (str(self) == str(other))
+
+    def __eq__(self, other):
+        if not self.is_same_of(other):
+            return False
+        return (self.content == other.content and
+                self.source == other.source and
+                self.parameters == other.parameters)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def diff_if_present(self, other):
+        if self == other:
+            return None
+
+        out = {'resource': str(self)}
+        if self.content != other.content and self.resource_type == 'File':
+            other_content = other.content.split('\n')
+            my_content = self.content.split('\n')
+            content_diff = [
+                line for line in difflib.unified_diff(
+                    my_content, other_content,
+                    fromfile='{}.orig'.format(self.title),
+                    tofile=self.title)
+            ]
+            out['content'] = content_diff
+        if self.parameters != other.parameters:
+            out['parameters'] = datadiff.diff(
+                self.parameters, other.parameters,
+                fromfile='{}.orig'.format(str(self)), tofile=str(self)
+            )
+        return out
+
+
+class PuppetCatalog(object):
+    def __init__(self, filename, resource_filter=None):
+        self.resources = {}
+        with open(filename, 'r') as fh:
+            catalog = json.load(fh, 'latin_1')
+        for resource in catalog['data']['resources']:
+            r = PuppetResource(resource, resource_filter)
+            self.resources[str(r)] = r
+        self.all_resources = set(self.resources.keys())
+        self.name = catalog['data']['name']
+
+    def diff_if_present(self, other):
+        diffs = []
+        only_in_other = other.all_resources - self.all_resources
+        only_in_self = self.all_resources - other.all_resources
+
+        for resource in self.all_resources & other.all_resources:
+            mine = self.resources[resource]
+            theirs = other.resources[resource]
+            out = mine.diff_if_present(theirs)
+            if out is not None:
+                diffs.append(out)
+
+        num_changed = len(diffs)
+        num_other = len(only_in_other)
+        num_self = len(only_in_self)
+        total_affected = (num_changed + num_other + num_self)
+        num_resources = len(self.all_resources)
+        perc_changed = '%.2f%%' % (100 * float(total_affected) / num_resources)
+        if (total_affected) == 0:
+            return None
+        return {
+            'total': len(self.all_resources),
+            'only_in_self': only_in_self,
+            'only_in_other': only_in_other,
+            'resource_diffs': diffs,
+            'perc_changed': perc_changed
+        }

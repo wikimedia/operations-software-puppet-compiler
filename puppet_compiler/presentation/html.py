@@ -15,7 +15,6 @@ class Host(object):
         self.retcode = retcode
         self.hostname = hostname
         self.outdir = files.outdir
-        self.diff_file = files.file_for('change', 'diff')
 
     def _retcode_to_desc(self):
         if self.retcode == 'noop':
@@ -27,18 +26,17 @@ class Host(object):
         else:
             return 'compiler failure'
 
-    def htmlpage(self):
+    def htmlpage(self, diffs=None):
         """
         Create the html page
         """
         _log.debug("Rendering index page for %s", self.hostname)
-        data = {'retcode': self.retcode}
-        if self.retcode == 'diff':
-            with open(self.diff_file, 'r') as f:
-                data['diffs'] = f.read()
+        data = {'retcode': self.retcode, 'host': self.hostname}
+        if self.retcode == 'diff' and diffs is not None:
+            data['diffs'] = diffs
         data['desc'] = self._retcode_to_desc()
         t = env.get_template(self.tpl)
-        page = t.render(host=self.hostname, jid=job_id, chid=change_id, **data)
+        page = t.render(jid=job_id, chid=change_id, **data)
         with open(os.path.join(self.outdir, self.page_name), 'w') as f:
             f.write(page)
 
@@ -49,7 +47,6 @@ class FutureHost(Host):
 
     def __init__(self, hostname, files, retcode):
         super(FutureHost, self).__init__(hostname, files, retcode)
-        self.diff_file = files.file_for('future', 'diff')
 
     def _retcode_to_desc(self):
         if self.retcode == 'break':

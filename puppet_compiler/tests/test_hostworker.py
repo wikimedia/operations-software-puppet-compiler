@@ -17,6 +17,8 @@ class TestHostWorker(unittest.TestCase):
 
         self.assertEquals(self.hw.hostname, 'test.example.com')
         self.assertItemsEqual(['prod', 'change'], self.hw._envs)
+        self.assertIsNone(self.hw.diffs)
+        self.assertEqual(self.hw.resource_filter, worker.future_filter)
 
     @mock.patch('os.path.isfile')
     def test_facts_file(self, isfile):
@@ -58,18 +60,28 @@ class TestHostWorker(unittest.TestCase):
         err = self.hw._compile_all()
         self.assertEquals(err, 2)
 
-    @mock.patch('puppet_compiler.puppet.diff')
+    @mock.patch('puppet_compiler.worker.PuppetCatalog')
     def test_make_diff(self, mocker):
-        mocker.return_value = True
-        self.hw._get_diff = mock.Mock(return_value=True)
-        retval = self.hw._make_diff()
-        mocker.assert_called_with('change', 'test.example.com', base='prod')
-        self.assertEquals(retval, True)
-        self.hw._get_diff = mock.Mock(return_value=False)
-        self.assertEquals(self.hw._make_diff(), None)
-        mocker.reset_mock()
-        mocker.side_effect = subprocess.CalledProcessError(cmd="ehehe", returncode=30)
-        self.assertEquals(self.hw._make_diff(), False)
+        instance_mock = mocker.return_value
+        instance_mock.diff_if_present.return_value = None
+        self.assertIsNone(self.hw._make_diff())
+        self.assertIsNone(self.hw.diffs)
+
+        mocker.assert_has_calls(
+            [
+                mock.call(
+                    '/mnt/jenkins-workspace/19/production/catalogs/test.example.com.pson', worker.future_filter
+                ),
+                mock.call(
+                    '/mnt/jenkins-workspace/19/change/catalogs/test.example.com.pson', worker.future_filter
+                )
+            ]
+        )
+        instance_mock.diff_if_present.return_value = {'foo': 'bar'}
+        self.assertTrue(self.hw._make_diff())
+        self.assertEqual(self.hw.diffs, {'foo': 'bar'})
+        instance_mock.diff_if_present.side_effect = ValueError("ehehe")
+        self.assertFalse(self.hw._make_diff())
 
     @mock.patch('os.path.isfile')
     @mock.patch('os.makedirs')
@@ -80,35 +92,15 @@ class TestHostWorker(unittest.TestCase):
         mock_makedirs.assert_called_with(self.hw._files.outdir, 0755)
         assert not mock_copy.called
         mock_isfile.return_value = True
-        self.hw._get_diff = mock.MagicMock(return_value=False)
         self.hw._make_output()
         mock_copy.assert_called_with(
             '/mnt/jenkins-workspace/19/change/catalogs/test.example.com.err',
             '/mnt/jenkins-workspace/output/19/test.example.com/change.test.example.com.err',
         )
-        self.hw._get_diff = mock.MagicMock(return_value='test_value')
-        self.hw._make_output()
-        mock_copy.assert_called_with(
-            'test_value',
-            '/mnt/jenkins-workspace/output/19/test.example.com'
-        )
-
-    @mock.patch('os.path')
-    def test_get_diff(self, mock_path):
-        mock_path.join.return_value = self.fixtures + '/' + 'exit_nodiff'
-        mock_path.isfile.return_value = True
-        mock_path.getsize.return_value = 100
-        self.assertEquals(self.hw._get_diff(), False)
-        filename = self.fixtures + '/' + 'exit_diff'
-        mock_path.join.return_value = filename
-        self.assertEquals(self.hw._get_diff(), filename)
-
-    def test_build_html(self):
-        pass
 
     def test_run_host(self):
         self.hw.facts_file = mock.Mock(return_value=False)
-        self.assertEquals(self.hw.run_host(), 'fail')
+        self.assertEquals(self.hw.run_host(), (True, True, None))
         self.hw.facts_file = mock.Mock(return_value=True)
         self.hw._compile_all = mock.Mock(return_value=0)
         self.hw._make_diff = mock.Mock(return_value=True)
@@ -141,8 +133,6 @@ class TestFutureHostWorker(unittest.TestCase):
 
     def test_compile_all(self):
         self.hw._compile = mock.Mock(return_value=True)
-        self.hw.filter_future.run = mock.Mock()
-        self.hw.filter_change.run = mock.Mock()
         self.assertEquals(self.hw._compile_all(), 0)
         future_parser = [
             '--environment=future',
@@ -154,5 +144,3 @@ class TestFutureHostWorker(unittest.TestCase):
             mock.call('change', []),
             mock.call('future', future_parser)
         ])
-        self.hw.filter_future.run.assert_called_with()
-        self.hw.filter_change.run.assert_called_with()

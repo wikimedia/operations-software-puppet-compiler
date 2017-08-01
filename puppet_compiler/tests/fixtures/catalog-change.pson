@@ -1,0 +1,261 @@
+{
+  "document_type": "Catalog",
+  "data": {
+    "tags": ["settings","systemd","node","class"],
+    "name": "test123.test",
+    "version": 1500366969,
+    "environment": "production",
+    "resources": [
+      {
+        "type": "Stage",
+        "title": "main",
+        "tags": ["stage"],
+        "exported": false,
+        "parameters": {
+          "name": "main"
+        }
+      },
+      {
+        "type": "Class",
+        "title": "Settings",
+        "tags": ["class","settings"],
+        "exported": false
+      },
+      {
+        "type": "Class",
+        "title": "main",
+        "tags": ["class"],
+        "exported": false,
+        "parameters": {
+          "name": "main"
+        }
+      },
+      {
+        "type": "Node",
+        "title": "test123.test",
+        "tags": ["node","test123.test","class"],
+        "exported": false
+      },
+      {
+        "type": "Class",
+        "title": "Role::Configcluster",
+        "tags": ["class","role::configcluster","role","configcluster","node","test123.test"],
+        "exported": false
+      },
+      {
+        "type": "Class",
+        "title": "Standard",
+        "tags": ["class","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "exported": false,
+        "parameters": {
+          "has_default_mail_relay": true,
+          "has_admin": true,
+          "has_ganglia": true
+        }
+      },
+      {
+        "type": "Class",
+        "title": "Profile::Base",
+        "tags": ["class","profile::base","profile","base","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "exported": false,
+        "parameters": {
+          "puppetmaster": "puppet",
+          "dns_alt_names": "foobar.test",
+          "environment": "future",
+          "use_apt_proxy": true,
+          "domain_search": "test",
+          "remote_syslog": [
+            "syslog.eqiad.wmnet",
+            "syslog.test"
+          ],
+          "monitoring": true,
+          "core_dump_pattern": "/var/tmp/core/core.%h.%e.%p.%t",
+          "ssh_server_settings": {
+
+          },
+          "nrpe_allowed_hosts": "127.0.0.1,208.80.154.14,208.80.153.74,208.80.155.119",
+          "group_contact": "admins",
+          "check_disk_options": "-w 6% -c 3% -l -e -A -i \"/srv/sd[a-b][1-3]\" --exclude-type=tracefs",
+          "check_disk_critical": false,
+          "check_raid_policy": "",
+          "require": "Class[Profile::Base::Certificates]"
+        }
+      },
+      {
+        "type": "Class",
+        "title": "Profile::Base::Certificates",
+        "tags": ["class","profile::base::certificates","profile","base","certificates","profile::base","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "exported": false
+      },
+      {
+        "type": "Class",
+        "title": "Sslcert3",
+        "tags": ["class","sslcert","profile::base::certificates","profile","base","certificates","profile::base","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "exported": false
+      },
+      {
+        "type": "Package",
+        "title": "openssl",
+        "tags": ["package","openssl","class","sslcert","profile::base::certificates","profile","base","certificates","profile::base","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/sslcert/manifests/init.pp",
+        "line": 15,
+        "exported": false,
+        "parameters": {
+          "ensure": "present"
+        }
+      },
+      {
+        "type": "Package",
+        "title": "ssl-cert",
+        "tags": ["package","ssl-cert","class","sslcert","profile::base::certificates","profile","base","certificates","profile::base","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/sslcert/manifests/init.pp",
+        "line": 15,
+        "exported": false,
+        "parameters": {
+          "ensure": "present"
+        }
+      },
+      {
+        "type": "Package",
+        "title": "ca-certificates",
+        "tags": ["package","ca-certificates","class","sslcert","profile::base::certificates","profile","base","certificates","profile::base","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/sslcert/manifests/init.pp",
+        "line": 15,
+        "exported": false,
+        "parameters": {
+          "ensure": "present"
+        }
+      },
+      {
+        "type": "Exec",
+        "title": "update-ca-certificates",
+        "tags": ["exec","update-ca-certificates","class","sslcert","profile::base::certificates","profile","base","certificates","profile::base","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/sslcert/manifests/init.pp",
+        "line": 21,
+        "exported": false,
+        "parameters": {
+          "command": "/usr/sbin/update-ca-certificates -a",
+          "refreshonly": true,
+          "require": "Package[ca-certificates]"
+        }
+      },
+      {
+        "type": "File",
+        "title": "/etc/ssl/localcerts",
+        "tags": ["file","class","sslcert","profile::base::certificates","profile","base","certificates","profile::base","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/sslcert/manifests/init.pp",
+        "line": 31,
+        "exported": false,
+        "parameters": {
+          "ensure": "directory",
+          "owner": "root",
+          "group": "ssl-cert",
+          "mode": "0755",
+          "require": "Package[ssl-cert]"
+        }
+      },
+      {
+        "type": "File",
+        "title": "/etc/ssl/private",
+        "tags": ["file","class","sslcert","profile::base::certificates","profile","base","certificates","profile::base","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/sslcert/manifests/init.pp",
+        "line": 41,
+        "exported": false,
+        "parameters": {
+          "ensure": "directory",
+          "owner": "root",
+          "group": "ssl-cert",
+          "mode": "0711",
+          "require": "Package[ssl-cert]"
+        }
+      },
+      {
+        "type": "File",
+        "title": "/usr/local/sbin/x509-bundle",
+        "tags": ["file","class","sslcert","profile::base::certificates","profile","base","certificates","profile::base","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/sslcert/manifests/init.pp",
+        "line": 50,
+        "exported": false,
+        "parameters": {
+          "ensure": "present",
+          "owner": "root",
+          "group": "root",
+          "mode": "0755",
+          "source": "puppet:///modules/sslcert/x509-bundle"
+        }
+      },
+      {
+        "type": "Class",
+        "title": "Base::Kernel",
+        "tags": ["class","base::kernel","base","kernel","profile::base","profile","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/profile/manifests/base.pp",
+        "line": 84,
+        "exported": false
+      },
+      {
+        "type": "File",
+        "title": "/etc/modprobe.d/blacklist-wmf.conf",
+        "tags": ["file","class","base::kernel","base","kernel","profile::base","profile","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/base/manifests/kernel.pp",
+        "line": 26,
+        "exported": false,
+        "parameters": {
+          "ensure": "present",
+          "owner": "root",
+          "group": "root",
+          "mode": "0444",
+          "source": "puppet:///modules/base/kernel/blacklist-wmf.conf"
+        }
+      },
+      {
+        "type": "File",
+        "title": "/etc/modprobe.d/blacklist-linux44.conf",
+        "tags": ["file","class","base::kernel","base","kernel","profile::base","profile","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/base/manifests/kernel.pp",
+        "line": 35,
+        "exported": false,
+        "parameters": {
+          "ensure": "present",
+          "owner": "root",
+          "group": "root",
+          "mode": "0444",
+          "source": "puppet:///modules/base/kernel/blacklist-linux44.conf"
+        }
+      },
+      {
+        "type": "Class",
+        "title": "Base::Debdeploy",
+        "tags": ["class","base::debdeploy","base","debdeploy","profile::base","profile","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/profile/manifests/base.pp",
+        "line": 85,
+        "exported": false
+      },
+      {
+        "type": "Package",
+        "title": "debdeploy-minion",
+        "tags": ["package","debdeploy-minion","class","base::debdeploy","base","debdeploy","profile::base","profile","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "file": "/tmp/testspc/change/src/modules/base/manifests/debdeploy.pp",
+        "line": 10,
+        "exported": false,
+        "parameters": {
+          "ensure": "present"
+        }
+      },
+      {
+        "type": "Salt::Grain",
+        "title": "debdeploy-etcd-codfw",
+        "tags": ["salt::grain","salt","grain","debdeploy-etcd-codfw","class","base::debdeploy","base","debdeploy","profile::base","profile","standard","role::configcluster","role","configcluster","node","test123.test"],
+        "exported": false,
+        "parameters": {
+          "value": "standard",
+          "grain": "debdeploy-etcd-codfw",
+          "ensure": "present",
+          "replace": false
+        }
+      }
+    ] 
+  },
+  "metadata": {
+    "api_version": 1
+  }
+}

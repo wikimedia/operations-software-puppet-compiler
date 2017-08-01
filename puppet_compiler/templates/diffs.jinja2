@@ -1,0 +1,26 @@
+{% macro bigsep() %}{{ "%-80s"|format("=" * 80) }}{% endmacro %}
+{% macro smallsep() %}{{ "%-80s"|format("-" * 80) }}{% endmacro %}
+{{ bigsep() }}
+{{ "%-70s%10s"|format(host, diffs.perc_changed) }}
+{{ bigsep() }}
+Total Resources: {{ diffs.total }}
+{% if diffs.only_in_self %}Only in old: 
+{% for resource in diffs.only_in_self %}   {{ resource }}
+{% endfor %}{% endif %}
+
+{% if diffs.only_in_other %}Only in new:
+{% for resource in diffs.only_in_other %}   {{ resource }}
+{% endfor %}{% endif %}
+
+{% if diffs.resource_diffs %}Resources changed:{% for diff in diffs.resource_diffs %}
+{{ smallsep() }}
+Resource: {{ diff.resource}}
+{% if diff.parameters %}
+Parameters differences:
+{{ diff.parameters }}
+{% endif %}
+{% if diff.content %}
+Content differences:
+{{ diff.content }}
+{% endif %}{{smallsep()}}{% endfor %}
+{% endif %}

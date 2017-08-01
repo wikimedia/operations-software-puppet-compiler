@@ -76,3 +76,23 @@ class FilterFutureParser(CatalogFilter):
     def setup_filters(self):
         return [self.flatten_one_element_arrays,
                 self.cast_integers_to_string]
+
+
+def itos(value):
+    """Transform all integers in strings"""
+    if type(value) == int:
+        return str(value)
+    elif type(value) == list:
+        return [itos(v) for v in value]
+    elif type(value) == dict:
+        return {k: itos(v) for k, v in value.items()}
+    else:
+        return value
+
+
+def flatten(value):
+    """Flatten one-element arrays"""
+    if type(value) == list and len(value) == 1:
+        return value[0]
+    else:
+        return value

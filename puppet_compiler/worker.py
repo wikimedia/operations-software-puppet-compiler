@@ -1,13 +1,18 @@
 import os
-import re
 import shutil
 import subprocess
 
 from puppet_compiler import puppet, _log
-from puppet_compiler.filter import FilterFutureParser
+from puppet_compiler.filter import itos, flatten
+from puppet_compiler.differ import PuppetCatalog
 from puppet_compiler.directories import HostFiles, FHS
 from puppet_compiler.presentation import html
 from puppet_compiler.state import ChangeState, FutureState
+
+
+def future_filter(value):
+    """This filter must be used during the transition to the future parser"""
+    return itos(flatten(value))
 
 
 class HostWorker(object):
@@ -23,6 +28,8 @@ class HostWorker(object):
         self._files = HostFiles(hostname)
         self._envs = ['prod', 'change']
         self.hostname = hostname
+        self.diffs = None
+        self.resource_filter = future_filter
 
     def facts_file(self):
         """ Finds facts file for the current hostname """
@@ -39,7 +46,7 @@ class HostWorker(object):
         if not self.facts_file():
             _log.error('Unable to find facts for host %s, skipping',
                        self.hostname)
-            return 'fail'
+            return (True, True, None)
         errors = self._compile_all()
         if errors == self.E_OK:
             diff = self._make_diff()
@@ -112,21 +119,26 @@ class HostWorker(object):
     def _make_diff(self):
         """
         Will produce diffs.
+
+        Returns True if there are diffs, None if no diffs are found,
+        False if diffing failed
         """
-        # Both nodes compiled correctly
         _log.info("Calculating diffs for %s", self.hostname)
         try:
-            puppet.diff(self._envs[1], self.hostname, base=self._envs[0])
-        except subprocess.CalledProcessError as e:
+            original = PuppetCatalog(self._files.file_for(self._envs[0], 'catalog'),
+                                     self.resource_filter)
+            new = PuppetCatalog(self._files.file_for(self._envs[1], 'catalog'),
+                                self.resource_filter)
+            self.diffs = original.diff_if_present(new)
+        except Exception as e:
             _log.error("Diffing the catalogs failed: %s", self.hostname)
-            _log.info("Diffing exited with code %d", e.returncode)
-            _log.debug("Failed command: %s", e.cmd)
+            _log.info("Diffing failed with exception %s", e)
             return False
         else:
-            if self._get_diff():
-                return True
-            else:
+            if self.diffs is None:
                 return None
+            else:
+                return True
 
     def _make_output(self):
         """
@@ -142,38 +154,14 @@ class HostWorker(object):
                     newname = self._files.outfile_for(env, label)
                     shutil.copy(filename, newname)
 
-        diff = self._get_diff()
-        if diff:
-            shutil.copy(diff, self._files.outdir)
-            return True
-
-        return False
-
-    def _get_diff(self):
-        """
-        Get diffs name if the file exists
-        """
-        diff = self._files.file_for(self._envs[1], 'diff')
-
-        if os.path.isfile(diff) and os.path.getsize(diff) > 0:
-            with open(diff, 'r') as f:
-                for line in f:
-                    # If no changes were detected, puppet catalog diff outputs
-                    # a line with 'fqdn     0.0%'
-                    # we use that to detect a noop change since we have no other
-                    # means to detect that.
-                    if re.match('^{}\s+0.0\%'.format(self.hostname), line):
-                        return False
-            return diff
         return False
 
     def _build_html(self, retcode):
         """
         build the HTML output
         """
-        # TODO: implement the actual html parsing
         host = self.html_page(self.hostname, self._files, retcode)
-        host.htmlpage()
+        host.htmlpage(self.diffs)
 
 
 class FutureHostWorker(HostWorker):
@@ -196,8 +184,6 @@ class FutureHostWorker(HostWorker):
     def __init__(self, vardir, hostname):
         super(FutureHostWorker, self).__init__(vardir, hostname)
         self._envs = ['change', 'future']
-        self.filter_future = FilterFutureParser(self._files.file_for('future', 'catalog'))
-        self.filter_change = FilterFutureParser(self._files.file_for('change', 'catalog'))
 
     def _compile_all(self):
         future_args = [
@@ -208,15 +194,9 @@ class FutureHostWorker(HostWorker):
         ]
         args = []
         errors = self.E_OK
-        if self._compile(self._envs[0], args):
-            _log.info("Filtering the change catalog (%s)", self.hostname)
-            self.filter_change.run()
-        else:
+        if not self._compile(self._envs[0], args):
             errors += self.E_BASE
-        if self._compile(self._envs[1], future_args):
-            _log.info("Filtering the future catalog (%s)", self.hostname)
-            self.filter_future.run()
-        else:
+        if not self._compile(self._envs[1], future_args):
             errors += self.E_CHANGED
 
         return errors
