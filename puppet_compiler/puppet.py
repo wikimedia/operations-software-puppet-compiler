@@ -43,21 +43,3 @@ def compile(hostname, label, vardir, *extra_flags):
         for line in out:
             if not re.match('(Info|[Nn]otice|[Ww]arning)', line):
                 f.write(line)
-
-
-def diff(env, hostname, base='prod'):
-    """
-    Compute the diffs between the two changes
-    """
-    hostfiles = HostFiles(hostname)
-    prod_catalog = hostfiles.file_for(base, 'catalog')
-    change_catalog = hostfiles.file_for(env, 'catalog')
-    output = hostfiles.file_for(env, 'diff')
-    cmd = ['puppet', 'catalog', 'diff', '--show_resource_diff',
-           '--content_diff', prod_catalog, change_catalog]
-    temp = spoolfile()
-    subprocess.check_call(cmd, stdout=temp)
-    with open(output, 'w') as out:
-        temp.seek(0)
-        # Remove bold from term output
-        out.write(temp.read().replace('\x1b[1m', '').replace('\x1b[0m', ''))

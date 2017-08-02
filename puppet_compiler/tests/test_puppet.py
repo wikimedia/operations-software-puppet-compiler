@@ -3,7 +3,7 @@ import mock
 import subprocess
 import os
 from puppet_compiler import puppet
-from puppet_compiler.directories import FHS, HostFiles
+from puppet_compiler.directories import FHS
 
 
 class TestPuppetCalls(unittest.TestCase):
@@ -98,22 +98,3 @@ class TestPuppetCalls(unittest.TestCase):
             mock.call(hostfile + '.err', 'w'),
         ]
         mocker.assert_has_calls(calls, any_order=True)
-
-    @mock.patch('puppet_compiler.puppet.spoolfile')
-    def test_diff(self, tf_mocker):
-        hostfiles = HostFiles('test.codfw.wmnet')
-        m = mock.mock_open(read_data='wat')
-        with mock.patch('__builtin__.open', m, True) as mocker:
-            puppet.diff('change', 'test.codfw.wmnet')
-        mocker.assert_called_with(hostfiles.file_for('change', 'diff'), 'w')
-
-        subprocess.check_call.called_with(
-            ['puppet',
-             'catalog',
-             'diff',
-             '--show_resource_diff',
-             '--content_diff',
-             hostfiles.file_for('production', 'catalog'),
-             hostfiles.file_for('change', 'catalog')],
-            stdout=tf_mocker.return_value
-        )
