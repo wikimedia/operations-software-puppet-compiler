@@ -76,15 +76,15 @@ class PuppetResource(object):
 
         out = {'resource': str(self)}
         if self.content != other.content and self.resource_type == 'File':
-            other_content = other.content.split('\n')
-            my_content = self.content.split('\n')
+            other_content = other.content.splitlines()
+            my_content = self.content.splitlines()
             content_diff = [
                 line for line in difflib.unified_diff(
-                    my_content, other_content,
+                    my_content, other_content, lineterm="",
                     fromfile='{}.orig'.format(self.title),
                     tofile=self.title)
             ]
-            out['content'] = content_diff
+            out['content'] = "\n".join(content_diff)
         if self.parameters != other.parameters:
             out['parameters'] = parameters_diff(
                 self.parameters, other.parameters,

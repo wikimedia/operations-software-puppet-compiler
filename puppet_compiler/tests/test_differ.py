@@ -69,7 +69,8 @@ class TestPuppetResource(unittest.TestCase):
         diff = self.r.diff_if_present(other)
         datadiff_mock.assert_not_called()
         difflib_mock.assert_called_with(
-            [''], ['lala', 'alal'],
+            [], ['lala', 'alal'],
+            lineterm="",
             fromfile='hhvm.orig',
             tofile='hhvm'
         )
