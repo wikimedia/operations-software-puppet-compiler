@@ -1,26 +1,44 @@
-{% macro bigsep() %}{{ "%-80s"|format("=" * 80) }}{% endmacro %}
-{% macro smallsep() %}{{ "%-80s"|format("-" * 80) }}{% endmacro %}
-{{ bigsep() }}
-{{ "%-70s%10s"|format(host, diffs.perc_changed) }}
-{{ bigsep() }}
-Total Resources: {{ diffs.total }}
-{% if diffs.only_in_self %}Only in old: 
-{% for resource in diffs.only_in_self %}   {{ resource }}
-{% endfor %}{% endif %}
+<h2>Catalog differences</h2>
+<h3>Summary</h3>
+<table>
+  <tr><th>Total Resources:</th><td>{{ diffs.total }}</td></tr>
+  <tr><th>Resources added:</th><td>{{ diffs.only_in_other|length }}</td></tr>
+  <tr><th>Resources removed:</th><td>{{ diffs.only_in_self|length }}</td></tr>
+  <tr><th>Resources modified:</th><td>{{diffs.resource_diffs|length }}</td></tr>
+  <tr><th>Change percentage:</th><td>{{diffs.perc_changed}}</td></tr>
+</table>
 
-{% if diffs.only_in_other %}Only in new:
-{% for resource in diffs.only_in_other %}   {{ resource }}
-{% endfor %}{% endif %}
+{% if diffs.only_in_other %}
+<h3>Resources only in the new catalog</h3>
+<ul>
+{% for resource in diffs.only_in_other %}<li>{{ resource }}</li>{% endfor %}
+</ul>
+{% endif %}
+{% if diffs.only_in_self %}
+<h3>Resources only in the old catalog</h3>
+<ul>
+{% for resource in diffs.only_in_self %}<li>{{ resource }}</li>{% endfor %}
+</ul>
+{% endif %}
 
-{% if diffs.resource_diffs %}Resources changed:{% for diff in diffs.resource_diffs %}
-{{ smallsep() }}
-Resource: {{ diff.resource}}
+{% if diffs.resource_diffs %}
+<h3>Resources modified</h3>
+<ul>
+{% for diff in diffs.resource_diffs %}
+  <li>{{ diff.resource}}
+    <dl>
 {% if diff.parameters %}
-Parameters differences:
-{{ diff.parameters }}
+      <dd> Parameters differences:
+        <pre>{{ diff.parameters }}</pre>
+      </dd>
 {% endif %}
 {% if diff.content %}
-Content differences:
-{{ diff.content }}
-{% endif %}{{smallsep()}}{% endfor %}
+      <dd> Content differences:
+        <pre>{{ diff.content|join("") }}</pre>
+      </dd>
 {% endif %}
+    </dl>
+  </li>
+{% endfor %}
+{% endif %}
+</ul>

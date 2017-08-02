@@ -58,7 +58,7 @@ class TestPuppetResource(unittest.TestCase):
         self.assertNotEqual(self.r, other)
 
     @mock.patch('difflib.unified_diff')
-    @mock.patch('datadiff.diff')
+    @mock.patch('puppet_compiler.differ.parameters_diff')
     def test_diff_if_present(self, datadiff_mock, difflib_mock):
         other = PuppetResource(self.raw_resource, future_filter)
         self.assertIsNone(self.r.diff_if_present(other))

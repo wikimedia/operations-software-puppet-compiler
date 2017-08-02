@@ -1,7 +1,27 @@
 import difflib
 import json
 
-import datadiff
+
+def parameters_diff(orig, other, fromfile='a', tofile='b'):
+    output = "--- {f}\n+++ {t}\n\n".format(f=fromfile, t=tofile)
+    old = set(orig.keys())
+    new = set(other.keys())
+    # Parameters only in the old definition
+    only_in_old = old - new
+    only_in_new = new - old
+    diff = [k for k in (old & new) if orig[k] != other[k]]
+    # Now calculate the string length for arrow allignment, a la puppet.
+    param_len = max(map(len, (only_in_new.union(only_in_old).union(diff))))
+    param_format = "{p:<%d} => {v}\n" % param_len
+    for parameter in only_in_old:
+        output += "-    " + param_format.format(p=parameter, v=orig[parameter])
+    for parameter in only_in_new:
+        output += "+    " + param_format.format(p=parameter, v=other[parameter])
+    for parameter in diff:
+        output += "@@\n"
+        output += "-    " + param_format.format(p=parameter, v=orig[parameter])
+        output += "+    " + param_format.format(p=parameter, v=other[parameter])
+    return output
 
 
 class PuppetResource(object):
@@ -66,7 +86,7 @@ class PuppetResource(object):
             ]
             out['content'] = content_diff
         if self.parameters != other.parameters:
-            out['parameters'] = datadiff.diff(
+            out['parameters'] = parameters_diff(
                 self.parameters, other.parameters,
                 fromfile='{}.orig'.format(str(self)), tofile=str(self)
             )

@@ -27,8 +27,7 @@
       {% block body %}
         <h1>Compilation results for {{ host }}: <span class="{{retcode}}">{{ desc }}</span></h1>
         {% if retcode == "diff" %}
-          <h2>Catalog differences</h2>
-          <textarea rows="20" cols="82" class="source">{% include "diffs.jinja2" %}</textarea>
+        {% include "diffs.jinja2" %}
         {% endif %}
         <h2>Relevant files</h2>
         <ul>
