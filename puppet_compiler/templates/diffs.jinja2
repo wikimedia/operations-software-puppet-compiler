@@ -34,7 +34,7 @@
 {% endif %}
 {% if diff.content %}
       <dd> Content differences:
-        <pre>{{ diff.content }}</pre>
+        <pre>{{ diff.content|e }}</pre>
       </dd>
 {% endif %}
     </dl>
