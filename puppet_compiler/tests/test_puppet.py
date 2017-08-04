@@ -30,7 +30,6 @@ class TestPuppetCalls(unittest.TestCase):
              '--modulepath=%(basedir)s/private/modules:'
              '%(basedir)s/src/modules' % {'basedir': FHS.prod_dir},
              '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
-             '--templatedir=%s/%s' % (FHS.prod_dir, 'src/templates'),
              '--trusted_node_data',
              '--compile=test.codfw.wmnet',
              '--color=false'],
@@ -53,7 +52,6 @@ class TestPuppetCalls(unittest.TestCase):
              '--modulepath=%(basedir)s/private/modules:'
              '%(basedir)s/src/modules' % {'basedir': FHS.change_dir},
              '--confdir=%s/%s' % (FHS.change_dir, 'src'),
-             '--templatedir=%s/%s' % (FHS.change_dir, 'src/templates'),
              '--trusted_node_data',
              '--compile=test.codfw.wmnet',
              '--color=false'],
@@ -84,7 +82,6 @@ class TestPuppetCalls(unittest.TestCase):
              '--modulepath=%(basedir)s/private/modules:'
              '%(basedir)s/src/modules' % {'basedir': FHS.prod_dir},
              '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
-             '--templatedir=%s/%s' % (FHS.prod_dir, 'src/templates'),
              '--trusted_node_data',
              '--compile=test.codfw.wmnet',
              '--color=false', '--dummy'],

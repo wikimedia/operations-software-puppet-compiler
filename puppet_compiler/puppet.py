@@ -19,13 +19,11 @@ def compile(hostname, label, vardir, *extra_flags):
     privdir = os.path.join(basedir, 'private')
     env['RUBYLIB'] = os.path.join(srcdir, 'modules/wmflib/lib/')
 
-    tpldir = os.path.join(srcdir, 'templates')
     cmd = ['puppet', 'master',
            '--vardir=%s' % vardir,
            '--modulepath=%s:%s' % (os.path.join(privdir, 'modules'),
                                    os.path.join(srcdir, 'modules')),
            '--confdir=%s' % srcdir,
-           '--templatedir=%s' % tpldir,
            '--trusted_node_data',
            '--compile=%s' % hostname,
            '--color=false'
