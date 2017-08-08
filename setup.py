@@ -12,7 +12,7 @@ def all_files(cwd, path):
 
 setup(
     name='puppet_compiler',
-    version='0.3.1',
+    version='0.3.2',
     description='Tools to compile puppet catalogs as a service',
     author='Joe',
     author_email='glavagetto@wikimedia.org',

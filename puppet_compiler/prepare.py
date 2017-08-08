@@ -96,6 +96,13 @@ class ManageCode(object):
 
         shutil.copytree(os.path.join(self.puppet_var, 'ssl'),
                         os.path.join(src, 'ssl'))
+        puppetdb_conf = os.path.join(self.puppet_src, 'puppetdb.conf')
+        if os.path.isfile(puppetdb_conf):
+            _log.debug('Copying the puppetdb config file')
+            shutil.copy(
+                puppetdb_conf,
+                os.path.join(src, 'puppetdb.conf')
+            )
 
     @staticmethod
     def _copy_hiera(dirname, realm):
