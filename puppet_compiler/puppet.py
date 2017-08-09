@@ -1,14 +1,14 @@
 import os
 import re
 import subprocess
+
 from tempfile import SpooledTemporaryFile as spoolfile
-from directories import HostFiles, FHS
+
+from puppet_compiler import _log
+from puppet_compiler.directories import HostFiles, FHS
 
 
-def compile(hostname, label, vardir, *extra_flags):
-    """
-    Compile the catalog
-    """
+def compile_cmd_env(hostname, label, vardir, *extra_flags):
     env = os.environ.copy()
     if label == 'prod':
         basedir = FHS.prod_dir
@@ -29,6 +29,14 @@ def compile(hostname, label, vardir, *extra_flags):
            '--color=false'
            ]
     cmd.extend(extra_flags)
+    return (cmd, env)
+
+
+def compile(hostname, label, vardir, *extra_flags):
+    """
+    Compile the catalog
+    """
+    cmd, env = compile_cmd_env(hostname, label, vardir, *extra_flags)
     hostfiles = HostFiles(hostname)
 
     with open(hostfiles.file_for(label, 'errors'), 'w') as err:
@@ -41,3 +49,24 @@ def compile(hostname, label, vardir, *extra_flags):
         for line in out:
             if not re.match('(Info|[Nn]otice|[Ww]arning)', line):
                 f.write(line)
+
+
+def compile_storeconfigs(hostname, vardir):
+    """
+    Specialized function to store data into puppetdb
+    when compiling.
+    """
+    cmd, env = compile_cmd_env(hostname, 'prod')
+    out = spoolfile()
+    err = spoolfile()
+    success = False
+
+    try:
+        subprocess.check_call(cmd, stdout=out, stderr=err, env=env)
+        success = True
+    except subprocess.CalledProcessError as e:
+        _log.exception("Compilation failed for host %s: %s", hostname, e)
+
+    out.seek(0)
+    err.seek(0)
+    return (success, out, err)

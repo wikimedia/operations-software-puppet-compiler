@@ -12,7 +12,7 @@ def all_files(cwd, path):
 
 setup(
     name='puppet_compiler',
-    version='0.3.2',
+    version='0.3.3',
     description='Tools to compile puppet catalogs as a service',
     author='Joe',
     author_email='glavagetto@wikimedia.org',
@@ -24,7 +24,8 @@ setup(
     package_data={'puppet_compiler': all_files("puppet_compiler", "templates")},
     entry_points={
         'console_scripts': [
-            'puppet-compiler = puppet_compiler.cli:main'
+            'puppet-compiler = puppet_compiler.cli:main',
+            'puppetdb-populate = puppet_compiler.populate_puppetdb:main'
         ],
     },
 )
