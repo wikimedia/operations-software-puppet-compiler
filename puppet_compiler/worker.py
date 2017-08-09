@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 
-from puppet_compiler import puppet, _log
+from puppet_compiler import puppet, _log, utils
 from puppet_compiler.filter import itos, flatten
 from puppet_compiler.differ import PuppetCatalog
 from puppet_compiler.directories import HostFiles, FHS
@@ -33,8 +33,7 @@ class HostWorker(object):
 
     def facts_file(self):
         """ Finds facts file for the current hostname """
-        facts_file = os.path.join(self.puppet_var, 'yaml', 'facts',
-                                  '{}.yaml'.format(self.hostname))
+        facts_file = utils.facts_file(self.puppet_var, self.hostname)
         if os.path.isfile(facts_file):
             return facts_file
         return None
@@ -47,6 +46,10 @@ class HostWorker(object):
             _log.error('Unable to find facts for host %s, skipping',
                        self.hostname)
             return (True, True, None)
+        else:
+            # Refresh the facts file first
+            utils.refresh_yaml_date(self.facts_file())
+
         errors = self._compile_all()
         if errors == self.E_OK:
             diff = self._make_diff()

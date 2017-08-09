@@ -101,7 +101,9 @@ class TestHostWorker(unittest.TestCase):
     def test_run_host(self):
         self.hw.facts_file = mock.Mock(return_value=False)
         self.assertEquals(self.hw.run_host(), (True, True, None))
-        self.hw.facts_file = mock.Mock(return_value=True)
+        fname = os.path.join(self.fixtures, 'puppet_var', 'yaml',
+                             'facts', 'test.eqiad.wmnet')
+        self.hw.facts_file.return_value = fname
         self.hw._compile_all = mock.Mock(return_value=0)
         self.hw._make_diff = mock.Mock(return_value=True)
         self.hw._make_output = mock.Mock(return_value=None)
@@ -112,6 +114,7 @@ class TestHostWorker(unittest.TestCase):
         assert self.hw._make_diff.called
         assert self.hw._make_output.called
         assert self.hw._build_html.called
+
         self.hw._compile_all.return_value = 1
         self.hw._make_diff.reset_mock()
         self.assertEquals(self.hw.run_host(), (True, False, None))
