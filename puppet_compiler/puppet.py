@@ -56,7 +56,7 @@ def compile_storeconfigs(hostname, vardir):
     Specialized function to store data into puppetdb
     when compiling.
     """
-    cmd, env = compile_cmd_env(hostname, 'prod')
+    cmd, env = compile_cmd_env(hostname, 'prod', vardir, '--storeconfigs', '--storeconfigs_backend=puppetdb')
     out = spoolfile()
     err = spoolfile()
     success = False
