@@ -34,7 +34,7 @@ class TestPuppetResource(unittest.TestCase):
         self.assertEqual(self.r.content, '')
         self.assertEqual(self.r.parameters['before'], 'Class[apache2]')
         self.assertEqual(self.r.parameters['settings'], {'foo': '1', 'bar': ['2', '3']})
-        self.assertNotIn('nope', self.r.parameters)
+        self.assertIn('nope', self.r.parameters)
 
     def test_str(self):
         """Test stringification"""

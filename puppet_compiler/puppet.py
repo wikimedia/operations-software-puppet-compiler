@@ -26,7 +26,10 @@ def compile_cmd_env(hostname, label, vardir, *extra_flags):
            '--confdir=%s' % srcdir,
            '--trusted_node_data',
            '--compile=%s' % hostname,
-           '--color=false'
+           '--color=false',
+           '--parser=future',
+           '--manifest=$confdir/manifests',
+           '--environment=future'
            ]
     cmd.extend(extra_flags)
     return (cmd, env)

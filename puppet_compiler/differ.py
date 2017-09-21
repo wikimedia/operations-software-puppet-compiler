@@ -42,10 +42,7 @@ class PuppetResource(object):
         self.source = None
         # Let's first look for special
         for k, v in kwargs.items():
-            # Filter out null values
-            if v is None:
-                pass
-            elif k == 'content':
+            if k == 'content':
                 self.content = v
             else:
                 self.parameters[k] = self._filter(v)

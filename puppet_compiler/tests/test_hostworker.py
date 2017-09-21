@@ -18,7 +18,7 @@ class TestHostWorker(unittest.TestCase):
         self.assertEquals(self.hw.hostname, 'test.example.com')
         self.assertItemsEqual(['prod', 'change'], self.hw._envs)
         self.assertIsNone(self.hw.diffs)
-        self.assertEqual(self.hw.resource_filter, worker.future_filter)
+        self.assertEqual(self.hw.resource_filter, None)
 
     @mock.patch('os.path.isfile')
     def test_facts_file(self, isfile):
@@ -70,10 +70,10 @@ class TestHostWorker(unittest.TestCase):
         mocker.assert_has_calls(
             [
                 mock.call(
-                    '/mnt/jenkins-workspace/19/production/catalogs/test.example.com.pson', worker.future_filter
+                    '/mnt/jenkins-workspace/19/production/catalogs/test.example.com.pson', None
                 ),
                 mock.call(
-                    '/mnt/jenkins-workspace/19/change/catalogs/test.example.com.pson', worker.future_filter
+                    '/mnt/jenkins-workspace/19/change/catalogs/test.example.com.pson', None
                 )
             ]
         )

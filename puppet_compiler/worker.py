@@ -29,7 +29,7 @@ class HostWorker(object):
         self._envs = ['prod', 'change']
         self.hostname = hostname
         self.diffs = None
-        self.resource_filter = future_filter
+        self.resource_filter = None
 
     def facts_file(self):
         """ Finds facts file for the current hostname """

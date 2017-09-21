@@ -32,7 +32,8 @@ class TestPuppetCalls(unittest.TestCase):
              '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
              '--trusted_node_data',
              '--compile=test.codfw.wmnet',
-             '--color=false'],
+             '--color=false',
+             '--parser=future', '--manifest=$confdir/manifests', '--environment=future'],
             env=env,
             stdout=spool,
             stderr=mocker.return_value
@@ -54,7 +55,8 @@ class TestPuppetCalls(unittest.TestCase):
              '--confdir=%s/%s' % (FHS.change_dir, 'src'),
              '--trusted_node_data',
              '--compile=test.codfw.wmnet',
-             '--color=false'],
+             '--color=false',
+             '--parser=future', '--manifest=$confdir/manifests', '--environment=future'],
             env=env,
             stdout=tf_mocker.return_value,
             stderr=mocker.return_value
@@ -84,7 +86,9 @@ class TestPuppetCalls(unittest.TestCase):
              '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
              '--trusted_node_data',
              '--compile=test.codfw.wmnet',
-             '--color=false', '--dummy'],
+             '--color=false',
+             '--parser=future', '--manifest=$confdir/manifests', '--environment=future',
+             '--dummy'],
             env=env,
             stdout=tf_mocker.return_value,
             stderr=mocker.return_value
