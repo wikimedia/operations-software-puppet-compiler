@@ -118,6 +118,9 @@ class TestController(unittest.TestCase):
             c.pick_hosts('test.eqiad.wmnet,test.tools.eqiad.wmflabs')
 
         self.assertEqual(cm.exception.code, 2)
+        c = controller.Controller(None, 19, 224570, 'test.eqiad.wmflabs')
+        self.assertEqual(c.realm, 'labs')
+        self.assertEqual(c.m.realm, 'labs')
 
     def test_success(self):
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')

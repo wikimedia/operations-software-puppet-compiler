@@ -120,11 +120,11 @@ class ManageCode(object):
         pub = os.path.join(dirname, 'src')
         with open(hiera_file, 'r') as g, open('hiera.yaml', 'w') as f:
             for line in g:
-                l = line.replace(
+                data = line.replace(
                     '/etc/puppet/private', priv
                 ).replace(
                     '/etc/puppet', pub)
-                f.write(l)
+                f.write(data)
 
     @staticmethod
     def _create_puppetconf(dirname, realm):

@@ -74,7 +74,7 @@ class ThreadOrchestrator(object):
         res = self._incoming_queue.get(True)
         try:
             callback(res)
-        except:
+        except Exception:
             _log.warn('post-exec callback failed.')
         self._incoming_queue.task_done()
 
