@@ -1,5 +1,7 @@
+import os
 import re
 import sys
+import subprocess
 
 import yaml
 
@@ -30,6 +32,8 @@ class Controller(object):
 
     def __init__(self, configfile, job_id, change_id, host_list=[],
                  nthreads=2, modes=['change']):
+        # Let's first detect the installed puppet version
+        self.set_puppet_version()
         self.config = {
             # Url under which results will be found
             'http_url': 'https://puppet-compiler.wmflabs.org/html',
@@ -67,6 +71,11 @@ class Controller(object):
         # Set up variables to be used by the html output class
         html.change_id = change_id
         html.job_id = job_id
+
+    def set_puppet_version(self):
+        if not os.environ.get('PUPPET_VERSION', False):
+            major = subprocess.check_output(['puppet', '--version']).rstrip().split('.')[0]
+            os.environ['PUPPET_VERSION'] = major
 
     def pick_hosts(self, host_list):
         if not host_list:

@@ -10,6 +10,7 @@ class TestController(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
+        os.environ['PUPPET_VERSION'] = '4'
 
     def test_initialize_no_configfile(self):
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet', nthreads=2)
@@ -29,6 +30,14 @@ class TestController(unittest.TestCase):
         # This will log an error, but not raise an exception
         controller.Controller('unexistent', 19, 224570, 'test.eqiad.wmnet', nthreads=2)
         self.assertRaises(SystemExit, controller.Controller, filename + '.invalid', 1, 1, 'test.eqiad.wmnet')
+
+    @mock.patch('subprocess.check_output')
+    def test_set_puppet_version(self, mocker):
+        del os.environ['PUPPET_VERSION']
+        mocker.return_value = '3.8.2\n'
+        controller.Controller(None, 19, 224570, 'test.eqiad.wmnet', nthreads=2)
+        mocker.assert_called_with(['puppet', '--version'])
+        self.assertEqual(os.environ['PUPPET_VERSION'], '3')
 
     @mock.patch('puppet_compiler.worker.HostWorker.html_index')
     @mock.patch('puppet_compiler.worker.HostWorker.run_host')

@@ -9,6 +9,7 @@ from puppet_compiler.directories import FHS
 class TestPuppetCalls(unittest.TestCase):
 
     def setUp(self):
+        os.environ['PUPPET_VERSION'] = '3'
         subprocess.check_call = mock.Mock()
         self.fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         FHS.setup(10, self.fixtures)
@@ -30,10 +31,13 @@ class TestPuppetCalls(unittest.TestCase):
              '--modulepath=%(basedir)s/private/modules:'
              '%(basedir)s/src/modules' % {'basedir': FHS.prod_dir},
              '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
-             '--trusted_node_data',
              '--compile=test.codfw.wmnet',
              '--color=false',
-             '--parser=future', '--manifest=$confdir/manifests', '--environment=future'],
+             '--manifest=$confdir/manifests',
+             '--environmentpath=$confdir/environments',
+             '--trusted_node_data',
+             '--parser=future',
+             '--environment=future'],
             env=env,
             stdout=spool,
             stderr=mocker.return_value
@@ -53,10 +57,13 @@ class TestPuppetCalls(unittest.TestCase):
              '--modulepath=%(basedir)s/private/modules:'
              '%(basedir)s/src/modules' % {'basedir': FHS.change_dir},
              '--confdir=%s/%s' % (FHS.change_dir, 'src'),
-             '--trusted_node_data',
              '--compile=test.codfw.wmnet',
              '--color=false',
-             '--parser=future', '--manifest=$confdir/manifests', '--environment=future'],
+             '--manifest=$confdir/manifests',
+             '--environmentpath=$confdir/environments',
+             '--trusted_node_data',
+             '--parser=future',
+             '--environment=future'],
             env=env,
             stdout=tf_mocker.return_value,
             stderr=mocker.return_value
@@ -84,10 +91,13 @@ class TestPuppetCalls(unittest.TestCase):
              '--modulepath=%(basedir)s/private/modules:'
              '%(basedir)s/src/modules' % {'basedir': FHS.prod_dir},
              '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
-             '--trusted_node_data',
              '--compile=test.codfw.wmnet',
              '--color=false',
-             '--parser=future', '--manifest=$confdir/manifests', '--environment=future',
+             '--manifest=$confdir/manifests',
+             '--environmentpath=$confdir/environments',
+             '--trusted_node_data',
+             '--parser=future',
+             '--environment=future',
              '--dummy'],
             env=env,
             stdout=tf_mocker.return_value,

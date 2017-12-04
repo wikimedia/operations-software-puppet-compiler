@@ -9,6 +9,7 @@ from puppet_compiler.directories import HostFiles, FHS
 
 
 def compile_cmd_env(hostname, label, vardir, *extra_flags):
+    puppet_version = int(os.environ.get('PUPPET_VERSION', 4))
     env = os.environ.copy()
     if label == 'prod':
         basedir = FHS.prod_dir
@@ -24,13 +25,13 @@ def compile_cmd_env(hostname, label, vardir, *extra_flags):
            '--modulepath=%s:%s' % (os.path.join(privdir, 'modules'),
                                    os.path.join(srcdir, 'modules')),
            '--confdir=%s' % srcdir,
-           '--trusted_node_data',
            '--compile=%s' % hostname,
            '--color=false',
-           '--parser=future',
            '--manifest=$confdir/manifests',
-           '--environment=future'
+           '--environmentpath=$confdir/environments'
            ]
+    if puppet_version < 4:
+        cmd.extend(['--trusted_node_data', '--parser=future', '--environment=future'])
     cmd.extend(extra_flags)
     return (cmd, env)
 

@@ -95,11 +95,15 @@ class PuppetCatalog(object):
         self.resources = {}
         with open(filename, 'r') as fh:
             catalog = json.load(fh, 'latin_1')
-        for resource in catalog['data']['resources']:
+        if 'data' in catalog:
+            base = catalog['data']  # Puppet 3
+        else:
+            base = catalog  # Puppet 4 and above
+        for resource in base['resources']:
             r = PuppetResource(resource, resource_filter)
             self.resources[str(r)] = r
         self.all_resources = set(self.resources.keys())
-        self.name = catalog['data']['name']
+        self.name = base['name']
 
     def diff_if_present(self, other):
         diffs = []
