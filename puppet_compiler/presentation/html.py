@@ -37,8 +37,11 @@ class Host(object):
         data['desc'] = self._retcode_to_desc()
         t = env.get_template(self.tpl)
         page = t.render(jid=job_id, chid=change_id, **data)
+        # page might contain non-ascii chars and generate UnicodeEncodeError
+        # exceptions when trying to save its content to a file, so it is
+        # explicitly encoded as utf-8 string.
         with open(os.path.join(self.outdir, self.page_name), 'w') as f:
-            f.write(page)
+            f.write(page.encode('utf-8'))
 
 
 class FutureHost(Host):
