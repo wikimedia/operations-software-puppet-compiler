@@ -78,8 +78,11 @@ class Index(object):
         t = env.get_template(self.tpl)
         # TODO: support multiple modes
         page = t.render(state=state, jid=job_id, chid=change_id)
+        # page might contain non-ascii chars and generate UnicodeEncodeError
+        # exceptions when trying to save its content to a file, so it is
+        # explicitly encoded as utf-8 string.
         with open(self.outfile, 'w') as f:
-            f.write(page)
+            f.write(page.encode('utf-8'))
 
 
 class FutureIndex(Index):
