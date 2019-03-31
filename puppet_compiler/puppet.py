@@ -6,6 +6,7 @@ from tempfile import SpooledTemporaryFile as spoolfile
 
 from puppet_compiler import _log
 from puppet_compiler.directories import HostFiles, FHS
+from puppet_compiler import utils
 
 
 def compile_cmd_env(hostname, label, vardir, *extra_flags):
@@ -20,6 +21,18 @@ def compile_cmd_env(hostname, label, vardir, *extra_flags):
     privdir = os.path.join(basedir, 'private')
     env['RUBYLIB'] = os.path.join(srcdir, 'modules/wmflib/lib/')
 
+    # factsfile will be something like
+    #  "/foo/yaml/facts/production/facts/hostname.yaml
+    # puppet will look for a subdir named 'facts' for
+    # the yaml files, so we need to prune this path
+    # accordingly.
+    #
+    # We can safely assume that factsfile is a valid path
+    # since we would have errored out earlier if it's
+    # unknown.
+    factsfile = utils.facts_file(vardir, hostname)
+    yamldir = os.path.dirname(os.path.dirname(factsfile))
+
     cmd = ['puppet', 'master',
            '--vardir=%s' % vardir,
            '--modulepath=%s:%s' % (os.path.join(privdir, 'modules'),
@@ -27,6 +40,7 @@ def compile_cmd_env(hostname, label, vardir, *extra_flags):
            '--confdir=%s' % srcdir,
            '--compile=%s' % hostname,
            '--color=false',
+           '--yamldir=%s' % yamldir,
            '--manifest=$confdir/manifests',
            '--environmentpath=$confdir/environments'
            ]

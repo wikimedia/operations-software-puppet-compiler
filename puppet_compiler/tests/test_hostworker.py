@@ -21,6 +21,9 @@ class TestHostWorker(unittest.TestCase):
         self.assertEqual(self.hw.resource_filter, None)
 
     @mock.patch('os.path.isfile')
+    @mock.patch('puppet_compiler.utils.facts_file',
+                mock.MagicMock(
+                    return_value='/var/lib/catalog-differ/puppet/yaml/facts/test.example.com.yaml'))
     def test_facts_file(self, isfile):
         isfile.return_value = True
         self.assertEqual(

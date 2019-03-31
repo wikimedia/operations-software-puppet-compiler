@@ -15,6 +15,9 @@ class TestPuppetCalls(unittest.TestCase):
         FHS.setup(10, self.fixtures)
 
     @mock.patch('puppet_compiler.puppet.spoolfile')
+    @mock.patch('puppet_compiler.utils.facts_file',
+                mock.MagicMock(
+                    return_value='/var/lib/catalog-differ/puppet/yaml/facts/test.example.com.yaml'))
     def test_compile(self, tf_mocker):
         os.environ.copy = mock.Mock(return_value={'myenv': 'ishere!'})
         env = os.environ.copy()
@@ -33,6 +36,7 @@ class TestPuppetCalls(unittest.TestCase):
              '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
              '--compile=test.codfw.wmnet',
              '--color=false',
+             '--yamldir=/var/lib/catalog-differ/puppet/yaml',
              '--manifest=$confdir/manifests',
              '--environmentpath=$confdir/environments',
              '--trusted_node_data',
@@ -59,6 +63,7 @@ class TestPuppetCalls(unittest.TestCase):
              '--confdir=%s/%s' % (FHS.change_dir, 'src'),
              '--compile=test.codfw.wmnet',
              '--color=false',
+             '--yamldir=/var/lib/catalog-differ/puppet/yaml',
              '--manifest=$confdir/manifests',
              '--environmentpath=$confdir/environments',
              '--trusted_node_data',
@@ -76,6 +81,9 @@ class TestPuppetCalls(unittest.TestCase):
         mocker.assert_has_calls(calls, any_order=True)
 
     @mock.patch('puppet_compiler.puppet.spoolfile')
+    @mock.patch('puppet_compiler.utils.facts_file',
+                mock.MagicMock(
+                    return_value='/var/lib/catalog-differ/puppet/yaml/facts/test.example.com.yaml'))
     def test_extra_args_compile(self, tf_mocker):
         os.environ.copy = mock.Mock(return_value={'myenv': 'ishere!'})
         env = os.environ.copy()
@@ -93,6 +101,7 @@ class TestPuppetCalls(unittest.TestCase):
              '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
              '--compile=test.codfw.wmnet',
              '--color=false',
+             '--yamldir=/var/lib/catalog-differ/puppet/yaml',
              '--manifest=$confdir/manifests',
              '--environmentpath=$confdir/environments',
              '--trusted_node_data',

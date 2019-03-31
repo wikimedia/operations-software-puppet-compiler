@@ -7,7 +7,7 @@ def get_nodes(config):
     """
     Get all the available nodes that have separate declarations in site.pp
     """
-    facts_dir = os.path.join(config['puppet_var'], 'yaml', 'facts')
+    facts_dir = os.path.join(config['puppet_var'], 'yaml')
     _log.info("Walking dir %s", facts_dir)
     site_pp = os.path.join(config['puppet_src'], 'manifests', 'site.pp')
     # Read site.pp
@@ -19,7 +19,7 @@ def get_nodes(config):
 def get_nodes_regex(config, regex):
     nodes = []
     r = re.compile(regex)
-    facts_dir = os.path.join(config['puppet_var'], 'yaml', 'facts')
+    facts_dir = os.path.join(config['puppet_var'], 'yaml')
     _log.info("Walking dir %s", facts_dir)
     for node in nodelist(facts_dir):
         if r.search(node):

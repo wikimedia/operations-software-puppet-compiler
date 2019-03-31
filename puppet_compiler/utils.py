@@ -7,9 +7,19 @@ from puppet_compiler import _log
 
 
 def facts_file(vardir, hostname):
-    """Finds facts file for the given hostname."""
-    return os.path.join(vardir, 'yaml', 'facts',
-                        '{}.yaml'.format(hostname))
+    """Finds facts file for the given hostname.  Search subdirs recursively.
+       If we find multiple matches, return the newest one."""
+    filename = '{}.yaml'.format(hostname)
+    latestfile = ""
+    mtime = 0
+    for dirpath, dirnames, files in os.walk(os.path.join(vardir, 'yaml')):
+        # Puppet can only see things in directories named 'facts'
+        if os.path.basename(os.path.normpath(dirpath)) == 'facts' and filename in files:
+            filepath = os.path.join(dirpath, filename)
+            if os.path.getmtime(filepath) > mtime:
+                latestfile = filepath
+                mtime = os.path.getmtime(filepath)
+    return latestfile
 
 
 def refresh_yaml_date(facts_file):
