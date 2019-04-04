@@ -86,7 +86,7 @@ class Controller(object):
             self.hosts = nodegen.get_nodes_regex(self.config, host_regex)
         else:
             # Standard comma-separated list of hosts
-            self.hosts = re.split('\s*,\s*', host_list)
+            self.hosts = re.split(r'\s*,\s*', host_list)
 
         is_labs = [host.endswith('.wmflabs') for host in self.hosts]
         if any(is_labs) and not all(is_labs):

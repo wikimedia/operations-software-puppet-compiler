@@ -193,7 +193,7 @@ class FutureHostWorker(HostWorker):
             '--environment=future',
             '--parser=future',
             '--environmentpath=%s' % os.path.join(FHS.change_dir, 'src', 'environments'),
-            '--default_manifest=\$confdir/manifests/site.pp'
+            r'--default_manifest=\$confdir/manifests/site.pp'
         ]
         args = []
         errors = self.E_OK

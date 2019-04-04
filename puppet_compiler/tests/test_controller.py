@@ -107,7 +107,7 @@ class TestController(unittest.TestCase):
         c.pick_hosts('test.eqiad.wmnet,test1.eqiad.wmnet')
         self.assertEquals(set(c.hosts), set(['test.eqiad.wmnet', 'test1.eqiad.wmnet']))
         # Regex-based matching
-        c.pick_hosts('re:test\d.eqiad.wmnet')
+        c.pick_hosts(r're:test\d.eqiad.wmnet')
         self.assertEquals(set(c.hosts), set(['test1.eqiad.wmnet', 'test2.eqiad.wmnet']))
         # Nodegen based on parsing site.pp
         c.pick_hosts(None)

@@ -34,8 +34,8 @@ def nodelist(facts_dir):
 
 
 class NodeFinder(object):
-    regexp_node = re.compile('^node\s+/([^/]+)/')
-    exact_node = re.compile("node\s*\'([^\']+)\'")
+    regexp_node = re.compile(r'^node\s+/([^/]+)/')
+    exact_node = re.compile(r"node\s*\'([^\']+)\'")
 
     def __init__(self, sitepp):
         self.regexes = set()

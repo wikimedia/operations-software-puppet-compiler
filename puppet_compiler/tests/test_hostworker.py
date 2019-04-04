@@ -141,7 +141,7 @@ class TestFutureHostWorker(unittest.TestCase):
             '--environment=future',
             '--parser=future',
             '--environmentpath=/mnt/jenkins-workspace/19/change/src/environments',
-            '--default_manifest=\$confdir/manifests/site.pp'
+            r'--default_manifest=\$confdir/manifests/site.pp'
         ]
         self.hw._compile.assert_has_calls([
             mock.call('change', []),
