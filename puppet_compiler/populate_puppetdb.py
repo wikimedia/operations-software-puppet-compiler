@@ -52,7 +52,11 @@ def main():
         print "=" * 80
         print "Compiling catalog for {}".format(node)
 
-        utils.refresh_yaml_date(utils.facts_file(config['puppet_var'], node))
+        try:
+            utils.refresh_yaml_date(utils.facts_file(config['puppet_var'], node))
+        except utils.FactsFileNotFound as error:
+            print 'ERROR: {}'.format(error)
+            continue
         succ, out, err = puppet.compile_storeconfigs(node, config['puppet_var'])
         if succ:
             print "OK"

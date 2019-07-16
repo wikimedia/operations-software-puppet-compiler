@@ -1,9 +1,14 @@
-import re
 import os
+import re
 import shutil
 
 from datetime import datetime, timedelta
+
 from puppet_compiler import _log
+
+
+class FactsFileNotFound(Exception):
+    '''Exception for missing facts files'''
 
 
 def facts_file(vardir, hostname):
@@ -19,7 +24,9 @@ def facts_file(vardir, hostname):
             if os.path.getmtime(filepath) > mtime:
                 latestfile = filepath
                 mtime = os.path.getmtime(filepath)
-    return latestfile
+    if latestfile:
+        return latestfile
+    raise FactsFileNotFound('Unable to find fact file for: {}'.format(hostname))
 
 
 def refresh_yaml_date(facts_file):
