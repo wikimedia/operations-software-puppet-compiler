@@ -31,7 +31,8 @@ class Host(object):
         Create the html page
         """
         _log.debug("Rendering index page for %s", self.hostname)
-        data = {'retcode': self.retcode, 'host': self.hostname}
+        # PUPPET_VERSION is set when the Controller is initialised
+        data = {'retcode': self.retcode, 'host': self.hostname, 'puppet_version': os.environ['PUPPET_VERSION']}
         if self.retcode == 'diff' and diffs is not None:
             data['diffs'] = diffs
         data['desc'] = self._retcode_to_desc()
@@ -48,8 +49,8 @@ class FutureHost(Host):
     tpl = 'hostpage.future.jinja2'
     page_name = 'index-future.html'
 
-    def __init__(self, hostname, files, retcode):
-        super(FutureHost, self).__init__(hostname, files, retcode)
+    def __init__(self, hostname, files, retcode, puppet_version):
+        super(FutureHost, self).__init__(hostname, files, retcode, puppet_version)
 
     def _retcode_to_desc(self):
         if self.retcode == 'break':
