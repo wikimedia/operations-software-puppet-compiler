@@ -73,8 +73,11 @@ class Controller(object):
         html.job_id = job_id
 
     def set_puppet_version(self):
+        if not os.environ.get('PUPPET_VERSION_FULL', False):
+            full = subprocess.check_output(['puppet', '--version']).rstrip()
+            os.environ['PUPPET_VERSION_FULL'] = full
         if not os.environ.get('PUPPET_VERSION', False):
-            major = subprocess.check_output(['puppet', '--version']).rstrip().split('.')[0]
+            major = os.environ['PUPPET_VERSION_FULL'].split('.')[0]
             os.environ['PUPPET_VERSION'] = major
 
     def pick_hosts(self, host_list):

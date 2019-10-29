@@ -82,7 +82,7 @@ class Index(object):
         t = env.get_template(self.tpl)
         # TODO: support multiple modes
         page = t.render(state=state, jid=job_id, chid=change_id,
-                        puppet_version=os.environ['PUPPET_VERSION'])
+                        puppet_version=os.environ['PUPPET_VERSION_FULL'])
         # page might contain non-ascii chars and generate UnicodeEncodeError
         # exceptions when trying to save its content to a file, so it is
         # explicitly encoded as utf-8 string.
