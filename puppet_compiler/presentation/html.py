@@ -1,4 +1,5 @@
 import os
+
 from jinja2 import Environment, PackageLoader
 from puppet_compiler import _log
 
@@ -31,8 +32,7 @@ class Host(object):
         Create the html page
         """
         _log.debug("Rendering index page for %s", self.hostname)
-        # PUPPET_VERSION is set when the Controller is initialised
-        data = {'retcode': self.retcode, 'host': self.hostname, 'puppet_version': os.environ['PUPPET_VERSION']}
+        data = {'retcode': self.retcode, 'host': self.hostname}
         if self.retcode == 'diff' and diffs is not None:
             data['diffs'] = diffs
         data['desc'] = self._retcode_to_desc()
@@ -49,8 +49,8 @@ class FutureHost(Host):
     tpl = 'hostpage.future.jinja2'
     page_name = 'index-future.html'
 
-    def __init__(self, hostname, files, retcode, puppet_version):
-        super(FutureHost, self).__init__(hostname, files, retcode, puppet_version)
+    def __init__(self, hostname, files, retcode):
+        super(FutureHost, self).__init__(hostname, files, retcode)
 
     def _retcode_to_desc(self):
         if self.retcode == 'break':
@@ -81,7 +81,8 @@ class Index(object):
         _log.debug("Rendering the main index page")
         t = env.get_template(self.tpl)
         # TODO: support multiple modes
-        page = t.render(state=state, jid=job_id, chid=change_id)
+        page = t.render(state=state, jid=job_id, chid=change_id,
+                        puppet_version=os.environ['PUPPET_VERSION'])
         # page might contain non-ascii chars and generate UnicodeEncodeError
         # exceptions when trying to save its content to a file, so it is
         # explicitly encoded as utf-8 string.
