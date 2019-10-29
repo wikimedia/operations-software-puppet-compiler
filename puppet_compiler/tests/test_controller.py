@@ -11,6 +11,7 @@ class TestController(unittest.TestCase):
     def setUpClass(cls):
         cls.fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         os.environ['PUPPET_VERSION'] = '4'
+        os.environ['PUPPET_VERSION_FULL'] = '4.8.10'
 
     def test_initialize_no_configfile(self):
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet', nthreads=2)
@@ -34,6 +35,7 @@ class TestController(unittest.TestCase):
     @mock.patch('subprocess.check_output')
     def test_set_puppet_version(self, mocker):
         del os.environ['PUPPET_VERSION']
+        del os.environ['PUPPET_VERSION_FULL']
         mocker.return_value = '3.8.2\n'
         controller.Controller(None, 19, 224570, 'test.eqiad.wmnet', nthreads=2)
         mocker.assert_called_with(['puppet', '--version'])
