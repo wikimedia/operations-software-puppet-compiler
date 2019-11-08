@@ -12,13 +12,13 @@ class TestGit(unittest.TestCase):
     def setUp(self):
         self.git = prepare.Git()
 
-    @mock.patch('subprocess.call')
+    @mock.patch('subprocess.check_call')
     def test_call_no_args(self, mocker):
         """Init a git repository"""
         self.git.init()
         mocker.assert_called_with(['git', 'init'])
 
-    @mock.patch('subprocess.call')
+    @mock.patch('subprocess.check_call')
     def test_call_with_args(self, mocker):
         self.git.clone('-q', '/src/orig', '/src/dest')
         mocker.assert_called_with(['git', 'clone', '-q',
@@ -82,7 +82,7 @@ class TestManageCode(unittest.TestCase):
             os.unlink(fn)
         self.assertIn('node_terminus = exec', data)
 
-    @mock.patch('subprocess.call')
+    @mock.patch('subprocess.check_call')
     def test_fetch_change(self, mocker):
         """The change can be downloaded"""
         self.m._fetch_change()
@@ -99,7 +99,7 @@ class TestManageCode(unittest.TestCase):
         self.m.change_id = 363216
         self.assertRaises(RuntimeError, self.m._fetch_change)
 
-    @mock.patch('subprocess.call')
+    @mock.patch('subprocess.check_call')
     @mock.patch('os.chdir', return_value=None)
     def test_fetch_change_submodule(self, os_chdir_mocker, subprocess_mocker):
         """The submodule change can be downloaded"""
