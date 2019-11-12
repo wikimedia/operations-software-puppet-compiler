@@ -232,4 +232,8 @@ class Git():
     def _execute_command(self, command, *args):
         cmd = ['git', command]
         cmd.extend(args)
-        return subprocess.call(cmd)
+        try:
+            return subprocess.check_call(cmd)
+        except subprocess.CalledProcessError as error:
+            _log.critical('`{}` failed: {}'.format(' '.join(cmd), error))
+            raise SystemExit(2)
