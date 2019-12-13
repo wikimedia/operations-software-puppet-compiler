@@ -28,6 +28,7 @@ class Controller(object):
     available_run_modes = {
         'change': worker.HostWorker,
         'future': worker.FutureHostWorker,
+        'rich_data': worker.RichDataHostWorker,
     }
 
     def __init__(self, configfile, job_id, change_id, host_list=[],

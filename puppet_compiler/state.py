@@ -92,3 +92,7 @@ class FutureState(ChangeState):
             return 'ok'
         else:
             return 'diff'
+
+
+class RichDataState(FutureState):
+    pass

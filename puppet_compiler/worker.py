@@ -1,13 +1,14 @@
 import os
 import shutil
 import subprocess
+import traceback
 
-from puppet_compiler import puppet, _log, utils
-from puppet_compiler.filter import itos, flatten
+from puppet_compiler import _log, puppet, utils
 from puppet_compiler.differ import PuppetCatalog
-from puppet_compiler.directories import HostFiles, FHS
+from puppet_compiler.directories import FHS, HostFiles
+from puppet_compiler.filter import flatten, itos
 from puppet_compiler.presentation import html
-from puppet_compiler.state import ChangeState, FutureState
+from puppet_compiler.state import ChangeState, FutureState, RichDataState
 
 
 def future_filter(value):
@@ -136,6 +137,7 @@ class HostWorker(object):
         except Exception as e:
             _log.error("Diffing the catalogs failed: %s", self.hostname)
             _log.info("Diffing failed with exception %s", e)
+            _log.debug(traceback.format_exc())
             return False
         else:
             if self.diffs is None:
@@ -179,7 +181,6 @@ class FutureHostWorker(HostWorker):
     "error" => normal parser works, but future parser doesn't
     "break" => future parser works, but the normal one doesn't
     """
-    E_FUTURE = 4
     state = FutureState
     html_page = html.FutureHost
     html_index = html.FutureIndex
@@ -200,6 +201,41 @@ class FutureHostWorker(HostWorker):
         if not self._compile(self._envs[0], args):
             errors += self.E_BASE
         if not self._compile(self._envs[1], future_args):
+            errors += self.E_CHANGED
+
+        return errors
+
+
+class RichDataHostWorker(HostWorker):
+    """
+    This worker is designed to be used when transitioning to the rich_data option.
+    It will compile the change first with the normal parser, then with the future one,
+    and make a diff between the two.
+
+    Results:
+    "ok"    => both catalogs compile, and there is no diff
+    "diff"  => both catalogs compile, but there is a diff
+    "error" => normal parser works, but future parser doesn't
+    "break" => future parser works, but the normal one doesn't
+    """
+    state = RichDataState
+    html_page = html.RichDataHost
+    html_index = html.RichDataIndex
+
+    def __init__(self, vardir, hostname):
+        super(RichDataHostWorker, self).__init__(vardir, hostname)
+        self._envs = ['change', 'rich_data']
+
+    def _compile_all(self):
+        rich_args = [
+            '--rich_data',
+            r'--default_manifest=\$confdir/manifests/site.pp'
+        ]
+        args = []
+        errors = self.E_OK
+        if not self._compile(self._envs[0], args):
+            errors += self.E_BASE
+        if not self._compile(self._envs[1], rich_args):
             errors += self.E_CHANGED
 
         return errors

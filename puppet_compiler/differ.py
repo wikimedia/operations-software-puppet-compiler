@@ -67,14 +67,28 @@ class PuppetResource(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    @staticmethod
+    def parse_file_content(content):
+        """Parse a resource content object and return the content string.
+        content objects are either a string or a hash of the form.
+        content = { "__pcore_type__": "", "__pcore_value__": ""}
+        """
+        parsed = content
+        if isinstance(content, dict):
+            if content.get('__pcore_type__') == 'Binary':
+                # Prefix the content so we can detect when the type changes
+                parsed = 'Puppet::Pops::Types::PBinaryType::Binary\n{}'.format(
+                    content.get('__pcore_value__'))
+        return parsed.splitlines()
+
     def diff_if_present(self, other):
         if self == other:
             return None
 
         out = {'resource': str(self)}
         if self.content != other.content and self.resource_type == 'File':
-            other_content = other.content.splitlines()
-            my_content = self.content.splitlines()
+            other_content = self.parse_file_content(other.content)
+            my_content = self.parse_file_content(self.content)
             content_diff = [
                 line for line in difflib.unified_diff(
                     my_content, other_content, lineterm="",

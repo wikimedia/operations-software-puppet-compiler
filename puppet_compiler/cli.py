@@ -48,3 +48,7 @@ def main():
     except Exception as e:
         _log.critical("Build run failed: %s", e, exc_info=True)
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

@@ -63,6 +63,24 @@ class FutureHost(Host):
             return 'change works with both parsers, with diffs'
 
 
+class RichDataHost(Host):
+    tpl = 'hostpage.rich_data.jinja2'
+    page_name = 'index-rich_data.html'
+
+    def __init__(self, hostname, files, retcode):
+        super(RichDataHost, self).__init__(hostname, files, retcode)
+
+    def _retcode_to_desc(self):
+        if self.retcode == 'break':
+            return 'change breaks the current parser'
+        elif self.retcode == 'error':
+            return 'change is not compatible with the rich_data'
+        elif self.retcode == 'ok':
+            return 'change works with both parsers'
+        elif self.retcode == 'diff':
+            return 'change works with both parsers, with diffs'
+
+
 class Index(object):
     tpl = 'index.jinja2'
     page_name = 'index.html'
@@ -93,3 +111,8 @@ class Index(object):
 class FutureIndex(Index):
     tpl = 'index.future.jinja2'
     page_name = 'index-future.html'
+
+
+class RichDataIndex(Index):
+    tpl = 'index.rich_data.jinja2'
+    page_name = 'index-rich_data.html'
