@@ -92,33 +92,11 @@ class TestManageCode(unittest.TestCase):
                        'refs/changes/50/227450/1']),
             mock.call(['git', 'checkout', 'FETCH_HEAD']),
             mock.call(['git', 'pull', '--rebase', 'origin', 'production']),
-            mock.call(['git', 'submodule', 'update', '--init'])
         ]
         mocker.assert_has_calls(calls)
         # Now test a change to another repository
         self.m.change_id = 363216
         self.assertRaises(RuntimeError, self.m._fetch_change)
-
-    @mock.patch('subprocess.check_call')
-    @mock.patch('os.chdir', return_value=None)
-    def test_fetch_change_submodule(self, os_chdir_mocker, subprocess_mocker):
-        """The submodule change can be downloaded"""
-        self.m.change_id = 280690
-        self.m._fetch_change()
-        subprocess_calls = [
-            mock.call(['git', 'fetch', '-q',
-                       'https://gerrit.wikimedia.org/r/operations'
-                       '/puppet/varnishkafka',
-                       'refs/changes/90/280690/1']),
-            mock.call(['git', 'checkout', 'FETCH_HEAD'])
-        ]
-        subprocess_mocker.assert_has_calls(subprocess_calls)
-
-        # Checking that os.path.exists and os.chdir are called with
-        # the correct submodule dir.
-        submodule_dir = os.path.join(os.getcwd(), 'modules', 'varnishkafka')
-        os_chdir_calls = mock.call(submodule_dir)
-        assert os_chdir_calls in os_chdir_mocker.mock_calls
 
     @mock.patch('os.symlink')
     @mock.patch('shutil.copytree')
@@ -134,7 +112,6 @@ class TestManageCode(unittest.TestCase):
             'https://gerrit.wikimedia.org/r/operations/puppet',
             prod_src)
         assert 2 == self.m.git.clone.call_count
-        assert 2 == self.m.git.submodule.call_count
         mock_copy.assert_called_with(self.m.puppet_var + '/ssl',
                                      prod_src + '/ssl')
         assert 3 == mock_symlink.call_count
