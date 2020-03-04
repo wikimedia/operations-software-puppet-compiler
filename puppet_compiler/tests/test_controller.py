@@ -1,7 +1,9 @@
-import unittest
-import mock
 import os
-from puppet_compiler import controller, threads, state
+import unittest
+
+import mock
+
+from puppet_compiler import controller, state, threads
 from puppet_compiler.presentation import html
 
 
@@ -15,7 +17,7 @@ class TestController(unittest.TestCase):
 
     def test_initialize_no_configfile(self):
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet', nthreads=2)
-        self.assertEquals(c.hosts, ['test.eqiad.wmnet'])
+        self.assertEquals(c.hosts, set(['test.eqiad.wmnet']))
         self.assertEquals(c.config['http_url'],
                           'https://puppet-compiler.wmflabs.org/html')
         self.assertEquals(c.config['base'], '/mnt/jenkins-workspace')
@@ -104,18 +106,21 @@ class TestController(unittest.TestCase):
         c.config['puppet_src'] = self.fixtures
         # Single node
         c.pick_hosts('test1.eqiad.wmnet')
-        self.assertEquals(c.hosts, ['test1.eqiad.wmnet'])
+        self.assertEquals(c.hosts, set(['test1.eqiad.wmnet']))
         # Comma-separated nodes
         c.pick_hosts('test.eqiad.wmnet,test1.eqiad.wmnet')
-        self.assertEquals(set(c.hosts), set(['test.eqiad.wmnet', 'test1.eqiad.wmnet']))
+        self.assertEquals(c.hosts, set(['test.eqiad.wmnet', 'test1.eqiad.wmnet']))
+        # Comma-separated nodes trailing comma
+        c.pick_hosts('test.eqiad.wmnet,test1.eqiad.wmnet,')
+        self.assertEquals(c.hosts, set(['test.eqiad.wmnet', 'test1.eqiad.wmnet']))
         # Regex-based matching
         c.pick_hosts(r're:test\d.eqiad.wmnet')
-        self.assertEquals(set(c.hosts), set(['test1.eqiad.wmnet', 'test2.eqiad.wmnet']))
+        self.assertEquals(c.hosts, set(['test1.eqiad.wmnet', 'test2.eqiad.wmnet']))
         # Nodegen based on parsing site.pp
         c.pick_hosts(None)
         s1 = set(['test.eqiad.wmnet', 'test1.eqiad.wmnet'])
         s2 = set(['test.eqiad.wmnet', 'test2.eqiad.wmnet'])
-        s = set(c.hosts)
+        s = c.hosts
         assert (s == s1 or s == s2)
 
     def test_realm_detection(self):

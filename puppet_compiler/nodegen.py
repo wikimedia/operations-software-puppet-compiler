@@ -17,13 +17,13 @@ def get_nodes(config):
 
 
 def get_nodes_regex(config, regex):
-    nodes = []
+    nodes = set()
     r = re.compile(regex)
     facts_dir = os.path.join(config['puppet_var'], 'yaml')
     _log.info("Walking dir %s", facts_dir)
     for node in nodelist(facts_dir):
         if r.search(node):
-            nodes.append(node)
+            nodes.add(node)
     return nodes
 
 
@@ -52,12 +52,12 @@ class NodeFinder(object):
                 self.nodes.add(m.group(1))
 
     def match_physical_nodes(self, nodelist):
-        nodes = []
+        nodes = set()
         for node in nodelist:
             discarded = None
             if node in self.nodes:
                 _log.debug('Found node %s', node)
-                nodes.append(node)
+                nodes.add(node)
                 self.nodes.discard(node)
                 continue
             for regex in self.regexes:
@@ -66,7 +66,7 @@ class NodeFinder(object):
                 if m:
                     _log.debug('Found match for node %s: %s', node,
                                regex.pattern)
-                    nodes.append(node)
+                    nodes.add(node)
                     discarded = regex
                     continue
 
