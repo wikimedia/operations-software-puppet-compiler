@@ -1,3 +1,7 @@
+## 2019-03-05
+### 0.6.2
+ * convert host_list from `list` to `set` and remove empty entries
+
 ## 2019-02-13
 ### 0.6.1
  * remove git submodule support
