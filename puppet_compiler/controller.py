@@ -88,6 +88,15 @@ class Controller(object):
         elif host_list.startswith("re:"):
             host_regex = host_list[3:]
             self.hosts = nodegen.get_nodes_regex(self.config, host_regex)
+        elif host_list.startswith('O:'):
+            role = host_list[2:]
+            self.hosts = nodegen.get_nodes_puppetdb_class('Role::{}'.format(role))
+        elif host_list.startswith('P:'):
+            profile = host_list[2:]
+            self.hosts = nodegen.get_nodes_puppetdb_class('Profile::{}'.format(profile))
+        elif host_list.startswith('C:'):
+            puppet_class = host_list[2:]
+            self.hosts = nodegen.get_nodes_puppetdb_class(puppet_class)
         else:
             # Standard comma-separated list of hosts
             self.hosts = set(host for host in re.split(r'\s*,\s*', host_list) if host)

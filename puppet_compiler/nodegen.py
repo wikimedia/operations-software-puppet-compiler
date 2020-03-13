@@ -1,6 +1,8 @@
-import re
 import os
+import re
+
 from puppet_compiler import _log
+from requests import get
 
 
 def get_nodes(config):
@@ -25,6 +27,30 @@ def get_nodes_regex(config, regex):
         if r.search(node):
             nodes.add(node)
     return nodes
+
+
+def get_nodes_puppetdb_class(title):
+    """return a set of nodes which have the class 'title' applied"""
+    title = '::'.join(s.capitalize() for s in title.split('::'))
+    params = {'query': '["extract",["certname"]]'}
+    puppetdb_uri = 'http://localhost:8080/pdb/query/v4/resources/Class/{}'.format(title)
+    nodes_json = get(puppetdb_uri, params=params).json()
+    if not nodes_json:
+        _log.warning('no nodes found for class: %s', title)
+        return set()
+    if len(nodes_json) == 1:
+        return set([nodes_json[0]['certname']])
+    # We try to reduce the set of nodes down so that we dont test nodes
+    # which have the same set of classes
+    # The algorithm considers a node unique if it based on the hostname
+    # excluding any integers and the set of tags applied to a resource"""
+    deduplicated_nodes = {}
+    for node in nodes_json:
+        key = '{}:{}'.format(re.split(r'\d', node['certname'], 1)[0],
+                             '|'.join(node['tags']))
+        if key not in deduplicated_nodes:
+            deduplicated_nodes[key] = node['certname']
+    return set(deduplicated_nodes.values())
 
 
 def nodelist(facts_dir):
