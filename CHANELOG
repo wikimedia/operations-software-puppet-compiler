@@ -1,3 +1,7 @@
+## 2019-03-20
+### 0.7.0
+ * add support for selecting hosts using limited Cumin syntax C:, O: and P:
+
 ## 2019-03-05
 ### 0.6.2
  * convert host_list from `list` to `set` and remove empty entries
