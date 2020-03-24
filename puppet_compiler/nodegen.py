@@ -32,7 +32,7 @@ def get_nodes_regex(config, regex):
 def get_nodes_puppetdb_class(title):
     """return a set of nodes which have the class 'title' applied"""
     title = '::'.join(s.capitalize() for s in title.split('::'))
-    params = {'query': '["extract",["certname"]]'}
+    params = {'query': '["extract",["certname","tags"]]'}
     puppetdb_uri = 'http://localhost:8080/pdb/query/v4/resources/Class/{}'.format(title)
     nodes_json = get(puppetdb_uri, params=params).json()
     if not nodes_json:

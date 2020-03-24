@@ -1,3 +1,7 @@
+## 2019-03-24
+### 0.7.1
+ * extract tags from puppetdb so the C, P and O overrides work
+
 ## 2019-03-20
 ### 0.7.0
  * add support for selecting hosts using limited Cumin syntax C:, O: and P:
