@@ -4,12 +4,11 @@ import subprocess
 
 from tempfile import SpooledTemporaryFile as spoolfile
 
-from puppet_compiler import _log
-from puppet_compiler.directories import HostFiles, FHS
-from puppet_compiler import utils
+from puppet_compiler import _log, utils
+from puppet_compiler.directories import FHS, HostFiles
 
 
-def compile_cmd_env(hostname, label, vardir, *extra_flags):
+def compile_cmd_env(hostname, label, vardir, manifests_dir=None, *extra_flags):
     puppet_version = int(os.environ.get('PUPPET_VERSION', 4))
     env = os.environ.copy()
     if label == 'prod':
@@ -20,6 +19,8 @@ def compile_cmd_env(hostname, label, vardir, *extra_flags):
     srcdir = os.path.join(basedir, 'src')
     privdir = os.path.join(basedir, 'private')
     env['RUBYLIB'] = os.path.join(srcdir, 'modules/wmflib/lib/')
+    manifests_dir = os.path.join(srcdir, 'manifests') if manifests_dir is None else manifests_dir
+    environments_dir = os.path.join(srcdir, 'environments')
 
     # factsfile will be something like
     #  "/foo/yaml/facts/production/facts/hostname.yaml
@@ -41,8 +42,8 @@ def compile_cmd_env(hostname, label, vardir, *extra_flags):
            '--compile=%s' % hostname,
            '--color=false',
            '--yamldir=%s' % yamldir,
-           '--manifest=$confdir/manifests',
-           '--environmentpath=$confdir/environments'
+           '--manifest=%s' % manifests_dir,
+           '--environmentpath=%s' % environments_dir
            ]
     if puppet_version < 4:
         cmd.extend(['--trusted_node_data', '--parser=future', '--environment=future'])
@@ -50,11 +51,11 @@ def compile_cmd_env(hostname, label, vardir, *extra_flags):
     return (cmd, env)
 
 
-def compile(hostname, label, vardir, *extra_flags):
+def compile(hostname, label, vardir, manifests_dir=None, *extra_flags):
     """
     Compile the catalog
     """
-    cmd, env = compile_cmd_env(hostname, label, vardir, *extra_flags)
+    cmd, env = compile_cmd_env(hostname, label, vardir, manifests_dir, *extra_flags)
     hostfiles = HostFiles(hostname)
 
     with open(hostfiles.file_for(label, 'errors'), 'w') as err:
@@ -69,12 +70,12 @@ def compile(hostname, label, vardir, *extra_flags):
                 f.write(line)
 
 
-def compile_storeconfigs(hostname, vardir):
+def compile_storeconfigs(hostname, vardir, manifests_dir=None):
     """
     Specialized function to store data into puppetdb
     when compiling.
     """
-    cmd, env = compile_cmd_env(hostname, 'prod', vardir, '--storeconfigs', '--storeconfigs_backend=puppetdb')
+    cmd, env = compile_cmd_env(hostname, 'prod', vardir, manifests_dir, '--storeconfigs', '--storeconfigs_backend=puppetdb')
     out = spoolfile()
     err = spoolfile()
     success = False

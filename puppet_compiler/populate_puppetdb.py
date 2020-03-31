@@ -57,6 +57,7 @@ def main():
         except utils.FactsFileNotFound as error:
             print 'ERROR: {}'.format(error)
             continue
+        succ, out, err = puppet.compile_storeconfigs(node, config['puppet_var'], '/dev/null')
         succ, out, err = puppet.compile_storeconfigs(node, config['puppet_var'])
         if succ:
             print "OK"

@@ -38,9 +38,9 @@ class TestHostWorker(unittest.TestCase):
         err = self.hw._compile_all()
         calls = [
             mock.call('test.example.com', 'prod',
-                      '/var/lib/catalog-differ/puppet'),
+                      '/var/lib/catalog-differ/puppet', None),
             mock.call('test.example.com', 'change',
-                      '/var/lib/catalog-differ/puppet'),
+                      '/var/lib/catalog-differ/puppet', None),
         ]
         mocker.assert_has_calls(calls)
         self.assertEquals(err, 0)

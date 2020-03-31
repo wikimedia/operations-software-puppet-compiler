@@ -37,8 +37,8 @@ class TestPuppetCalls(unittest.TestCase):
              '--compile=test.codfw.wmnet',
              '--color=false',
              '--yamldir=/var/lib/catalog-differ/puppet/yaml',
-             '--manifest=$confdir/manifests',
-             '--environmentpath=$confdir/environments',
+             '--manifest=%s/%s/manifests' % (FHS.prod_dir, 'src'),
+             '--environmentpath=%s/%s/environments' % (FHS.prod_dir, 'src'),
              '--trusted_node_data',
              '--parser=future',
              '--environment=future'],
@@ -64,8 +64,8 @@ class TestPuppetCalls(unittest.TestCase):
              '--compile=test.codfw.wmnet',
              '--color=false',
              '--yamldir=/var/lib/catalog-differ/puppet/yaml',
-             '--manifest=$confdir/manifests',
-             '--environmentpath=$confdir/environments',
+             '--manifest=%s/%s/manifests' % (FHS.change_dir, 'src'),
+             '--environmentpath=%s/%s/environments' % (FHS.change_dir, 'src'),
              '--trusted_node_data',
              '--parser=future',
              '--environment=future'],
@@ -91,7 +91,7 @@ class TestPuppetCalls(unittest.TestCase):
         m = mock.mock_open(read_data='wat')
         with mock.patch('__builtin__.open', m, True) as mocker:
             puppet.compile('test.codfw.wmnet', 'prod', self.fixtures +
-                           '/puppet_var', '--dummy')
+                           '/puppet_var', None, '--dummy')
         subprocess.check_call.assert_called_with(
             ['puppet',
              'master',
@@ -102,8 +102,8 @@ class TestPuppetCalls(unittest.TestCase):
              '--compile=test.codfw.wmnet',
              '--color=false',
              '--yamldir=/var/lib/catalog-differ/puppet/yaml',
-             '--manifest=$confdir/manifests',
-             '--environmentpath=$confdir/environments',
+             '--manifest=%s/%s/manifests' % (FHS.prod_dir, 'src'),
+             '--environmentpath=%s/%s/environments' % (FHS.prod_dir, 'src'),
              '--trusted_node_data',
              '--parser=future',
              '--environment=future',
