@@ -11,6 +11,8 @@ job_id = None
 class Host(object):
     tpl = 'hostpage.jinja2'
     page_name = 'index.html'
+    mode = 'prod'
+    pretty_mode = 'Production'
 
     def __init__(self, hostname, files, retcode):
         self.retcode = retcode
@@ -36,6 +38,8 @@ class Host(object):
         if self.retcode == 'diff' and diffs is not None:
             data['diffs'] = diffs
         data['desc'] = self._retcode_to_desc()
+        data['mode'] = self.mode
+        data['pretty_mode'] = self.pretty_mode
         t = env.get_template(self.tpl)
         page = t.render(jid=job_id, chid=change_id, **data)
         # page might contain non-ascii chars and generate UnicodeEncodeError
@@ -46,8 +50,9 @@ class Host(object):
 
 
 class FutureHost(Host):
-    tpl = 'hostpage.future.jinja2'
     page_name = 'index-future.html'
+    mode = 'future'
+    pretty_mode = 'Future parser'
 
     def __init__(self, hostname, files, retcode):
         super(FutureHost, self).__init__(hostname, files, retcode)
@@ -64,7 +69,8 @@ class FutureHost(Host):
 
 
 class RichDataHost(Host):
-    tpl = 'hostpage.rich_data.jinja2'
+    mode = 'rich_data'
+    pretty_mode = 'RichData'
     page_name = 'index-rich_data.html'
 
     def __init__(self, hostname, files, retcode):
@@ -84,6 +90,7 @@ class RichDataHost(Host):
 class Index(object):
     tpl = 'index.jinja2'
     page_name = 'index.html'
+    mode = 'standard'
 
     def __init__(self, outdir):
         if self.page_name == 'index.html':
@@ -99,8 +106,8 @@ class Index(object):
         _log.debug("Rendering the main index page")
         t = env.get_template(self.tpl)
         # TODO: support multiple modes
-        page = t.render(state=state, jid=job_id, chid=change_id,
-                        puppet_version=os.environ['PUPPET_VERSION_FULL'])
+        page = t.render(state=state, jid=job_id, chid=change_id, page_name=self.page_name,
+                        mode=self.mode, puppet_version=os.environ['PUPPET_VERSION_FULL'])
         # page might contain non-ascii chars and generate UnicodeEncodeError
         # exceptions when trying to save its content to a file, so it is
         # explicitly encoded as utf-8 string.
@@ -109,10 +116,10 @@ class Index(object):
 
 
 class FutureIndex(Index):
-    tpl = 'index.future.jinja2'
     page_name = 'index-future.html'
+    mode = 'future'
 
 
 class RichDataIndex(Index):
-    tpl = 'index.rich_data.jinja2'
     page_name = 'index-rich_data.html'
+    mode = 'rich_data'
