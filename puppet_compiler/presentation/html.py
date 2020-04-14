@@ -13,6 +13,11 @@ class Host(object):
     page_name = 'index.html'
     mode = 'prod'
     pretty_mode = 'Production'
+    retcode_descriptions = {
+        'noop': 'no change',
+        'diff': 'changes detected',
+        'error': 'change fails'
+    }
 
     def __init__(self, hostname, files, retcode):
         self.retcode = retcode
@@ -20,14 +25,7 @@ class Host(object):
         self.outdir = files.outdir
 
     def _retcode_to_desc(self):
-        if self.retcode == 'noop':
-            return 'no change'
-        elif self.retcode == 'diff':
-            return 'changes detected'
-        elif self.retcode == 'error':
-            return 'change fails'
-        else:
-            return 'compiler failure'
+        return self.retcode_descriptions.get(self.retcode, 'compiler failure')
 
     def htmlpage(self, diffs=None):
         """
@@ -40,86 +38,91 @@ class Host(object):
         data['desc'] = self._retcode_to_desc()
         data['mode'] = self.mode
         data['pretty_mode'] = self.pretty_mode
-        t = env.get_template(self.tpl)
-        page = t.render(jid=job_id, chid=change_id, **data)
+        data['hosts_raw'] = self.hostname
+        tpl = env.get_template(self.tpl)
+        page = tpl.render(jid=job_id, chid=change_id, **data)
         # page might contain non-ascii chars and generate UnicodeEncodeError
         # exceptions when trying to save its content to a file, so it is
         # explicitly encoded as utf-8 string.
-        with open(os.path.join(self.outdir, self.page_name), 'w') as f:
-            f.write(page.encode('utf-8'))
+        with open(os.path.join(self.outdir, self.page_name), 'w') as outfile:
+            outfile.write(page.encode('utf-8'))
 
 
 class FutureHost(Host):
     page_name = 'index-future.html'
     mode = 'future'
     pretty_mode = 'Future parser'
+    retcode_descriptions = {
+        'break': 'change breaks the current parser',
+        'ok': 'change works with both parsers',
+        'diff': 'change works with both parsers, with diffs'
+    }
 
     def __init__(self, hostname, files, retcode):
         super(FutureHost, self).__init__(hostname, files, retcode)
-
-    def _retcode_to_desc(self):
-        if self.retcode == 'break':
-            return 'change breaks the current parser'
-        elif self.retcode == 'error':
-            return 'change is not compatible with the future parser'
-        elif self.retcode == 'ok':
-            return 'change works with both parsers'
-        elif self.retcode == 'diff':
-            return 'change works with both parsers, with diffs'
+        self.retcode_descriptions['error'] = 'change is not compatible with the {}'.format(
+            self.pretty_mode)
 
 
-class RichDataHost(Host):
+class RichDataHost(FutureHost):
     mode = 'rich_data'
     pretty_mode = 'RichData'
     page_name = 'index-rich_data.html'
-
-    def __init__(self, hostname, files, retcode):
-        super(RichDataHost, self).__init__(hostname, files, retcode)
-
-    def _retcode_to_desc(self):
-        if self.retcode == 'break':
-            return 'change breaks the current parser'
-        elif self.retcode == 'error':
-            return 'change is not compatible with the rich_data'
-        elif self.retcode == 'ok':
-            return 'change works with both parsers'
-        elif self.retcode == 'diff':
-            return 'change works with both parsers, with diffs'
 
 
 class Index(object):
     tpl = 'index.jinja2'
     page_name = 'index.html'
     mode = 'standard'
+    messages = {
+        'change': 'when the change is applied',
+        'fail': 'have failed to compile completely',
+    }
 
-    def __init__(self, outdir):
+    def __init__(self, outdir, hosts_raw):
         if self.page_name == 'index.html':
             self.url = ""
         else:
             self.url = self.page_name
         self.outfile = os.path.join(outdir, self.page_name)
+        self.hosts_raw = hosts_raw
 
     def render(self, state):
         """
         Render the index page with info coming from state
         """
+        if self.mode == 'standard':
+            ok_hosts = state.get('noop', [])
+            fail_hosts = state.get('fail', [])
+        else:
+            ok_hosts = state.get('ok', [])
+            fail_hosts = state.get('break', [])
+
         _log.debug("Rendering the main index page")
-        t = env.get_template(self.tpl)
-        # TODO: support multiple modes
-        page = t.render(state=state, jid=job_id, chid=change_id, page_name=self.page_name,
-                        mode=self.mode, puppet_version=os.environ['PUPPET_VERSION_FULL'])
+        tpl = env.get_template(self.tpl)
+        page = tpl.render(ok_hosts=ok_hosts, fail_hosts=fail_hosts, msg=self.messages,
+                          state=state, jid=job_id, chid=change_id, page_name=self.page_name,
+                          mode=self.mode, hosts_raw=self.hosts_raw,
+                          puppet_version=os.environ['PUPPET_VERSION_FULL'])
         # page might contain non-ascii chars and generate UnicodeEncodeError
         # exceptions when trying to save its content to a file, so it is
         # explicitly encoded as utf-8 string.
-        with open(self.outfile, 'w') as f:
-            f.write(page.encode('utf-8'))
+        with open(self.outfile, 'w') as outfile:
+            outfile.write(page.encode('utf-8'))
 
 
 class FutureIndex(Index):
     page_name = 'index-future.html'
     mode = 'future'
 
+    def __init__(self, outdir, hosts_raw):
+        super(FutureIndex, self).__init__(outdir, hosts_raw)
+        self.messages = {
+            'change': 'with the {} parser'.format(self.mode),
+            'fail': 'break with the current parser',
+        }
 
-class RichDataIndex(Index):
+
+class RichDataIndex(FutureIndex):
     page_name = 'index-rich_data.html'
     mode = 'rich_data'

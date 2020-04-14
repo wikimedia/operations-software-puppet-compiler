@@ -63,6 +63,7 @@ class Controller(object):
             _log.exception("Couldn't load the configuration from %s", configfile)
 
         self.count = defaultdict(int)
+        self.hosts_raw = host_list
         self.pick_hosts(host_list)
         directories.FHS.setup(job_id, self.config['base'])
         self.m = prepare.ManageCode(self.config, job_id, change_id, self.realm)
@@ -148,7 +149,7 @@ class Controller(object):
             # Let's wait for all runs in this mode to complete
             threadpool.fetch(self.on_node_compiled)
             # Let's create the index for this mode
-            index = html_class(self.outdir)
+            index = html_class(self.outdir, self.hosts_raw)
             index.render(self.state.modes[mode])
             _log.info('Run finished for mode %s; see your results at %s',
                       mode, self.index_url(index))
