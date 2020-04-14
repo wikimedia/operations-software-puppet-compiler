@@ -38,6 +38,7 @@ def main():
             sys.exit(2)
 
         _log.info("Working on change %d", change)
+        _log.info("run manually with: ./utils/pcc %d %s", change, nodes)
 
         c = controller.Controller(configfile, job_id, change, host_list=nodes,
                                   nthreads=nthreads, modes=compiler_mode)
