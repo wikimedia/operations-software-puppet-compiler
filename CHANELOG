@@ -1,3 +1,8 @@
+## 2019-04-21
+### 0.7.2
+ * refactor jinja templates
+ * add instructions to run job via ./utils/pcc
+
 ## 2019-03-24
 ### 0.7.1
  * extract tags from puppetdb so the C, P and O overrides work
