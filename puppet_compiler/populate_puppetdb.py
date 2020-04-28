@@ -57,13 +57,15 @@ def main():
         except utils.FactsFileNotFound as error:
             print 'ERROR: {}'.format(error)
             continue
-        succ, out, err = puppet.compile_storeconfigs(node, config['puppet_var'], '/dev/null')
-        succ, out, err = puppet.compile_storeconfigs(node, config['puppet_var'])
-        if succ:
-            print "OK"
-        else:
-            for line in err:
-                print line
+        for manifest_dir in ['/dev/null', None]:
+            print('manifest_dir: {}'.format(manifest_dir))
+            succ, out, err = puppet.compile_storeconfigs(
+                node, config['puppet_var'], manifest_dir)
+            if succ:
+                print "OK"
+            else:
+                for line in err:
+                    print line
     shutil.rmtree(tmpdir)
 
 
