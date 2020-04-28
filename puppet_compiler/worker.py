@@ -98,6 +98,7 @@ class HostWorker(object):
             puppet.compile(self.hostname,
                            env,
                            self.puppet_var,
+                           None,
                            *args)
         except subprocess.CalledProcessError as e:
             _log.error("Compilation failed for hostname %s "
