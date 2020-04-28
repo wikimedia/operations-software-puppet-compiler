@@ -16,6 +16,7 @@ parser.add_argument(
     help='The base dir of the compiler installation',
 )
 parser.add_argument('--debug', action='store_true', default=False, help="Print debug output")
+parser.add_argument('--host', help="if present only populate the DB for this host")
 
 
 def main():
@@ -47,8 +48,8 @@ def main():
     srcdir = os.path.join(m.prod_dir, 'src')
     with prepare.pushd(srcdir):
         m._copy_hiera(m.prod_dir, 'production')
-
-    for node in nodegen.get_nodes(config):
+    nodes = [opts.host] if opts.host else nodegen.get_nodes(config)
+    for node in nodes:
         print "=" * 80
         print "Compiling catalog for {}".format(node)
 
