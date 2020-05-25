@@ -14,7 +14,7 @@ def all_files(cwd, path):
 
 setup(
     name='puppet_compiler',
-    version='0.7.5',
+    version='0.7.6',
     description='Tools to compile puppet catalogs as a service',
     author='Joe',
     author_email='glavagetto@wikimedia.org',

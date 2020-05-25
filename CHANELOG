@@ -1,3 +1,8 @@
+## 2019-05-25
+### 0.7.6
+ * Fix the thread call back so that we pass raw_hosts
+ * add a script for debugging hosts
+
 ## 2019-04-28
 ### 0.7.5
  * add --host parameter to allow running for one host
