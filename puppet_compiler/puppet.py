@@ -89,3 +89,31 @@ def compile_storeconfigs(hostname, vardir, manifests_dir=None):
     out.seek(0)
     err.seek(0)
     return (success, out, err)
+
+
+def compile_debug(hostname, vardir):
+    """
+    Specialized function to store data into puppetdb
+    when compiling.
+    """
+    cmd, env = compile_cmd_env(hostname, 'change', vardir, None, '-d')
+    out = spoolfile()
+    err = spoolfile()
+    success = False
+
+    try:
+        subprocess.check_call(cmd, stdout=out, stderr=err, env=env)
+        success = True
+    except subprocess.CalledProcessError as e:
+        _log.exception("Compilation failed for host %s: %s", hostname, e)
+
+    out.seek(0)
+    print('Standard Out\n{}'.format('=' * 80))
+    for line in out:
+        print(line.strip())
+    err.seek(0)
+    print('Standard Error\n{}'.format('=' * 80))
+    for line in err:
+        if 'cannot collect exported resources without storeconfigs being set not' not in line:
+            print(line.strip())
+    return success
