@@ -129,7 +129,7 @@ class TestController(unittest.TestCase):
             )
             c.count['change'] = 4
             c.on_node_compiled(response)
-            mocker.assert_called_with(c.outdir)
+            mocker.assert_called_with(c.outdir, 'test.eqiad.wmnet')
 
     def test_pick_hosts(self):
         # Initialize a simple controller
