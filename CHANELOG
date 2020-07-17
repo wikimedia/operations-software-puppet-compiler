@@ -1,3 +1,7 @@
+## 2019-07-17
+### 0.7.7
+ * Add entry point for debug_host script
+
 ## 2019-05-25
 ### 0.7.6
  * Fix the thread call back so that we pass raw_hosts

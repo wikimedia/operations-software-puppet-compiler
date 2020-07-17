@@ -14,7 +14,7 @@ def all_files(cwd, path):
 
 setup(
     name='puppet_compiler',
-    version='0.7.6',
+    version='0.7.7',
     description='Tools to compile puppet catalogs as a service',
     author='Joe',
     author_email='glavagetto@wikimedia.org',
@@ -27,7 +27,8 @@ setup(
     entry_points={
         'console_scripts': [
             'puppet-compiler = puppet_compiler.cli:main',
-            'puppetdb-populate = puppet_compiler.populate_puppetdb:main'
+            'puppetdb-populate = puppet_compiler.populate_puppetdb:main',
+            'pcc-debug-host = puppet_compiler.debug_host:main'
         ],
     },
 )

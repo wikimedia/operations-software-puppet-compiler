@@ -18,6 +18,8 @@ def get_args():
         default='/var/lib/catalog-differ',
         help='The base dir of the compiler installation',
     )
+    parser.add_argument('--no-clean', action='store_true', help='dont delete the temp dir')
+    parser.add_argument('--build-dir', help='dont create a temp dir')
     parser.add_argument('-c', '--change-id', type=int, help='The gerrit change number')
     parser.add_argument('host', help='The host to debug')
     return parser.parse_args()
@@ -37,17 +39,22 @@ def main():
         'puppet_private': os.path.join(args.basedir, 'private')
     }
     # Do the whole compilation in a dedicated directory.
-    tmpdir = tempfile.mkdtemp(prefix='fill-puppetdb')
+    if args.build_dir:
+        tmpdir = args.build_dir
+    else:
+        tmpdir = tempfile.mkdtemp(prefix='fill-puppetdb')
     jobid = '1'
     directories.FHS.setup(jobid, tmpdir)
     m = prepare.ManageCode(config, jobid, args.change_id)
-    os.mkdir(m.base_dir, 0o755)
-    os.makedirs(m.change_dir, 0o755)
-    os.makedirs(os.path.join(m.change_dir, 'catalogs'), 0o755)
-    m._prepare_dir(m.change_dir)
+    if not args.build_dir:
+        os.mkdir(m.base_dir, 0o755)
+        os.makedirs(m.change_dir, 0o755)
+        os.makedirs(os.path.join(m.change_dir, 'catalogs'), 0o755)
+        m._prepare_dir(m.change_dir)
     srcdir = os.path.join(m.change_dir, 'src')
     with prepare.pushd(srcdir):
-        m._fetch_change()
+        if not args.build_dir:
+            m._fetch_change()
         m._copy_hiera(m.change_dir, 'production')
         try:
             utils.refresh_yaml_date(utils.facts_file(config['puppet_var'], args.host))
@@ -55,7 +62,8 @@ def main():
             logging.error(error)
         logging.debug('%s: compiling', args.host)
         puppet.compile_debug(args.host, config['puppet_var'])
-    shutil.rmtree(tmpdir)
+    if not args.no_clean:
+        shutil.rmtree(tmpdir)
 
 
 if __name__ == '__main__':
