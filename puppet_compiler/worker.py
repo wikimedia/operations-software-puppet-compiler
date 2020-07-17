@@ -30,6 +30,7 @@ class HostWorker(object):
         self._envs = ['prod', 'change']
         self.hostname = hostname
         self.diffs = None
+        self.full_diffs = None
         self.resource_filter = None
 
     def facts_file(self):
@@ -135,6 +136,7 @@ class HostWorker(object):
             new = PuppetCatalog(self._files.file_for(self._envs[1], 'catalog'),
                                 self.resource_filter)
             self.diffs = original.diff_if_present(new)
+            self.full_diffs = original.diff_full_diff(new)
         except Exception as e:
             _log.error("Diffing the catalogs failed: %s", self.hostname)
             _log.info("Diffing failed with exception %s", e)
@@ -167,7 +169,7 @@ class HostWorker(object):
         build the HTML output
         """
         host = self.html_page(self.hostname, self._files, retcode)
-        host.htmlpage(self.diffs)
+        host.htmlpage(self.diffs, self.full_diffs)
 
 
 class FutureHostWorker(HostWorker):

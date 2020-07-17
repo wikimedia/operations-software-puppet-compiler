@@ -27,11 +27,8 @@ class Host(object):
     def _retcode_to_desc(self):
         return self.retcode_descriptions.get(self.retcode, 'compiler failure')
 
-    def htmlpage(self, diffs=None):
-        """
-        Create the html page
-        """
-        _log.debug("Rendering index page for %s", self.hostname)
+    def _renderpage(self, page_name, diffs=None):
+        _log.debug("Rendering %s for %s", page_name, self.hostname)
         data = {'retcode': self.retcode, 'host': self.hostname}
         if self.retcode == 'diff' and diffs is not None:
             data['diffs'] = diffs
@@ -39,13 +36,21 @@ class Host(object):
         data['mode'] = self.mode
         data['pretty_mode'] = self.pretty_mode
         data['hosts_raw'] = self.hostname
+        data['page_name'] = page_name
         tpl = env.get_template(self.tpl)
         page = tpl.render(jid=job_id, chid=change_id, **data)
         # page might contain non-ascii chars and generate UnicodeEncodeError
         # exceptions when trying to save its content to a file, so it is
         # explicitly encoded as utf-8 string.
-        with open(os.path.join(self.outdir, self.page_name), 'w') as outfile:
+        with open(os.path.join(self.outdir, page_name), 'w') as outfile:
             outfile.write(page.encode('utf-8'))
+
+    def htmlpage(self, diffs=None, full_diffs=None):
+        """
+        Create the html page
+        """
+        self._renderpage('fulldiff.html', full_diffs)
+        self._renderpage(self.page_name, diffs)
 
 
 class FutureHost(Host):

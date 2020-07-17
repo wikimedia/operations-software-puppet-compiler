@@ -2,7 +2,29 @@ import difflib
 import json
 
 
+def clone_resource(resource, full_clone=True):
+    """Create a copy of a resource.  If full_clone is false only copy the title,
+    type and exported properties
+
+    Paramters:
+        resource (PuppetResource): the resource to copy
+        full_clone (bool): if true clone the entire resource, if false just copy the
+                           title, type and exported properties
+
+    Returns:
+        PuppetResource: a new resource object
+    """
+    if full_clone:
+        return resource
+    return PuppetResource({
+        'title': resource.title,
+        'type': resource.resource_type,
+        'exported': resource.exported,
+    })
+
+
 def parameters_diff(orig, other, fromfile='a', tofile='b'):
+    """Function for diffing parameters"""
     output = "--- {f}\n+++ {t}\n\n".format(f=fromfile, t=tofile)
     old = set(orig.keys())
     new = set(other.keys())
@@ -25,6 +47,7 @@ def parameters_diff(orig, other, fromfile='a', tofile='b'):
 
 
 class PuppetResource(object):
+    """Object to manage Puppet resources"""
 
     def __init__(self, data, resource_filter=None):
         self.resource_type = data['type']
@@ -55,7 +78,7 @@ class PuppetResource(object):
         """
         True if it designates the same resource
         """
-        return (str(self) == str(other))
+        return str(self) == str(other)
 
     def __eq__(self, other):
         if not self.is_same_of(other):
@@ -105,28 +128,41 @@ class PuppetResource(object):
 
 
 class PuppetCatalog(object):
+    """Object for working with a  Puppet catalog"""
     def __init__(self, filename, resource_filter=None):
         self.resources = {}
-        with open(filename, 'r') as fh:
-            catalog = json.load(fh, 'latin_1')
+        with open(filename, 'r') as catalog_fh:
+            catalog = json.load(catalog_fh, 'latin_1')
         if 'data' in catalog:
             base = catalog['data']  # Puppet 3
         else:
             base = catalog  # Puppet 4 and above
         for resource in base['resources']:
-            r = PuppetResource(resource, resource_filter)
-            self.resources[str(r)] = r
+            res = PuppetResource(resource, resource_filter)
+            self.resources[str(res)] = res
         self.all_resources = set(self.resources.keys())
         self.name = base['name']
 
     def diff_if_present(self, other):
+        return self._diff(self.all_resources & other.all_resources, other)
+
+    def diff_full_diff(self, other):
+        return self._diff(self.all_resources | other.all_resources, other)
+
+    def _diff(self, resources, other):
+        """Produce a diff of resources only present in both catalouges"""
         diffs = []
         only_in_other = other.all_resources - self.all_resources
         only_in_self = self.all_resources - other.all_resources
 
-        for resource in self.all_resources & other.all_resources:
-            mine = self.resources[resource]
-            theirs = other.resources[resource]
+        for resource in resources:
+            mine = self.resources.get(resource)
+            theirs = other.resources.get(resource)
+            # if we don't have a resource in both create an empty one for diffing purposes
+            if mine is None:
+                mine = clone_resource(other.resources[resource], False)
+            if theirs is None:
+                theirs = clone_resource(self.resources[resource], False)
             out = mine.diff_if_present(theirs)
             if out is not None:
                 diffs.append(out)
@@ -136,13 +172,12 @@ class PuppetCatalog(object):
         num_self = len(only_in_self)
         total_affected = (num_changed + num_other + num_self)
         num_resources = len(self.all_resources)
-        perc_changed = '%.2f%%' % (100 * float(total_affected) / num_resources)
         if (total_affected) == 0:
             return None
         return {
-            'total': len(self.all_resources),
+            'total': num_resources,
             'only_in_self': only_in_self,
             'only_in_other': only_in_other,
             'resource_diffs': diffs,
-            'perc_changed': perc_changed
+            'perc_changed': '%.2f%%' % (100 * float(total_affected) / num_resources)
         }

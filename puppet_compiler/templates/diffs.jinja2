@@ -22,7 +22,11 @@
 {% endif %}
 
 {% if diffs.resource_diffs %}
+{% if diffs.page_name == 'fulldiff.html' %}
+<h3>Full Diff</h3>
+{% else %}
 <h3>Resources modified</h3>
+{% endif %}
 <ul>
 {% for diff in diffs.resource_diffs %}
   <li>{{ diff.resource}}

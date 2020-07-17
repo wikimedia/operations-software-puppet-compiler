@@ -1,4 +1,8 @@
 ## 2019-07-17
+### 0.8.0
+ * Add a fulldiff.html page which shows all resources added or removed in the diff report
+
+## 2019-07-17
 ### 0.7.7
  * Add entry point for debug_host script
 
