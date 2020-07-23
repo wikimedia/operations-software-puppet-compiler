@@ -1,10 +1,12 @@
+from __future__ import print_function
+
 import argparse
 import logging
 import os
-import tempfile
 import shutil
+import tempfile
 
-from puppet_compiler import nodegen, prepare, directories, puppet, utils
+from puppet_compiler import directories, nodegen, prepare, puppet, utils
 
 
 parser = argparse.ArgumentParser(
@@ -42,31 +44,31 @@ def main():
     jobid = '1'
     directories.FHS.setup(jobid, tmpdir)
     m = prepare.ManageCode(config, jobid, None)
-    os.mkdir(m.base_dir, 0755)
-    os.makedirs(m.prod_dir, 0755)
+    os.mkdir(m.base_dir, 0o755)
+    os.makedirs(m.prod_dir, 0o755)
     m._prepare_dir(m.prod_dir)
     srcdir = os.path.join(m.prod_dir, 'src')
     with prepare.pushd(srcdir):
         m._copy_hiera(m.prod_dir, 'production')
     nodes = [opts.host] if opts.host else nodegen.get_nodes(config)
     for node in nodes:
-        print "=" * 80
-        print "Compiling catalog for {}".format(node)
+        print("=" * 80)
+        print("Compiling catalog for {}".format(node))
 
         try:
             utils.refresh_yaml_date(utils.facts_file(config['puppet_var'], node))
         except utils.FactsFileNotFound as error:
-            print 'ERROR: {}'.format(error)
+            print('ERROR: {}'.format(error))
             continue
         for manifest_dir in ['/dev/null', None]:
             print('manifest_dir: {}'.format(manifest_dir))
             succ, out, err = puppet.compile_storeconfigs(
                 node, config['puppet_var'], manifest_dir)
             if succ:
-                print "OK"
+                print("OK")
             else:
                 for line in err:
-                    print line
+                    print(line)
     shutil.rmtree(tmpdir)
 
 

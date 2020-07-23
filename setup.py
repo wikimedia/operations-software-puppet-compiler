@@ -5,6 +5,25 @@ from functools import reduce
 
 from setuptools import find_packages, setup
 
+install_requires = [
+    'jinja2',
+    'requests',
+    'pyyaml'
+]
+
+extras_require = {
+    # Test dependencies
+    'tests': [
+        'coverage',
+        'bandit>=1.1.0',
+        'flake8>=3.2.1',
+        'prospector[with_everything]>=0.12.4,<=1.1.6.2',
+        'mock<1.1.0',
+        'nose',
+        'requests_mock',
+    ],
+}
+
 
 def all_files(cwd, path):
     return reduce(lambda x, y: x + y,
@@ -14,13 +33,13 @@ def all_files(cwd, path):
 
 setup(
     name='puppet_compiler',
-    version='0.8.1',
+    version='0.9.0',
     description='Tools to compile puppet catalogs as a service',
     author='Joe',
     author_email='glavagetto@wikimedia.org',
-    install_requires=['jinja2', 'requests', 'pyyaml'],
+    extras_require=extras_require,
+    install_requires=install_requires,
     test_suite='nose.collector',
-    tests_require=['mock<1.1.0', 'nose', 'requests_mock'],
     zip_safe=True,
     packages=find_packages(),
     package_data={'puppet_compiler': all_files("puppet_compiler", "templates")},

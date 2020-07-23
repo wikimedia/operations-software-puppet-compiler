@@ -44,11 +44,11 @@ class ManageCode(object):
     def prepare(self):
         _log.debug("Creating directories under %s", self.base_dir)
         # Create the base directory now
-        os.mkdir(self.base_dir, 0755)
+        os.mkdir(self.base_dir, 0o755)
         for dirname in [self.prod_dir, self.change_dir]:
-            os.makedirs(os.path.join(dirname, 'catalogs'), 0755)
-        os.makedirs(self.diff_dir, 0755)
-        os.makedirs(self.output_dir, 0755)
+            os.makedirs(os.path.join(dirname, 'catalogs'), 0o755)
+        os.makedirs(self.diff_dir, 0o755)
+        os.makedirs(self.output_dir, 0o755)
 
         # Production
         self._prepare_dir(self.prod_dir)
@@ -151,7 +151,7 @@ class ManageCode(object):
         # Workaround the broken gerrit response...
         json_data = change.text.split("\n")[-2:][0]
         res = json.loads(json_data)
-        revision = res["revisions"].values()[0]["_number"]
+        revision = list(res["revisions"].values())[0]["_number"]
         project = res["project"]
         ref = 'refs/changes/%02d/%d/%d' % (
             self.change_id % 100,

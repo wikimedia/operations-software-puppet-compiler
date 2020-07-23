@@ -1,4 +1,5 @@
 import copy
+import io  # TODO: remove after dropping python2.7
 import json
 from abc import ABCMeta, abstractmethod
 
@@ -34,15 +35,16 @@ class CatalogFilter(object):
         """
         Reads the catalog from file
         """
-        with open(self.filename, 'r') as fh:
+        with io.open(self.filename, 'r', encoding='latin_1') as fh:
             # https://docs.puppet.com/puppet/latest/http_api/pson.html#decoding-pson-using-json-parsers
-            self.original = json.load(fh, encoding='latin_1')
+            self.original = json.load(fh)
 
     def _write_files(self):
-        with open(self.filename, 'w') as fh:
-            json.dump(self.catalog, fh, encoding='latin_1')
-        with open(self.filename + '.orig', 'w') as fh:
-            json.dump(self.original, fh, encoding='latin_1')
+        # TODO: Fix when python2.7 is dropped
+        with io.open(self.filename, 'w', encoding='latin_1') as fh:
+            fh.write(u'{}'.format(json.dumps(self.catalog)))
+        with io.open(self.filename + '.orig', 'w', encoding='latin_1') as fh:
+            fh.write(u'{}'.format(json.dumps(self.original)))
 
 
 class FilterFutureParser(CatalogFilter):

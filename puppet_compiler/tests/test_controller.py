@@ -33,7 +33,7 @@ def get_mocked_response(check=None):
         },
     ]
     if check == 'role':
-        return filter(lambda x: x['certname'].startswith('grafana'), json_data)
+        return [host for host in json_data if host['certname'].startswith('grafana')]
     if check == 'empty':
         return []
     return json_data
@@ -54,7 +54,7 @@ class TestController(unittest.TestCase):
                           'https://puppet-compiler.wmflabs.org/html')
         self.assertEquals(c.config['base'], '/mnt/jenkins-workspace')
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet', nthreads=2, modes=['future'])
-        self.assertEqual(c.run_modes.keys(), ['future'])
+        self.assertEqual(list(c.run_modes.keys()), ['future'])
 
     def test_parse_config(self):
         filename = os.path.join(self.fixtures, 'test_config.yaml')

@@ -57,7 +57,7 @@ class ThreadOrchestrator(object):
         self._TP = []
         self._payload_queue = queue.Queue()
         self._incoming_queue = queue.Queue()
-        for i in xrange(self.pool_size):
+        for i in range(self.pool_size):
             t = ThreadExecutor(self._payload_queue, self._incoming_queue)
             # this thread will exit with the main program
             self._TP.append(t)
@@ -90,8 +90,8 @@ class ThreadOrchestrator(object):
         while not self._incoming_queue.empty():
             self._process_result(callback)
 
-        # Now send a death signal to all slaves.
-        for i in xrange(len(self._TP)):
+        # Now send a death signal to all workers.
+        for i in range(len(self._TP)):
             self._payload_queue.put(('__exit__', None, None))
         self._TP = []
         return

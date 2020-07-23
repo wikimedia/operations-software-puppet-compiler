@@ -1,3 +1,5 @@
+# TODO: drop once we drop python2 support
+import io
 import os
 
 from jinja2 import Environment, PackageLoader
@@ -39,11 +41,9 @@ class Host(object):
         data['page_name'] = page_name
         tpl = env.get_template(self.tpl)
         page = tpl.render(jid=job_id, chid=change_id, **data)
-        # page might contain non-ascii chars and generate UnicodeEncodeError
-        # exceptions when trying to save its content to a file, so it is
-        # explicitly encoded as utf-8 string.
-        with open(os.path.join(self.outdir, page_name), 'w') as outfile:
-            outfile.write(page.encode('utf-8'))
+        file_path = os.path.join(self.outdir, page_name)
+        with io.open(file_path, 'w') as outfile:
+            outfile.write(page)
 
     def htmlpage(self, diffs=None, full_diffs=None):
         """
@@ -109,11 +109,8 @@ class Index(object):
                           state=state, jid=job_id, chid=change_id, page_name=self.page_name,
                           mode=self.mode, hosts_raw=self.hosts_raw,
                           puppet_version=os.environ['PUPPET_VERSION_FULL'])
-        # page might contain non-ascii chars and generate UnicodeEncodeError
-        # exceptions when trying to save its content to a file, so it is
-        # explicitly encoded as utf-8 string.
-        with open(self.outfile, 'w') as outfile:
-            outfile.write(page.encode('utf-8'))
+        with io.open(self.outfile, 'w') as outfile:
+            outfile.write(page)
 
 
 class FutureIndex(Index):

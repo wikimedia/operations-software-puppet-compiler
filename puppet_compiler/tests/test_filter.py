@@ -1,4 +1,5 @@
 import copy
+import io  # TODO: remove after dropping python2.7
 import json
 import os
 import shutil
@@ -35,8 +36,8 @@ class TestFilter(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp(prefix='puppet-compiler')
         self.catalog = os.path.join(self.tempdir, 'catalog')
-        with open(self.catalog, 'w') as fh:
-            json.dump(catalog, fh, encoding='latin_1')
+        with io.open(self.catalog, 'w', encoding='latin_1') as fh:
+            fh.write(u'{}'.format(json.dumps(catalog)))
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
@@ -82,7 +83,7 @@ class TestFilter(unittest.TestCase):
         params['testtruelist'] = ['1', '2', '3']
         params['hash'] = {"a": '1', "b": "test"}
 
-        with open(self.catalog, 'r') as fh:
-            self.assertEqual(filtered_catalog, json.load(fh, encoding='latin_1'))
-        with open(self.catalog + '.orig', 'r') as fh:
-            self.assertEqual(catalog, json.load(fh, encoding='latin_1'))
+        with io.open(self.catalog, 'r', encoding='latin_1') as fh:
+            self.assertEqual(filtered_catalog, json.load(fh))
+        with io.open(self.catalog + '.orig', 'r', encoding='latin_1') as fh:
+            self.assertEqual(catalog, json.load(fh))

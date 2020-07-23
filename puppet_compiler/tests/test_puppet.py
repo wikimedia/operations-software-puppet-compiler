@@ -14,7 +14,7 @@ class TestPuppetCalls(unittest.TestCase):
         self.fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         FHS.setup(10, self.fixtures)
 
-    @mock.patch('puppet_compiler.puppet.spoolfile')
+    @mock.patch('puppet_compiler.puppet.SpooledTemporaryFile')
     @mock.patch('puppet_compiler.utils.facts_file',
                 mock.MagicMock(
                     return_value='/var/lib/catalog-differ/puppet/yaml/facts/test.example.com.yaml'))
@@ -23,8 +23,14 @@ class TestPuppetCalls(unittest.TestCase):
         env = os.environ.copy()
         env['RUBYLIB'] = FHS.prod_dir + '/src/modules/wmflib/lib/'
         m = mock.mock_open(read_data='wat')
-        with mock.patch('__builtin__.open', m, True) as mocker:
-            puppet.compile('test.codfw.wmnet', 'prod', self.fixtures + '/puppet_var')
+        try:
+            # TODO: remove try/except block when python2 is droped
+            with mock.patch('__builtin__.open', m, True) as mocker:
+                puppet.compile('test.codfw.wmnet', 'prod', self.fixtures + '/puppet_var')
+        except ImportError:
+            with mock.patch('builtins.open', m, True) as mocker:
+                puppet.compile('test.codfw.wmnet', 'prod', self.fixtures + '/puppet_var')
+
         spool = tf_mocker.return_value
         spool.return_value = ["Test ", "Info: meh"]
         subprocess.check_call.assert_called_with(
@@ -52,8 +58,13 @@ class TestPuppetCalls(unittest.TestCase):
             mock.call(hostfile + '.err', 'w'),
         ]
         mocker.assert_has_calls(calls, any_order=True)
-        with mock.patch('__builtin__.open', m, True) as mocker:
-            puppet.compile('test.codfw.wmnet', 'test', self.fixtures + '/puppet_var')
+        try:
+            # TODO: remove try/except block when python2 is droped
+            with mock.patch('__builtin__.open', m, True) as mocker:
+                puppet.compile('test.codfw.wmnet', 'test', self.fixtures + '/puppet_var')
+        except ImportError:
+            with mock.patch('builtins.open', m, True) as mocker:
+                puppet.compile('test.codfw.wmnet', 'test', self.fixtures + '/puppet_var')
         subprocess.check_call.assert_called_with(
             ['puppet',
              'master',
@@ -80,7 +91,7 @@ class TestPuppetCalls(unittest.TestCase):
         ]
         mocker.assert_has_calls(calls, any_order=True)
 
-    @mock.patch('puppet_compiler.puppet.spoolfile')
+    @mock.patch('puppet_compiler.puppet.SpooledTemporaryFile')
     @mock.patch('puppet_compiler.utils.facts_file',
                 mock.MagicMock(
                     return_value='/var/lib/catalog-differ/puppet/yaml/facts/test.example.com.yaml'))
@@ -89,9 +100,15 @@ class TestPuppetCalls(unittest.TestCase):
         env = os.environ.copy()
         env['RUBYLIB'] = FHS.prod_dir + '/src/modules/wmflib/lib/'
         m = mock.mock_open(read_data='wat')
-        with mock.patch('__builtin__.open', m, True) as mocker:
-            puppet.compile('test.codfw.wmnet', 'prod', self.fixtures +
-                           '/puppet_var', None, '--dummy')
+        try:
+            # TODO: remove try/except block when python2 is droped
+            with mock.patch('__builtin__.open', m, True) as mocker:
+                puppet.compile('test.codfw.wmnet', 'prod', self.fixtures +
+                               '/puppet_var', None, '--dummy')
+        except ImportError:
+            with mock.patch('builtins.open', m, True) as mocker:
+                puppet.compile('test.codfw.wmnet', 'prod', self.fixtures +
+                               '/puppet_var', None, '--dummy')
         subprocess.check_call.assert_called_with(
             ['puppet',
              'master',

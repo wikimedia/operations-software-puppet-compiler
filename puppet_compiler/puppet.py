@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 
-from tempfile import SpooledTemporaryFile as spoolfile
+from tempfile import SpooledTemporaryFile
 
 from puppet_compiler import _log, utils
 from puppet_compiler.directories import FHS, HostFiles
@@ -59,7 +59,7 @@ def compile(hostname, label, vardir, manifests_dir=None, *extra_flags):
     hostfiles = HostFiles(hostname)
 
     with open(hostfiles.file_for(label, 'errors'), 'w') as err:
-        out = spoolfile()
+        out = SpooledTemporaryFile()
         subprocess.check_call(cmd, stdout=out, stderr=err, env=env)
 
     # Puppet outputs a lot of garbage to stdout...
@@ -76,8 +76,8 @@ def compile_storeconfigs(hostname, vardir, manifests_dir=None):
     when compiling.
     """
     cmd, env = compile_cmd_env(hostname, 'prod', vardir, manifests_dir, '--storeconfigs', '--storeconfigs_backend=puppetdb')
-    out = spoolfile()
-    err = spoolfile()
+    out = SpooledTemporaryFile()
+    err = SpooledTemporaryFile()
     success = False
 
     try:
@@ -97,8 +97,8 @@ def compile_debug(hostname, vardir):
     when compiling.
     """
     cmd, env = compile_cmd_env(hostname, 'change', vardir, None, '-d')
-    out = spoolfile()
-    err = spoolfile()
+    out = SpooledTemporaryFile()
+    err = SpooledTemporaryFile()
     success = False
 
     try:
