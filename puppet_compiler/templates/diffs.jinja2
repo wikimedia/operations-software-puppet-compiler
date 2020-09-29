@@ -33,7 +33,7 @@
     <dl>
 {% if diff.parameters %}
       <dd> Parameters differences:
-        <pre>{{ diff.parameters }}</pre>
+        <pre>{{ diff.parameters.decode('utf-8') }}</pre>
       </dd>
 {% endif %}
 {% if diff.content %}

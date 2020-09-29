@@ -23,6 +23,15 @@ def clone_resource(resource, full_clone=True):
     })
 
 
+def format_param(param, value, param_len):
+    """format a parameter handeling none ascii characters"""
+    param_format = "{p:<%d} => {v}\n" % param_len
+    try:
+        return param_format.format(p=param, v=value)
+    except UnicodeEncodeError:
+        return param_format.format(p=param, v=value.encode('latin1'))
+
+
 def parameters_diff(orig, other, fromfile='a', tofile='b'):
     """Function for diffing parameters"""
     output = "--- {f}\n+++ {t}\n\n".format(f=fromfile, t=tofile)
@@ -34,15 +43,16 @@ def parameters_diff(orig, other, fromfile='a', tofile='b'):
     diff = [k for k in (old & new) if orig[k] != other[k]]
     # Now calculate the string length for arrow allignment, a la puppet.
     param_len = max(map(len, (only_in_new.union(only_in_old).union(diff))))
-    param_format = "{p:<%d} => {v}\n" % param_len
+    # need to do the encoding because of pson
+    # https://puppet.com/docs/puppet/5.5/http_api/pson.html
     for parameter in only_in_old:
-        output += "-    " + param_format.format(p=parameter, v=orig[parameter])
+        output += "-    " + format_param(parameter, orig[parameter], param_len)
     for parameter in only_in_new:
-        output += "+    " + param_format.format(p=parameter, v=other[parameter])
+        output += "+    " + format_param(parameter, other[parameter], param_len)
     for parameter in diff:
         output += "@@\n"
-        output += "-    " + param_format.format(p=parameter, v=orig[parameter])
-        output += "+    " + param_format.format(p=parameter, v=other[parameter])
+        output += "-    " + format_param(parameter, orig[parameter], param_len)
+        output += "+    " + format_param(parameter, other[parameter], param_len)
     return output
 
 
