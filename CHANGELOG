@@ -1,3 +1,7 @@
+## 2019-09-29
+### 0.8.1
+ * Fix differ to support non ascii characters inherent in pson format
+
 ## 2019-07-17
 ### 0.8.0
  * Add a fulldiff.html page which shows all resources added or removed in the diff report
