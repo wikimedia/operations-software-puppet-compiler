@@ -70,7 +70,7 @@ class TestController(unittest.TestCase):
     def test_set_puppet_version(self, mocker):
         del os.environ['PUPPET_VERSION']
         del os.environ['PUPPET_VERSION_FULL']
-        mocker.return_value = '3.8.2\n'
+        mocker.return_value = b'3.8.2\n'
         controller.Controller(None, 19, 224570, 'test.eqiad.wmnet', nthreads=2)
         mocker.assert_called_with(['puppet', '--version'])
         self.assertEqual(os.environ['PUPPET_VERSION'], '3')
