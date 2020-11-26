@@ -1,5 +1,4 @@
 import difflib
-import io  # TODO: remove after dropping python2.7
 import json
 
 
@@ -142,7 +141,7 @@ class PuppetCatalog(object):
     """Object for working with a  Puppet catalog"""
     def __init__(self, filename, resource_filter=None):
         self.resources = {}
-        with io.open(filename, 'r', encoding='latin_1') as catalog_fh:
+        with open(filename, 'r', encoding='latin_1') as catalog_fh:
             catalog = json.load(catalog_fh)
         if 'data' in catalog:
             base = catalog['data']  # Puppet 3

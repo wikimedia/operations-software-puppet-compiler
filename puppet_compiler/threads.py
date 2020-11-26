@@ -1,16 +1,9 @@
+import queue
 import threading
 import time
+
 from collections import namedtuple
 from puppet_compiler import _log
-try:
-    # python 2.x
-    import Queue as queue
-    # Work around for pyflakes < 0.6.
-    # TODO: Remove when pyflakes has been updated.
-    queue
-except ImportError:
-    # python 3.x
-    import queue
 
 Msg = namedtuple('Msg', ['is_error', 'value', 'args', 'kwargs'])
 

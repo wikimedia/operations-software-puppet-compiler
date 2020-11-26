@@ -63,15 +63,10 @@ def compile(hostname, label, vardir, manifests_dir=None, *extra_flags):
         subprocess.check_call(cmd, stdout=out, stderr=err, env=env)
 
     # Puppet outputs a lot of garbage to stdout...
-    with open(hostfiles.file_for(label, 'catalog'), "w") as f:
+    with open(hostfiles.file_for(label, 'catalog'), "wb") as f:
         out.seek(0)
         for line in out:
-            # TODO: fix when we drop python2 support
-            try:
-                line = line.decode()
-            except UnicodeDecodeError:
-                pass
-            if not re.match('(Info|[Nn]otice|[Ww]arning)', line):
+            if not re.match(b'(Info|[Nn]otice|[Ww]arning)', line):
                 f.write(line)
 
 

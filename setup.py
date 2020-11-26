@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import os
 
 from functools import reduce
@@ -33,7 +33,7 @@ def all_files(cwd, path):
 
 setup(
     name='puppet_compiler',
-    version='0.9.3',
+    version='1.0.0',
     description='Tools to compile puppet catalogs as a service',
     author='Joe',
     author_email='glavagetto@wikimedia.org',

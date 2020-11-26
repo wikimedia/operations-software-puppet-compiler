@@ -23,13 +23,8 @@ class TestPuppetCalls(unittest.TestCase):
         env = os.environ.copy()
         env['RUBYLIB'] = FHS.prod_dir + '/src/modules/wmflib/lib/'
         m = mock.mock_open(read_data='wat')
-        try:
-            # TODO: remove try/except block when python2 is droped
-            with mock.patch('__builtin__.open', m, True) as mocker:
-                puppet.compile('test.codfw.wmnet', 'prod', self.fixtures + '/puppet_var')
-        except ImportError:
-            with mock.patch('builtins.open', m, True) as mocker:
-                puppet.compile('test.codfw.wmnet', 'prod', self.fixtures + '/puppet_var')
+        with mock.patch('builtins.open', m, True) as mocker:
+            puppet.compile('test.codfw.wmnet', 'prod', self.fixtures + '/puppet_var')
 
         spool = tf_mocker.return_value
         spool.return_value = ["Test ", "Info: meh"]
@@ -54,17 +49,12 @@ class TestPuppetCalls(unittest.TestCase):
         )
         hostfile = os.path.join(self.fixtures, '10/production/catalogs', 'test.codfw.wmnet')
         calls = [
-            mock.call(hostfile + '.pson', 'w'),
+            mock.call(hostfile + '.pson', 'wb'),
             mock.call(hostfile + '.err', 'w'),
         ]
         mocker.assert_has_calls(calls, any_order=True)
-        try:
-            # TODO: remove try/except block when python2 is droped
-            with mock.patch('__builtin__.open', m, True) as mocker:
-                puppet.compile('test.codfw.wmnet', 'test', self.fixtures + '/puppet_var')
-        except ImportError:
-            with mock.patch('builtins.open', m, True) as mocker:
-                puppet.compile('test.codfw.wmnet', 'test', self.fixtures + '/puppet_var')
+        with mock.patch('builtins.open', m, True) as mocker:
+            puppet.compile('test.codfw.wmnet', 'test', self.fixtures + '/puppet_var')
         subprocess.check_call.assert_called_with(
             ['puppet',
              'master',
@@ -86,7 +76,7 @@ class TestPuppetCalls(unittest.TestCase):
         )
         hostfile = os.path.join(self.fixtures, '10/change/catalogs', 'test.codfw.wmnet-test')
         calls = [
-            mock.call(hostfile + '.pson', 'w'),
+            mock.call(hostfile + '.pson', 'wb'),
             mock.call(hostfile + '.err', 'w'),
         ]
         mocker.assert_has_calls(calls, any_order=True)
@@ -100,15 +90,9 @@ class TestPuppetCalls(unittest.TestCase):
         env = os.environ.copy()
         env['RUBYLIB'] = FHS.prod_dir + '/src/modules/wmflib/lib/'
         m = mock.mock_open(read_data='wat')
-        try:
-            # TODO: remove try/except block when python2 is droped
-            with mock.patch('__builtin__.open', m, True) as mocker:
-                puppet.compile('test.codfw.wmnet', 'prod', self.fixtures +
-                               '/puppet_var', None, '--dummy')
-        except ImportError:
-            with mock.patch('builtins.open', m, True) as mocker:
-                puppet.compile('test.codfw.wmnet', 'prod', self.fixtures +
-                               '/puppet_var', None, '--dummy')
+        with mock.patch('builtins.open', m, True) as mocker:
+            puppet.compile('test.codfw.wmnet', 'prod', self.fixtures +
+                           '/puppet_var', None, '--dummy')
         subprocess.check_call.assert_called_with(
             ['puppet',
              'master',
@@ -131,7 +115,7 @@ class TestPuppetCalls(unittest.TestCase):
         )
         hostfile = os.path.join(self.fixtures, '10/production/catalogs', 'test.codfw.wmnet')
         calls = [
-            mock.call(hostfile + '.pson', 'w'),
+            mock.call(hostfile + '.pson', 'wb'),
             mock.call(hostfile + '.err', 'w'),
         ]
         mocker.assert_has_calls(calls, any_order=True)

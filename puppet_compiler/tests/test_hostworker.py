@@ -16,12 +16,7 @@ class TestHostWorker(unittest.TestCase):
     def test_initialize(self):
 
         self.assertEquals(self.hw.hostname, 'test.example.com')
-        try:
-            self.assertCountEqual(['prod', 'change'], self.hw._envs)
-        except AttributeError:
-            # TODO: Remove this once python2 is gone
-            self.assertItemsEqual(['prod', 'change'], self.hw._envs)
-
+        self.assertCountEqual(['prod', 'change'], self.hw._envs)
         self.assertIsNone(self.hw.diffs)
         self.assertEqual(self.hw.resource_filter, None)
 

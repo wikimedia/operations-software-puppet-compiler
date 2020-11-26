@@ -33,8 +33,7 @@
     <dl>
 {% if diff.parameters %}
       <dd> Parameters differences:
-             {# TODO: remove encode().decode() hack when we drop python2 support #}
-        <pre>{{ diff.parameters.encode().decode('utf-8') }}</pre>
+        <pre>{{ diff.parameters }}</pre>
       </dd>
 {% endif %}
 {% if diff.content %}

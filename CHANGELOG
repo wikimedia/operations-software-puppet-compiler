@@ -1,5 +1,9 @@
 ## 2020-11-26
-### 0.9.0
+### 1.0.0
+ * Drop support for python2
+
+## 2020-11-26
+### 0.9.3
  * Add support for python3
 
 ## 2019-09-29
