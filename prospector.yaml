@@ -1,0 +1,53 @@
+strictness: high
+inherits:
+  - strictness_high
+
+doc-warnings: true
+member-warnings: true
+test-warnings: true
+
+autodetect: false
+output-format: grouped
+
+pep8:
+  full: true
+  options:
+    max-line-length: 120
+
+pep257:
+  explain: true
+  source: true
+  disable:
+    - D203  # 1 blank line required before class docstring, D211 (after) is enforce instead
+    - D213  # Multi-line docstring summary should start at the second line, D212 (first line) is enforced instead
+    - D406  # Section name should end with a newline, incompatible with Google Style Python Docstrings
+    - D407  # Missing dashed underline after section, incompatible with Google Style Python Docstrings
+    # First line should end with a period, question mark, or exclamation point.
+    # Cookbook docstrings are used as titles when listing cookbooks or in the menu, better without periods.
+    - D415
+
+pylint:
+  disable:
+    - pointless-string-statement  # used as documentation for class attributes
+  options:
+    ignore: vulture_whitelist.py
+    max-line-length: 120
+    max-args: 6
+    max-attributes: 14
+    max-locals: 16
+    # Allow modules to start with numbers and have dashes, they're loaded dynamically
+    module-rgx: '[a-z0-9_][a-z0-9_-]{2,30}$'
+    include-naming-hint: true
+    variable-rgx: (([a-z][a-z0-9_]{0,30})|(_[a-z0-9_]*))$
+    variable-name-hint: (([a-z][a-z0-9_]{0,30})|(_[a-z0-9_]*))$
+
+pyroma:
+  run: true
+
+# Disable McCabe complexity check as cookbooks might have a complex main function/method.
+mccabe:
+  run: false
+
+vulture:
+  # Pending Prospector to use Vulture >= 0.29 to use ignore-names to skip run() and argument_parser() functions
+  run: false

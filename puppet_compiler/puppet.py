@@ -66,6 +66,11 @@ def compile(hostname, label, vardir, manifests_dir=None, *extra_flags):
     with open(hostfiles.file_for(label, 'catalog'), "w") as f:
         out.seek(0)
         for line in out:
+            # TODO: fix when we drop python2 support
+            try:
+                line = line.decode()
+            except UnicodeDecodeError:
+                pass
             if not re.match('(Info|[Nn]otice|[Ww]arning)', line):
                 f.write(line)
 

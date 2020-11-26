@@ -77,7 +77,8 @@ class Controller(object):
     def set_puppet_version(self):
         if not os.environ.get('PUPPET_VERSION_FULL', False):
             full = subprocess.check_output(['puppet', '--version']).rstrip()
-            os.environ['PUPPET_VERSION_FULL'] = full
+            # TODO: fix when we drop python2 support
+            os.environ['PUPPET_VERSION_FULL'] = full.encode().decode()
         if not os.environ.get('PUPPET_VERSION', False):
             major = os.environ['PUPPET_VERSION_FULL'].split('.')[0]
             os.environ['PUPPET_VERSION'] = major
