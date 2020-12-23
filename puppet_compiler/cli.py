@@ -1,13 +1,19 @@
 import argparse
 import logging
 import os
-import sys
+
 from puppet_compiler import _log, controller
 
-parser = argparse.ArgumentParser(
-    description="Puppet Compiler - allows to see differences in catalogs between revisions"
-)
-parser.add_argument('--debug', action='store_true', default=False, help="Print debug output")
+
+def get_args():
+    """Return the parsed arguments"""
+    parser = argparse.ArgumentParser(
+        description="Puppet Compiler - allows to see differences in catalogs between revisions"
+    )
+    parser.add_argument('--debug', action='store_true', default=False, help="Print debug output")
+    parser.add_argument('--force', action='store_true', default=False, help="Print debug output")
+    return parser.parse_args()
+
 
 change = int(os.environ.get('CHANGE'))
 nodes = os.environ.get('NODES', None)
@@ -18,12 +24,10 @@ compiler_mode = os.environ.get('MODE', 'change').split(",")
 
 
 def main():
+    """Main entry point"""
     try:
-        opts = parser.parse_args()
-        if opts.debug:
-            lvl = logging.DEBUG
-        else:
-            lvl = logging.INFO
+        args = get_args()
+        lvl = logging.DEBUG if args.debug else logging.INFO
 
         logging.basicConfig(
             format='%(asctime)s %(levelname)s: %(message)s',
@@ -32,24 +36,25 @@ def main():
         )
         if not change:
             _log.critical("No change provided, we cannot do anything")
-            sys.exit(2)
+            return 2
         if not job_id:
             _log.critical("No build number, are you running through jenkins?")
-            sys.exit(2)
+            return 2
 
         _log.info("Working on change %d", change)
         _log.info("run manually with: ./utils/pcc %d %s", change, nodes)
 
         c = controller.Controller(configfile, job_id, change, host_list=nodes,
-                                  nthreads=nthreads, modes=compiler_mode)
+                                  nthreads=nthreads, modes=compiler_mode, force=args.force)
         success = c.run()
         # If the run is marked as failed, exit with a non-zero exit code
         if not success:
-            sys.exit(1)
+            return 1
     except Exception as e:
         _log.critical("Build run failed: %s", e, exc_info=True)
-        sys.exit(1)
+        return 1
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())

@@ -21,13 +21,14 @@ def pushd(dirname):
 class ManageCode(object):
     private_modules = ['passwords', 'contacts', 'privateexim']
 
-    def __init__(self, config, jobid, changeid, realm='production'):
+    def __init__(self, config, jobid, changeid, realm='production', force=False):
         self.base_dir = FHS.base_dir
         self.puppet_src = config['puppet_src']
         self.puppet_private = config['puppet_private']
         self.puppet_var = config['puppet_var']
         self.change_id = changeid
         self.realm = realm
+        self.force = force
 
         self.change_dir = FHS.change_dir
         self.prod_dir = FHS.prod_dir
@@ -44,6 +45,12 @@ class ManageCode(object):
     def prepare(self):
         _log.debug("Creating directories under %s", self.base_dir)
         # Create the base directory now
+        if self.force:
+            # This is manly used during development where you dont care about the output
+            # and are running the same command over and over with the same job_id
+            _log.debug('removing old directories, [%s, %s]', self.base_dir, self.output_dir)
+            self.cleanup()
+            shutil.rmtree(self.output_dir, True)
         os.mkdir(self.base_dir, 0o755)
         for dirname in [self.prod_dir, self.change_dir]:
             os.makedirs(os.path.join(dirname, 'catalogs'), 0o755)

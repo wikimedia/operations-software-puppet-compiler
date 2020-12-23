@@ -32,7 +32,7 @@ class Controller(object):
     }
 
     def __init__(self, configfile, job_id, change_id, host_list=[],
-                 nthreads=2, modes=['change']):
+                 nthreads=2, modes=['change'], force=False):
         # Let's first detect the installed puppet version
         self.set_puppet_version()
         self.config = {
@@ -66,7 +66,7 @@ class Controller(object):
         self.hosts_raw = host_list
         self.pick_hosts(host_list)
         directories.FHS.setup(job_id, self.config['base'])
-        self.m = prepare.ManageCode(self.config, job_id, change_id, self.realm)
+        self.m = prepare.ManageCode(self.config, job_id, change_id, self.realm, force)
         self.outdir = directories.FHS.output_dir
         # State of all nodes
         self.state = state.StatesCollection()
