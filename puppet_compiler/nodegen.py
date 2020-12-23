@@ -1,6 +1,7 @@
 import os
 import re
 
+from cumin.query import Query
 from puppet_compiler import _log
 from requests import get
 
@@ -51,6 +52,17 @@ def get_nodes_puppetdb_class(title):
         if key not in deduplicated_nodes:
             deduplicated_nodes[key] = node['certname']
     return set(deduplicated_nodes.values())
+
+
+def get_nodes_cumin(query_str):
+    """get a list of nodes using a raw cumin query"""
+    # Just create the config object manually so we don't have to manage a config file
+    config = {
+        'default_backend': 'puppetdb',
+        'puppetdb': {'port': 8080, 'scheme': 'http'}
+    }
+    hosts = Query(config).execute(query_str)
+    return set(hosts)
 
 
 def nodelist(facts_dir):

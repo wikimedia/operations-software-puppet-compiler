@@ -105,6 +105,9 @@ class Controller(object):
         elif host_list.startswith('C:'):
             puppet_class = host_list[2:]
             self.hosts = nodegen.get_nodes_puppetdb_class(puppet_class)
+        elif host_list.startswith('cumin:'):
+            query = host_list[6:]
+            self.hosts = nodegen.get_nodes_cumin(query)
         else:
             # Standard comma-separated list of hosts
             self.hosts = set(host for host in re.split(r'\s*,\s*', host_list) if host)
