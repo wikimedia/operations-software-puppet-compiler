@@ -1,3 +1,9 @@
+## 2020-12-23
+### 1.1.0
+ * Fail early if errors are connected
+ * add --force cli argument to delete old reports with the same job_id
+ * Add hacking instructions to readme file
+
 ## 2020-11-26
 ### 1.0.0
  * Drop support for python2
