@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 import subprocess
 
 import yaml
@@ -22,6 +21,14 @@ How data are organized:
   html page with some status and the diffs nicely represented, if any)
 
 """
+
+
+class ControllerError(Exception):
+    """Generic Exception for Controller Errors"""
+
+
+class ControllerNoHostsError(Exception):
+    """Generic Exception for Controller Errors"""
 
 
 class Controller(object):
@@ -55,10 +62,10 @@ class Controller(object):
         try:
             if configfile is not None:
                 self._parse_conf(configfile)
-        except yaml.error.YAMLError as e:
+        except yaml.error.YAMLError as error:
             _log.exception("Configuration file %s contains malformed yaml: %s",
-                           configfile, e)
-            sys.exit(2)
+                           configfile, error)
+            raise ControllerError from error
         except Exception:
             _log.exception("Couldn't load the configuration from %s", configfile)
 
@@ -102,11 +109,13 @@ class Controller(object):
             # Standard comma-separated list of hosts
             self.hosts = set(host for host in re.split(r'\s*,\s*', host_list) if host)
 
+        if not self.hosts:
+            raise ControllerNoHostsError
         is_labs = [host.endswith('.wmflabs') for host in self.hosts]
         if any(is_labs) and not all(is_labs):
             _log.critical("Cannot compile production and labs hosts in the "
                           "same run. Please run puppet-compiler twice.")
-            sys.exit(2)
+            raise ControllerError
         self.realm = 'labs' if any(is_labs) else 'production'
 
     def _parse_conf(self, configfile):

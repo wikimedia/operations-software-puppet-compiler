@@ -44,9 +44,15 @@ def main():
         _log.info("Working on change %d", change)
         _log.info("run manually with: ./utils/pcc %d %s", change, nodes)
 
-        c = controller.Controller(configfile, job_id, change, host_list=nodes,
-                                  nthreads=nthreads, modes=compiler_mode, force=args.force)
-        success = c.run()
+        try:
+            c = controller.Controller(configfile, job_id, change, host_list=nodes,
+                                      nthreads=nthreads, modes=compiler_mode, force=args.force)
+            success = c.run()
+        except controller.ControllerNoHostsError:
+            _log.warning('No hosts found matching `%s` unable to do anything', nodes)
+            return 2
+        except controller.ControllerError:
+            return 1
         # If the run is marked as failed, exit with a non-zero exit code
         if not success:
             return 1

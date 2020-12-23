@@ -64,7 +64,8 @@ class TestController(unittest.TestCase):
                           'http://www.example.com/garbagehere')
         # This will log an error, but not raise an exception
         controller.Controller('unexistent', 19, 224570, 'test.eqiad.wmnet', nthreads=2)
-        self.assertRaises(SystemExit, controller.Controller, filename + '.invalid', 1, 1, 'test.eqiad.wmnet')
+        with self.assertRaises(controller.ControllerError):
+            controller.Controller(filename + '.invalid', 1, 1, 'test.eqiad.wmnet')
 
     @mock.patch('subprocess.check_output')
     def test_set_puppet_version(self, mocker):
@@ -183,8 +184,9 @@ class TestController(unittest.TestCase):
         r_mock.get(PUPPETDB_URI.format('Grafana'),
                    json=get_mocked_response('empty'),
                    status_code=200)
-        c.pick_hosts('C:grafana')
-        self.assertEqual(c.hosts, set())
+
+        with self.assertRaises(controller.ControllerNoHostsError):
+            c.pick_hosts('C:grafana')
 
     def test_realm_detection(self):
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
@@ -193,10 +195,9 @@ class TestController(unittest.TestCase):
         c.pick_hosts('test.tools.eqiad.wmflabs')
         self.assertEquals(c.realm, 'labs')
 
-        with self.assertRaises(SystemExit) as cm:
+        with self.assertRaises(controller.ControllerError):
             c.pick_hosts('test.eqiad.wmnet,test.tools.eqiad.wmflabs')
 
-        self.assertEqual(cm.exception.code, 2)
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmflabs')
         self.assertEqual(c.realm, 'labs')
         self.assertEqual(c.m.realm, 'labs')
