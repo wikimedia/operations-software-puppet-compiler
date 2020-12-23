@@ -114,6 +114,6 @@ def compile_debug(hostname, vardir):
     err.seek(0)
     print('Standard Error\n{}'.format('=' * 80))
     for line in err:
-        if 'cannot collect exported resources without storeconfigs being set not' not in line:
-            print(line.strip())
+        if b'cannot collect exported resources without storeconfigs being set not' not in line:
+            print(line.decode().strip())
     return success
