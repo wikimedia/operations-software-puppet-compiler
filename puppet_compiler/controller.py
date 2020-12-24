@@ -75,6 +75,7 @@ class Controller:
             raise ControllerError from error
 
         self.count = 0
+        self.change_id = change_id
         self.hosts_raw = host_list
         self.pick_hosts(host_list)
         directories.FHS.setup(job_id, self.config.base)
@@ -128,6 +129,9 @@ class Controller:
                 elif host_list_part.startswith("cumin:"):
                     query = host_list_part[6:]
                     hosts.update(nodegen.get_nodes_cumin(query))
+                elif host_list_part == "auto":
+                    gerrit_node_finder = nodegen.GerritNodeFinder(self.change_id, "gerrit.wikimedia.org", self.config)
+                    hosts.update(gerrit_node_finder.run_hosts)
                 else:
                     hosts.add(host_list_part)
         # remove empty strings added by trailing commas

@@ -1,7 +1,8 @@
 """Class for generating nod lists of nodes"""
+import json
 import re
 from pathlib import Path
-from typing import Iterable, Pattern, Set
+from typing import Iterable, Optional, Pattern, Set, Tuple
 
 import urllib3  # type: ignore
 from cumin.query import Query  # type: ignore
@@ -12,6 +13,29 @@ from puppet_compiler.config import ControllerConfig
 
 # TODO: have the CA as a config option
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def get_type_and_title(path: Path) -> Tuple[str, Optional[str]]:
+    """Open a file and determin of its type.
+
+    return class, define, type etcs based on the resource type
+    Arguments:
+        path: the path to the resource file
+
+    Returns:
+        the puppet type
+    """
+    with path.open("r") as file_handle:
+        line = file_handle.readline()
+        while line:
+            if line[0] == "#" or line == "\n":
+                line = file_handle.readline()
+                continue
+            words = line.strip().split()
+            puppet_type = words[0]
+            title = words[1].rstrip("(")
+            return puppet_type, title
+    return "unknown", None
 
 
 def get_nodes(config: ControllerConfig) -> Set:
@@ -67,7 +91,6 @@ def capitalise_title(title: str):
 
 def get_nodes_puppetdb_class(title: str, deduplicate: bool = True) -> Set:
     """Get nodes for a specific class."""
-    # TODO: don't hardcode puppetdb
     title = "Class/" + capitalise_title(title)
     return get_nodes_puppetdb(title, deduplicate)
 
@@ -84,7 +107,8 @@ def get_nodes_puppetdb(title: str, deduplicate: bool = True) -> Set:
 
     """
     params = {"query": '["extract",["certname","tags"]]'}
-    uri = "https://localhost/pdb/query/v4/resources/{}".format(capitalise_title(title))
+    # TODO: don't hardcode puppetdb
+    uri = "https://localhost/pdb/query/v4/resources/{}".format(title)
     nodes_json = get(uri, params=params, verify=False).json()
     if not nodes_json:
         _log.warning("no nodes found for class: %s", title)
@@ -123,7 +147,6 @@ def get_nodes_cumin(query_str: str) -> Set:
         set: a set of hosts to work on
 
     """
-    # Just create the config object manually so we don't have to manage a config file
     config = {"default_backend": "puppetdb", "puppetdb": {"port": 8080, "scheme": "http"}}
     hosts = Query(config).execute(query_str)
     return set(hosts)
@@ -141,6 +164,82 @@ def nodelist(facts_dir: Path) -> Iterable[str]:
     for node in facts_dir.glob("**/*.yaml"):
         _log.debug("testing node:  %s", node.stem)
         yield node.stem
+
+
+def get_gerrit_blob(url):
+    """Return a json blob from a gerrit API endpoint
+
+    Arguments:
+        url (str): gerrit url end point
+
+    Returns
+        dict: A dictionary representing the json blob returned by gerrit
+    """
+
+    _log.debug("fetch gerrit blob: %s", url)
+    req = get(url, json={})
+    # To prevent against Cross Site Script Inclusion (XSSI) attacks, the JSON response
+    # body starts with a magic prefix line: `)]}'` that must be stripped before feeding the
+    # rest of the response body to a JSON
+    # https://gerrit-review.googlesource.com/Documentation/rest-api.html#output
+    return json.loads(req.text.split("\n", 1)[1])
+
+
+class GerritNodeFinder:
+    """A Class to get a list of hosts based on files changed in the PS"""
+
+    def __init__(self, change_number: int, gerrit_host: str, config: ControllerConfig):
+        self.change_number = change_number
+        self.change_url = f"https://{gerrit_host}/r/changes/{change_number}"
+        self._change_data = None
+        self._changed_files = None
+        self._run_hosts = None
+        self._config = config
+
+    @property
+    def change_data(self):
+        """Property to handle fetching the change details"""
+        if self._change_data is None:
+            url = f"{self.change_url}?o=CURRENT_REVISION"
+            self._change_data = get_gerrit_blob(url)
+        return self._change_data
+
+    @property
+    def changed_files(self):
+        """Property to handle fetching the changed files"""
+        if self._changed_files is None:
+            url = f"{self.change_url}/revisions/{self.change_data['current_revision']}/files"
+            data = get_gerrit_blob(url)
+            self._changed_files = [key.lstrip("/") for key in data.keys() if key != "/COMMIT_MSG"]
+        return self._changed_files
+
+    @property
+    def changed_hieradata(self):
+        """return the list of change modules"""
+        return set(changed for changed in self.changed_files if changed.startswith("hieradata"))
+
+    @property
+    def changed_sitepp(self):
+        """returns true if the site.pp file has been updated"""
+        return bool("manifests/site.pp" in self.changed_files)
+
+    @property
+    def run_hosts(self):
+        """Return a unique list of hosts this change should run on"""
+        if self._run_hosts is None:
+            run_hosts = []
+            for puppet_file in self.changed_files:
+                puppet_type, title = get_type_and_title(self._config.puppet_src / puppet_file)
+                if title is None:
+                    continue
+                _log.debug("Collecting hosts for: %s - %s", puppet_type, title)
+                if puppet_type == "class":
+                    run_hosts.extend(get_nodes_puppetdb_class(title, False))
+                    continue
+                if puppet_type == "define":
+                    run_hosts.extend(get_nodes_puppetdb(capitalise_title(title), False))
+            self._run_hosts = deduplicated_nodes(run_hosts)
+        return self._run_hosts
 
 
 # pylint: disable=too-few-public-methods
