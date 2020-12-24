@@ -33,7 +33,7 @@ def all_files(cwd, path):
 
 setup(
     name='puppet_compiler',
-    version='1.0.0',
+    version='1.1.1',
     description='Tools to compile puppet catalogs as a service',
     author='Joe',
     author_email='glavagetto@wikimedia.org',
