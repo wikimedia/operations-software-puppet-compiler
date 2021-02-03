@@ -15,9 +15,9 @@ extras_require = {
     # Test dependencies
     'tests': [
         'coverage',
-        'bandit>=1.1.0',
-        'flake8>=3.2.1',
-        'prospector[with_everything]>=0.12.4,<=1.1.6.2',
+        'bandit>=1.5.1',
+        'flake8>=3.6.0',
+        'prospector[with_everything]>=1.3.1',
         'mock<1.1.0',
         'nose',
         'requests_mock',
