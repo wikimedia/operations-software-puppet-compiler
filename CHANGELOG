@@ -1,6 +1,7 @@
 ## 2020-12-24
 ### 1.2.0
  * Add support to use cumin queries to fetch hosts
+ * Include wikimedia.cloud domain when checking for cloud hosts
 
 ## 2020-12-23
 ### 1.1.0

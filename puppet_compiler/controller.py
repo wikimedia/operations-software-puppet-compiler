@@ -114,7 +114,7 @@ class Controller(object):
 
         if not self.hosts:
             raise ControllerNoHostsError
-        is_labs = [host.endswith('.wmflabs') for host in self.hosts]
+        is_labs = [host.endswith(('.wmflabs', '.wikimedia.cloud')) for host in self.hosts]
         if any(is_labs) and not all(is_labs):
             _log.critical("Cannot compile production and labs hosts in the "
                           "same run. Please run puppet-compiler twice.")
