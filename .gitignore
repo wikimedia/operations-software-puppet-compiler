@@ -2,5 +2,9 @@
 /.tox/
 /*.egg-info/
 *.pyc
-*.swp
+*.sw?
 .coverage
+.vscode
+build/
+.workspace/
+.docker_tmp/

@@ -2,7 +2,7 @@
 
 Use the following command to test localy
 ```
-$ CHANGE=588086 NODES=mwlog2001.codfw.wmnet BUILD_NUMBER=1  python3 -m puppet_compiler.cli  --debug
+$ CHANGE=588086 NODES=mwlog2001.codfw.wmnet BUILD_NUMBER=1 PCC_CONF=~/.config/puppet-compiler.conf python3 -m puppet_compiler.cli  --debug
 ```
 Or to debug a specific host failing
 ```
@@ -15,23 +15,22 @@ theses instructions dont set up or configure the puppetdb server.  As such you
 want be able to test code which makes uses of exported resources or puppetdb
 queries
 
-* create a /etc/puppet-compiler.conf file with the following
+* create a $HOME/.config/puppet-compiler.conf file with the following
 ```yaml
-base: "/srv/jenkins-workspace/puppet-compiler"
-puppet_src: "/var/lib/catalog-differ/production"
-puppet_private: "/var/lib/catalog-differ/private"
+base: "<PATH_TO_REPO>/.workspace/jenkins-workspace"
+puppet_src: "<PATH_TO_REPO>/.workspace/catalog-differ/production"
+puppet_private: "<PATH_TO_REPO>/.workspace/catalog-differ/private"
 http_url: "http://localhost"
-puppet_var: "/var/lib/catalog-differ/puppet"
+puppet_var: "<PATH_TO_REPO>/.workspace/catalog-differ/puppet"
 ```
-* sudo apt-get install python3-jinja2 python3-yaml python3-requests ruby-httpclient ruby-ldap ruby-rgen ruby-multi-json
-* sudo mkdir -p /var/lib/catalog-differ/{production,private,puppet} /srv/jenkins-workspace/puppet-compiler
-* sudo chown ${USER} -R /var/lib/catalog-differ /srv/jenkins-workspace/puppet-compiler
-* git clone "https://gerrit.wikimedia.org/r/operations/puppet" /var/lib/catalog-differ/production
-* git clone "https://gerrit.wikimedia.org/r/labs/private" /var/lib/catalog-differ/private
-* /usr/bin/puppet master --compile test --vardir  /var/lib/catalog-differ/puppet
-* /usr/bin/puppet cert --ssldir  /var/lib/catalog-differ/puppet/ssl --vardir /var/lib/catalog-differ/puppet generate $(hostname -f)
-* ssh puppetmaster1001.eqiad.wmnet sudo /usr/local/bin/puppet-facts-export
-* scp puppetmaster1001.eqiad.wmnet:/tmp/puppet-facts-export.tar.xz /tmp
-* tar xvf /tmp/puppet-facts-export.tar.xz --directory /var/lib/catalog-differ/puppet/ 
-* ssh puppetmaster1001.eqiad.wmnet sudo rm /tmp/puppet-facts-export.tar.xz 
 
+Changing `PATH_TO_REPO` for the full path to the root of the gite repository.
+
+* sudo apt-get install ruby-httpclient ruby-ldap ruby-rgen ruby-multi-json puppet
+* ./utils/setup_workspace.sh
+* ./utils/fetch_facts.sh
+
+
+## Running the CI tests locally
+You can easily run the same tests that CI is running using the script:
+* ./utils/run_ci_locally.sh

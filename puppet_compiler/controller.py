@@ -123,7 +123,7 @@ class Controller(object):
 
     def _parse_conf(self, configfile):
         with open(configfile, 'r') as f:
-            data = yaml.load(f)
+            data = yaml.load(f, Loader=yaml.SafeLoader)
         # TODO: add data validation here
         self.config.update(data)
 

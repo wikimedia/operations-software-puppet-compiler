@@ -17,10 +17,11 @@ extras_require = {
         'coverage',
         'bandit>=1.5.1',
         'flake8>=3.6.0',
-        'prospector[with_everything]>=1.3.1',
-        'mock<1.1.0',
+        'prospector[with_everything]>=1.4.1',
+        'mock',
         'nose',
         'requests_mock',
+        'GitPython>=3.1.18',
     ],
 }
 
