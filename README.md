@@ -2,7 +2,7 @@
 
 Use the following command to test localy
 ```
-$ CHANGE=588086 NODES=mwlog2001.codfw.wmnet BUILD_NUMBER=1 PCC_CONF=~/.config/puppet-compiler.conf python3 -m puppet_compiler.cli  --debug
+$ CHANGE=731113 NODES=cloudservices1003.wikimedia.org BUILD_NUMBER=1 PC_CONFIG=~/.config/puppet-compiler.conf python3 -m puppet_compiler.cli  --debug --force
 ```
 Or to debug a specific host failing
 ```
