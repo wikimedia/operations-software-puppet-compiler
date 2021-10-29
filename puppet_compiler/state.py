@@ -80,8 +80,7 @@ class ChangeState(object):
             return 'diff'
 
 
-class FutureState(ChangeState):
-
+class RichDataState(ChangeState):
     @property
     def name(self):
         if self.prod_error:
@@ -92,7 +91,3 @@ class FutureState(ChangeState):
             return 'ok'
         else:
             return 'diff'
-
-
-class RichDataState(FutureState):
-    pass

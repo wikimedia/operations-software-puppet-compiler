@@ -1,9 +1,9 @@
 import mock
 import os
 import unittest
+from copy import deepcopy
 
 from puppet_compiler.differ import PuppetResource, PuppetCatalog
-from puppet_compiler.worker import future_filter
 
 
 class TestPuppetResource(unittest.TestCase):
@@ -23,18 +23,7 @@ class TestPuppetResource(unittest.TestCase):
         }
         self.r = PuppetResource(
             self.raw_resource,
-            future_filter,
         )
-
-    def test_init(self):
-        """Test initialization"""
-        self.assertEqual(self.r.resource_type, 'Class')
-        self.assertEqual(self.r.title, 'hhvm')
-        self.assertEqual(self.r._filter, future_filter)
-        self.assertEqual(self.r.content, '')
-        self.assertEqual(self.r.parameters['before'], 'Class[apache2]')
-        self.assertEqual(self.r.parameters['settings'], {'foo': '1', 'bar': ['2', '3']})
-        self.assertIn('nope', self.r.parameters)
 
     def test_str(self):
         """Test stringification"""
@@ -49,10 +38,7 @@ class TestPuppetResource(unittest.TestCase):
         self.assertFalse(self.r.is_same_of(other))
 
     def test_equality(self):
-        # Not filtered resource, it should be different
         other = PuppetResource(self.raw_resource)
-        self.assertNotEqual(self.r, other)
-        other = PuppetResource(self.raw_resource, future_filter)
         self.assertEqual(self.r, other)
         other.content = 'lala'
         self.assertNotEqual(self.r, other)
@@ -60,7 +46,7 @@ class TestPuppetResource(unittest.TestCase):
     @mock.patch('difflib.unified_diff')
     @mock.patch('puppet_compiler.differ.parameters_diff')
     def test_diff_if_present(self, datadiff_mock, difflib_mock):
-        other = PuppetResource(self.raw_resource, future_filter)
+        other = PuppetResource(self.raw_resource)
         self.assertIsNone(self.r.diff_if_present(other))
         # Now let's add some content
         self.r.resource_type = 'File'
@@ -77,8 +63,10 @@ class TestPuppetResource(unittest.TestCase):
         self.r.resource_type = 'Class'
         datadiff_mock.reset_mock()
         difflib_mock.reset_mock()
-        # Not filtered resource, it should be different
-        other = PuppetResource(self.raw_resource)
+        # Resource with different params, it should be different
+        different_params_raw_resource = deepcopy(self.raw_resource)
+        different_params_raw_resource['parameters']['ensure'] = 'absent'
+        other = PuppetResource(different_params_raw_resource)
         diff = self.r.diff_if_present(other)
         difflib_mock.assert_not_called()
         datadiff_mock.assert_called_with(

@@ -26,10 +26,6 @@ class TestHostFiles(unittest.TestCase):
             '/mnt/jenkins-workspace/19/change/catalogs/test.example.com.pson'
         )
         self.assertEqual(
-            self.hostfiles.file_for('future', 'catalog'),
-            '/mnt/jenkins-workspace/19/change/catalogs/test.example.com-future.pson'
-        )
-        self.assertEqual(
             self.hostfiles.file_for('change', 'diff'),
             '/mnt/jenkins-workspace/19/diffs/test.example.com.diff'
         )

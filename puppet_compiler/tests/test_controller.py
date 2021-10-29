@@ -53,8 +53,8 @@ class TestController(unittest.TestCase):
         self.assertEquals(c.config['http_url'],
                           'https://puppet-compiler.wmflabs.org/html')
         self.assertEquals(c.config['base'], '/mnt/jenkins-workspace')
-        c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet', nthreads=2, modes=['future'])
-        self.assertEqual(list(c.run_modes.keys()), ['future'])
+        c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet', nthreads=2, modes=['change'])
+        self.assertEqual(list(c.run_modes.keys()), ['change'])
 
     def test_parse_config(self):
         filename = os.path.join(self.fixtures, 'test_config.yaml')

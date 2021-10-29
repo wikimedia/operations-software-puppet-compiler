@@ -51,10 +51,10 @@ class Host(object):
         self._renderpage(self.page_name, diffs)
 
 
-class FutureHost(Host):
-    page_name = 'index-future.html'
-    mode = 'future'
-    pretty_mode = 'Future parser'
+class RichDataHost(Host):
+    mode = 'rich_data'
+    pretty_mode = 'RichData'
+    page_name = 'index-rich_data.html'
     retcode_descriptions = {
         'break': 'change breaks the current parser',
         'ok': 'change works with both parsers',
@@ -62,15 +62,9 @@ class FutureHost(Host):
     }
 
     def __init__(self, hostname, files, retcode):
-        super(FutureHost, self).__init__(hostname, files, retcode)
+        super().__init__(hostname, files, retcode)
         self.retcode_descriptions['error'] = 'change is not compatible with the {}'.format(
             self.pretty_mode)
-
-
-class RichDataHost(FutureHost):
-    mode = 'rich_data'
-    pretty_mode = 'RichData'
-    page_name = 'index-rich_data.html'
 
 
 class Index(object):
@@ -111,18 +105,13 @@ class Index(object):
             outfile.write(page)
 
 
-class FutureIndex(Index):
-    page_name = 'index-future.html'
-    mode = 'future'
+class RichDataIndex(Index):
+    page_name = 'index-rich_data.html'
+    mode = 'rich_data'
 
     def __init__(self, outdir, hosts_raw):
-        super(FutureIndex, self).__init__(outdir, hosts_raw)
+        super().__init__(outdir, hosts_raw)
         self.messages = {
             'change': 'with the {} parser'.format(self.mode),
             'fail': 'break with the current parser',
         }
-
-
-class RichDataIndex(FutureIndex):
-    page_name = 'index-rich_data.html'
-    mode = 'rich_data'

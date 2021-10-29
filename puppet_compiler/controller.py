@@ -34,7 +34,6 @@ class ControllerNoHostsError(Exception):
 class Controller(object):
     available_run_modes = {
         'change': worker.HostWorker,
-        'future': worker.FutureHostWorker,
         'rich_data': worker.RichDataHostWorker,
     }
 

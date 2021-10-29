@@ -6,14 +6,8 @@ import traceback
 from puppet_compiler import _log, puppet, utils
 from puppet_compiler.differ import PuppetCatalog
 from puppet_compiler.directories import FHS, HostFiles
-from puppet_compiler.filter import flatten, itos
 from puppet_compiler.presentation import html
-from puppet_compiler.state import ChangeState, FutureState, RichDataState
-
-
-def future_filter(value):
-    """This filter must be used during the transition to the future parser"""
-    return itos(flatten(value))
+from puppet_compiler.state import ChangeState, RichDataState
 
 
 class HostWorker(object):
@@ -170,43 +164,6 @@ class HostWorker(object):
         """
         host = self.html_page(self.hostname, self._files, retcode)
         host.htmlpage(self.diffs, self.full_diffs)
-
-
-class FutureHostWorker(HostWorker):
-    """
-    This worker is designed to be used when transitioning to the future parser.
-    It will compile the change first with the normal parser, then with the future one,
-    and make a diff between the two.
-
-    Results:
-    "ok"    => both catalogs compile, and there is no diff
-    "diff"  => both catalogs compile, but there is a diff
-    "error" => normal parser works, but future parser doesn't
-    "break" => future parser works, but the normal one doesn't
-    """
-    state = FutureState
-    html_page = html.FutureHost
-    html_index = html.FutureIndex
-
-    def __init__(self, vardir, hostname):
-        super(FutureHostWorker, self).__init__(vardir, hostname)
-        self._envs = ['change', 'future']
-
-    def _compile_all(self):
-        future_args = [
-            '--environment=future',
-            '--parser=future',
-            '--environmentpath=%s' % os.path.join(FHS.change_dir, 'src', 'environments'),
-            r'--default_manifest=\$confdir/manifests/site.pp'
-        ]
-        args = []
-        errors = self.E_OK
-        if not self._compile(self._envs[0], args):
-            errors += self.E_BASE
-        if not self._compile(self._envs[1], future_args):
-            errors += self.E_CHANGED
-
-        return errors
 
 
 class RichDataHostWorker(HostWorker):
