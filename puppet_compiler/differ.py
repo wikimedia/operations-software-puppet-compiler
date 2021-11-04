@@ -59,14 +59,10 @@ def parameters_diff(orig, other, fromfile='a', tofile='b'):
 class PuppetResource(object):
     """Object to manage Puppet resources"""
 
-    def __init__(self, data, resource_filter=None):
+    def __init__(self, data):
         self.resource_type = data['type']
         self.title = data['title']
         self.exported = data['exported']
-        if resource_filter is None:
-            self._filter = lambda x: x
-        else:
-            self._filter = resource_filter
         self._init_params(data.get('parameters', {}))
 
     def _init_params(self, kwargs):
@@ -78,7 +74,7 @@ class PuppetResource(object):
             if k == 'content':
                 self.content = v
             else:
-                self.parameters[k] = self._filter(v)
+                self.parameters[k] = v
 
     def __str__(self):
         return "{res}[{title}]".format(res=self.resource_type,
@@ -139,7 +135,7 @@ class PuppetResource(object):
 
 class PuppetCatalog(object):
     """Object for working with a  Puppet catalog"""
-    def __init__(self, filename, resource_filter=None):
+    def __init__(self, filename):
         self.resources = {}
         with open(filename, 'r', encoding='latin_1') as catalog_fh:
             catalog = json.load(catalog_fh)
@@ -148,7 +144,7 @@ class PuppetCatalog(object):
         else:
             base = catalog  # Puppet 4 and above
         for resource in base['resources']:
-            res = PuppetResource(resource, resource_filter)
+            res = PuppetResource(resource)
             self.resources[str(res)] = res
         self.all_resources = set(self.resources.keys())
         self.name = base['name']

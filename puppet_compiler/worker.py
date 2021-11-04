@@ -22,7 +22,6 @@ class HostWorker(object):
         self.hostname = hostname
         self.diffs = None
         self.full_diffs = None
-        self.resource_filter = None
 
     def facts_file(self):
         """ Finds facts file for the current hostname """
@@ -122,10 +121,8 @@ class HostWorker(object):
         """
         _log.info("Calculating diffs for %s", self.hostname)
         try:
-            original = PuppetCatalog(self._files.file_for(self._envs[0], 'catalog'),
-                                     self.resource_filter)
-            new = PuppetCatalog(self._files.file_for(self._envs[1], 'catalog'),
-                                self.resource_filter)
+            original = PuppetCatalog(self._files.file_for(self._envs[0], 'catalog'))
+            new = PuppetCatalog(self._files.file_for(self._envs[1], 'catalog'))
             self.diffs = original.diff_if_present(new)
             self.full_diffs = original.diff_full_diff(new)
         except Exception as e:

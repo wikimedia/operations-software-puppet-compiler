@@ -18,7 +18,6 @@ class TestHostWorker(unittest.TestCase):
         self.assertEquals(self.hw.hostname, 'test.example.com')
         self.assertCountEqual(['prod', 'change'], self.hw._envs)
         self.assertIsNone(self.hw.diffs)
-        self.assertEqual(self.hw.resource_filter, None)
 
     @mock.patch('os.path.isfile')
     @mock.patch('puppet_compiler.utils.facts_file',
@@ -64,19 +63,19 @@ class TestHostWorker(unittest.TestCase):
         self.assertEquals(err, 2)
 
     @mock.patch('puppet_compiler.worker.PuppetCatalog')
-    def test_make_diff(self, mocker):
-        instance_mock = mocker.return_value
+    def test_make_diff(self, puppetcatalog_mock):
+        instance_mock = puppetcatalog_mock.return_value
         instance_mock.diff_if_present.return_value = None
         self.assertIsNone(self.hw._make_diff())
         self.assertIsNone(self.hw.diffs)
 
-        mocker.assert_has_calls(
+        puppetcatalog_mock.assert_has_calls(
             [
                 mock.call(
-                    '/mnt/jenkins-workspace/19/production/catalogs/test.example.com.pson', None
+                    '/mnt/jenkins-workspace/19/production/catalogs/test.example.com.pson'
                 ),
                 mock.call(
-                    '/mnt/jenkins-workspace/19/change/catalogs/test.example.com.pson', None
+                    '/mnt/jenkins-workspace/19/change/catalogs/test.example.com.pson'
                 )
             ]
         )
