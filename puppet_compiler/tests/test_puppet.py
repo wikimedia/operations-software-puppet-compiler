@@ -9,7 +9,6 @@ from puppet_compiler.directories import FHS
 class TestPuppetCalls(unittest.TestCase):
 
     def setUp(self):
-        os.environ['PUPPET_VERSION'] = '3'
         subprocess.check_call = mock.Mock()
         self.fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         FHS.setup(10, self.fixtures)
@@ -29,20 +28,19 @@ class TestPuppetCalls(unittest.TestCase):
         spool = tf_mocker.return_value
         spool.return_value = ["Test ", "Info: meh"]
         subprocess.check_call.assert_called_with(
-            ['puppet',
-             'master',
-             '--vardir=%s' % self.fixtures + '/puppet_var',
-             '--modulepath=%(basedir)s/private/modules:'
-             '%(basedir)s/src/modules' % {'basedir': FHS.prod_dir},
-             '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
-             '--compile=test.codfw.wmnet',
-             '--color=false',
-             '--yamldir=/var/lib/catalog-differ/puppet/yaml',
-             '--manifest=%s/%s/manifests' % (FHS.prod_dir, 'src'),
-             '--environmentpath=%s/%s/environments' % (FHS.prod_dir, 'src'),
-             '--trusted_node_data',
-             '--parser=future',
-             '--environment=future'],
+            [
+                'puppet',
+                'master',
+                '--vardir=%s' % self.fixtures + '/puppet_var',
+                '--modulepath=%(basedir)s/private/modules:'
+                '%(basedir)s/src/modules' % {'basedir': FHS.prod_dir},
+                '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
+                '--compile=test.codfw.wmnet',
+                '--color=false',
+                '--yamldir=/var/lib/catalog-differ/puppet/yaml',
+                '--manifest=%s/%s/manifests' % (FHS.prod_dir, 'src'),
+                '--environmentpath=%s/%s/environments' % (FHS.prod_dir, 'src'),
+            ],
             env=env,
             stdout=spool,
             stderr=mocker.return_value
@@ -56,20 +54,19 @@ class TestPuppetCalls(unittest.TestCase):
         with mock.patch('builtins.open', m, True) as mocker:
             puppet.compile('test.codfw.wmnet', 'test', self.fixtures + '/puppet_var')
         subprocess.check_call.assert_called_with(
-            ['puppet',
-             'master',
-             '--vardir=%s' % self.fixtures + '/puppet_var',
-             '--modulepath=%(basedir)s/private/modules:'
-             '%(basedir)s/src/modules' % {'basedir': FHS.change_dir},
-             '--confdir=%s/%s' % (FHS.change_dir, 'src'),
-             '--compile=test.codfw.wmnet',
-             '--color=false',
-             '--yamldir=/var/lib/catalog-differ/puppet/yaml',
-             '--manifest=%s/%s/manifests' % (FHS.change_dir, 'src'),
-             '--environmentpath=%s/%s/environments' % (FHS.change_dir, 'src'),
-             '--trusted_node_data',
-             '--parser=future',
-             '--environment=future'],
+            [
+                'puppet',
+                'master',
+                '--vardir=%s' % self.fixtures + '/puppet_var',
+                '--modulepath=%(basedir)s/private/modules:'
+                '%(basedir)s/src/modules' % {'basedir': FHS.change_dir},
+                '--confdir=%s/%s' % (FHS.change_dir, 'src'),
+                '--compile=test.codfw.wmnet',
+                '--color=false',
+                '--yamldir=/var/lib/catalog-differ/puppet/yaml',
+                '--manifest=%s/%s/manifests' % (FHS.change_dir, 'src'),
+                '--environmentpath=%s/%s/environments' % (FHS.change_dir, 'src'),
+            ],
             env=env,
             stdout=tf_mocker.return_value,
             stderr=mocker.return_value
@@ -94,21 +91,20 @@ class TestPuppetCalls(unittest.TestCase):
             puppet.compile('test.codfw.wmnet', 'prod', self.fixtures +
                            '/puppet_var', None, '--dummy')
         subprocess.check_call.assert_called_with(
-            ['puppet',
-             'master',
-             '--vardir=%s' % self.fixtures + '/puppet_var',
-             '--modulepath=%(basedir)s/private/modules:'
-             '%(basedir)s/src/modules' % {'basedir': FHS.prod_dir},
-             '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
-             '--compile=test.codfw.wmnet',
-             '--color=false',
-             '--yamldir=/var/lib/catalog-differ/puppet/yaml',
-             '--manifest=%s/%s/manifests' % (FHS.prod_dir, 'src'),
-             '--environmentpath=%s/%s/environments' % (FHS.prod_dir, 'src'),
-             '--trusted_node_data',
-             '--parser=future',
-             '--environment=future',
-             '--dummy'],
+            [
+                'puppet',
+                'master',
+                '--vardir=%s' % self.fixtures + '/puppet_var',
+                '--modulepath=%(basedir)s/private/modules:'
+                '%(basedir)s/src/modules' % {'basedir': FHS.prod_dir},
+                '--confdir=%s/%s' % (FHS.prod_dir, 'src'),
+                '--compile=test.codfw.wmnet',
+                '--color=false',
+                '--yamldir=/var/lib/catalog-differ/puppet/yaml',
+                '--manifest=%s/%s/manifests' % (FHS.prod_dir, 'src'),
+                '--environmentpath=%s/%s/environments' % (FHS.prod_dir, 'src'),
+                '--dummy',
+            ],
             env=env,
             stdout=tf_mocker.return_value,
             stderr=mocker.return_value

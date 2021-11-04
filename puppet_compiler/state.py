@@ -1,15 +1,9 @@
-from collections import defaultdict
-
-
 class StatesCollection(object):
     """
-    Helper class that is used to store the state of each host,
-    for every different run mode that has been selected.
+    Helper class that is used to store the state of each host.
     """
     def __init__(self):
-        # For every run mode, we need to store a dictionary
-        # of sets of hosts. Use a defaultdict for that purpose.
-        self.modes = defaultdict(dict)
+        self.states = {}
 
     def add(self, state):
         """
@@ -18,37 +12,35 @@ class StatesCollection(object):
         Params:
           state - a ChangeState (or derived) object for a run on a specific host.
         """
-        if state.name not in self.modes[state.mode]:
-            self.modes[state.mode][state.name] = set([state.host])
+        if state.name not in self.states:
+            self.states[state.name] = set([state.host])
         else:
-            self.modes[state.mode][state.name].add(state.host)
+            self.states[state.name].add(state.host)
 
-    def mode_to_str(self, mode):
+    def summary(self):
         """
-        Outputs a summary of the status for a specific run mode.
+        Outputs a summary of the status.
         """
-        output = '[%s] Nodes: ' % mode
-        for state, hosts in self.modes[mode].items():
+        output = 'Nodes: '
+        for state, hosts in self.states.items():
             output += "%s %s " % (len(hosts), state.upper())
         return output
 
 
 class ChangeState(object):
 
-    def __init__(self, mode, hostname, base, change, diff):
+    def __init__(self, hostname, base, change, diff):
         """
         Class for storing the state for a traditional run that
         diffs between the current production repo and the proposed change.
 
         Params:
-        mode: the current run mode. (str)
         hostname: the name of the host we're compiling for (str)
         base: True if there were errors in the base compilation, False otherwise
         change: Same as base, but for the change.
         diff: Outcome of the diff between the two catalogs. Can either be True (diffs are present),
               False (the diffing process failed) or None (for no changes, or if a catalog failed).
         """
-        self.mode = mode
         self.host = hostname
         self.prod_error = base
         self.change_error = change
@@ -76,18 +68,5 @@ class ChangeState(object):
             return 'noop'
         elif self.diff is False:
             return 'fail'
-        else:
-            return 'diff'
-
-
-class RichDataState(ChangeState):
-    @property
-    def name(self):
-        if self.prod_error:
-            return 'break'
-        elif self.change_error or self.diff is False:
-            return 'error'
-        elif self.diff is None:
-            return 'ok'
         else:
             return 'diff'

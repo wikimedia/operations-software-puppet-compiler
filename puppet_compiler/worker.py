@@ -6,17 +6,14 @@ import traceback
 from puppet_compiler import _log, puppet, utils
 from puppet_compiler.differ import PuppetCatalog
 from puppet_compiler.directories import FHS, HostFiles
-from puppet_compiler.presentation import html
-from puppet_compiler.state import ChangeState, RichDataState
+from puppet_compiler.presentation.html import Host
+from puppet_compiler.state import ChangeState
 
 
 class HostWorker(object):
     E_OK = 0
     E_BASE = 1
     E_CHANGED = 2
-    state = ChangeState
-    html_page = html.Host
-    html_index = html.Index
 
     def __init__(self, vardir, hostname):
         self.puppet_var = vardir
@@ -55,7 +52,7 @@ class HostWorker(object):
         change = errors & self.E_CHANGED
         try:
             self._make_output()
-            state = self.state('', self.hostname, base, change, diff)
+            state = ChangeState(self.hostname, base, change, diff)
             self._build_html(state.name)
         except Exception as e:
             _log.error('Error preparing output for %s: %s', self.hostname, e,
@@ -162,40 +159,5 @@ class HostWorker(object):
         """
         build the HTML output
         """
-        host = self.html_page(self.hostname, self._files, retcode)
+        host = Host(self.hostname, self._files, retcode)
         host.htmlpage(self.diffs, self.full_diffs)
-
-
-class RichDataHostWorker(HostWorker):
-    """
-    This worker is designed to be used when transitioning to the rich_data option.
-    It will compile the change first with the normal parser, then with the future one,
-    and make a diff between the two.
-
-    Results:
-    "ok"    => both catalogs compile, and there is no diff
-    "diff"  => both catalogs compile, but there is a diff
-    "error" => normal parser works, but future parser doesn't
-    "break" => future parser works, but the normal one doesn't
-    """
-    state = RichDataState
-    html_page = html.RichDataHost
-    html_index = html.RichDataIndex
-
-    def __init__(self, vardir, hostname):
-        super(RichDataHostWorker, self).__init__(vardir, hostname)
-        self._envs = ['change', 'rich_data']
-
-    def _compile_all(self):
-        rich_args = [
-            '--rich_data',
-            r'--default_manifest=\$confdir/manifests/site.pp'
-        ]
-        args = []
-        errors = self.E_OK
-        if not self._compile(self._envs[0], args):
-            errors += self.E_BASE
-        if not self._compile(self._envs[1], rich_args):
-            errors += self.E_CHANGED
-
-        return errors

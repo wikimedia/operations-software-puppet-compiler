@@ -53,8 +53,6 @@ class TestController(unittest.TestCase):
         self.assertEquals(c.config['http_url'],
                           'https://puppet-compiler.wmflabs.org/html')
         self.assertEquals(c.config['base'], '/mnt/jenkins-workspace')
-        c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet', nthreads=2, modes=['change'])
-        self.assertEqual(list(c.run_modes.keys()), ['change'])
 
     def test_parse_config(self):
         filename = os.path.join(self.fixtures, 'test_config.yaml')
@@ -76,61 +74,72 @@ class TestController(unittest.TestCase):
         mocker.assert_called_with(['puppet', '--version'])
         self.assertEqual(os.environ['PUPPET_VERSION'], '3')
 
-    @mock.patch('puppet_compiler.worker.HostWorker.html_index')
+    @mock.patch('puppet_compiler.presentation.html.Index.render')
     @mock.patch('puppet_compiler.worker.HostWorker.run_host')
     def test_run_single_host(self, mocker, html_mocker):
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
         mocker.return_value = (False, False, False)
-        c.m.prepare = mock.MagicMock()
-        c.m.prepare.return_value = True
-        c.m.refresh = mock.MagicMock()
-        c.m.refresh.return_value = True
+        c.managecode.prepare = mock.MagicMock()
+        c.managecode.prepare.return_value = True
+        c.managecode.refresh = mock.MagicMock()
+        c.managecode.refresh.return_value = True
 
         with mock.patch('time.sleep'):
             c.run()
-        c.m.prepare.assert_called_once_with()
-        c.m.refresh.assert_not_called()
-        self.assertEquals(c.state.modes['change']['fail'], set(['test.eqiad.wmnet']))
-        c.m.refresh.reset_mocks()
+        c.managecode.prepare.assert_called_once_with()
+        c.managecode.refresh.assert_not_called()
+        self.assertEquals(c.state.states['fail'], set(['test.eqiad.wmnet']))
+        c.managecode.refresh.reset_mocks()
         c.config['puppet_src'] = '/src'
         c.config['puppet_private'] = '/private'
         mocker.return_value = (False, False, None)
         with mock.patch('time.sleep'):
             c.run()
-        c.m.refresh.assert_has_calls([mock.call('/src'), mock.call('/private')])
-        self.assertEquals(c.state.modes['change']['noop'], set(['test.eqiad.wmnet']))
+        c.managecode.refresh.assert_has_calls([mock.call('/src'), mock.call('/private')])
+        self.assertEquals(c.state.states['noop'], set(['test.eqiad.wmnet']))
 
     def test_node_callback(self):
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
-        response = threads.Msg(is_error=True, value='Something to remember',
-                               args=None,
-                               kwargs={
-                                   'hostname': 'test.eqiad.wmnet',
-                                   'classes': (state.ChangeState, html.Index),
-                                   'mode': 'change'})
-        c.count['change'] = 5
+        response = threads.Msg(
+            is_error=True,
+            value='Something to remember',
+            args=None,
+            kwargs={
+                'hostname': 'test.eqiad.wmnet',
+                'classes': (state.ChangeState, html.Index),
+            },
+        )
+        c.count = 5
         c.on_node_compiled(response)
-        self.assertIn('test.eqiad.wmnet', c.state.modes['change']['fail'])
-        self.assertEquals(c.count['change'], 6)
-        response = threads.Msg(is_error=False, value=(False, False, None), args=None,
-                               kwargs={
-                                   'hostname': 'test2.eqiad.wmnet',
-                                   'classes': (state.ChangeState, html.Index),
-                                   'mode': 'change'})
+        self.assertIn('test.eqiad.wmnet', c.state.states['fail'])
+        self.assertEquals(c.count, 6)
+        response = threads.Msg(
+            is_error=False,
+            value=(False, False, None),
+            args=None,
+            kwargs={
+                'hostname': 'test2.eqiad.wmnet',
+                'classes': (state.ChangeState, html.Index),
+            },
+        )
         c.on_node_compiled(response)
-        self.assertIn('test2.eqiad.wmnet', c.state.modes['change']['noop'])
-        self.assertEquals(c.count['change'], 7)
-        with mock.patch('puppet_compiler.presentation.html.Index') as mocker:
+        self.assertIn('test2.eqiad.wmnet', c.state.states['noop'])
+        self.assertEquals(c.count, 7)
+        with mock.patch('puppet_compiler.presentation.html.Index.render') as index_render_mock:
             response = threads.Msg(
-                is_error=False, value=(False, False, None), args=None,
+                is_error=False,
+                value=(False, False, None),
+                args=None,
                 kwargs={
                     'hostname': 'test2.eqiad.wmnet',
                     'classes': (state.ChangeState, html.Index),
-                    'mode': 'change'}
+                },
             )
-            c.count['change'] = 4
+            c.count = 4
             c.on_node_compiled(response)
-            mocker.assert_called_with(c.outdir, 'test.eqiad.wmnet')
+            index_render_mock.assert_called_with(
+                {'fail': {'test.eqiad.wmnet'}, 'noop': {'test2.eqiad.wmnet'}}
+            )
 
     def test_pick_hosts(self):
         # Initialize a simple controller
@@ -200,13 +209,13 @@ class TestController(unittest.TestCase):
 
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmflabs')
         self.assertEqual(c.realm, 'labs')
-        self.assertEqual(c.m.realm, 'labs')
+        self.assertEqual(c.managecode.realm, 'labs')
 
     def test_success(self):
         c = controller.Controller(None, 19, 224570, 'test.eqiad.wmnet')
         # let's add just a successful run
-        c.count['change'] = 2
-        c.state.modes = {'change': {'noop': 1}}
+        c.count = 2
+        c.state.states = {'noop': 1}
         self.assertTrue(c.success)
-        c.count['change'] = 0
+        c.count = 0
         self.assertTrue(c.success)

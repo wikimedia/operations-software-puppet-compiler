@@ -20,7 +20,6 @@ nodes = os.environ.get('NODES', None)
 job_id = int(os.environ.get('BUILD_NUMBER'))
 configfile = os.environ.get('PC_CONFIG', '/etc/puppet-compiler.conf')
 nthreads = os.environ.get('NUM_THREADS', 2)
-compiler_mode = os.environ.get('MODE', 'change').split(",")
 
 
 def main():
@@ -46,7 +45,7 @@ def main():
 
         try:
             c = controller.Controller(configfile, job_id, change, host_list=nodes,
-                                      nthreads=nthreads, modes=compiler_mode, force=args.force)
+                                      nthreads=nthreads, force=args.force)
             success = c.run()
         except controller.ControllerNoHostsError:
             _log.warning('No hosts found matching `%s` unable to do anything', nodes)

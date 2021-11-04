@@ -4,11 +4,11 @@ import subprocess
 
 import yaml
 
-from collections import defaultdict
-
-from puppet_compiler import directories, _log, nodegen, prepare, state, \
+from puppet_compiler import directories, _log, nodegen, prepare, \
     threads, worker
+from puppet_compiler.state import ChangeState, StatesCollection
 from puppet_compiler.presentation import html
+from puppet_compiler.presentation.html import Index
 """
 How data are organized:
 
@@ -32,13 +32,8 @@ class ControllerNoHostsError(Exception):
 
 
 class Controller(object):
-    available_run_modes = {
-        'change': worker.HostWorker,
-        'rich_data': worker.RichDataHostWorker,
-    }
-
     def __init__(self, configfile, job_id, change_id, host_list=[],
-                 nthreads=2, modes=['change'], force=False):
+                 nthreads=2, force=False):
         # Let's first detect the installed puppet version
         self.set_puppet_version()
         self.config = {
@@ -57,7 +52,6 @@ class Controller(object):
             'puppet_var': '/var/lib/catalog-differ/puppet',
             'pool_size': nthreads,
         }
-        self.run_modes = {m: w for m, w in self.available_run_modes.items() if m in modes}
         try:
             if configfile is not None:
                 self._parse_conf(configfile)
@@ -68,14 +62,14 @@ class Controller(object):
         except Exception:
             _log.exception("Couldn't load the configuration from %s", configfile)
 
-        self.count = defaultdict(int)
+        self.count = 0
         self.hosts_raw = host_list
         self.pick_hosts(host_list)
         directories.FHS.setup(job_id, self.config['base'])
-        self.m = prepare.ManageCode(self.config, job_id, change_id, self.realm, force)
+        self.managecode = prepare.ManageCode(self.config, job_id, change_id, self.realm, force)
         self.outdir = directories.FHS.output_dir
         # State of all nodes
-        self.state = state.StatesCollection()
+        self.state = StatesCollection()
         # Set up variables to be used by the html output class
         html.change_id = change_id
         html.job_id = job_id
@@ -132,40 +126,36 @@ class Controller(object):
         # before of a run.
         if self.config['puppet_src'].startswith('/'):
             _log.debug("refreshing %s", self.config['puppet_src'])
-            self.m.refresh(self.config['puppet_src'])
+            self.managecode.refresh(self.config['puppet_src'])
         if self.config['puppet_private'].startswith('/'):
             _log.debug("refreshing %s", self.config['puppet_private'])
-            self.m.refresh(self.config['puppet_private'])
+            self.managecode.refresh(self.config['puppet_private'])
 
         _log.info("Creating directories under %s", self.config['base'])
-        self.m.prepare()
+        self.managecode.prepare()
 
         # For each host, the threadpool will execute
         # Controller._run_host with the host as the only argument.
         # When this main payload is executed in a thread, the presentation
         # work is executed in the main thread via
         # Controller.on_node_compiled
-        for mode, worker_class in self.run_modes.items():
-            threadpool = threads.ThreadOrchestrator(
-                self.config['pool_size'])
-            _log.info('Starting run in mode %s', mode)
-            state_class = worker_class.state
-            html_class = worker_class.html_index
-            for host in self.hosts:
-                h = worker_class(self.config['puppet_var'], host)
-                threadpool.add(h.run_host,
-                               hostname=host,
-                               mode=mode,
-                               classes=(state_class, html_class))
-            # Let's wait for all runs in this mode to complete
-            threadpool.fetch(self.on_node_compiled)
-            # Let's create the index for this mode
-            index = html_class(self.outdir, self.hosts_raw)
-            index.render(self.state.modes[mode])
-            _log.info('Run finished for mode %s; see your results at %s',
-                      mode, self.index_url(index))
+        threadpool = threads.ThreadOrchestrator(self.config['pool_size'])
+        _log.info('Starting run')
+        for host in self.hosts:
+            host_worker = worker.HostWorker(self.config['puppet_var'], host)
+            threadpool.add(
+                host_worker.run_host,
+                hostname=host,
+            )
+
+        # Let's wait for all runs to complete
+        threadpool.fetch(self.on_node_compiled)
+        # Let's create the index
+        index = Index(self.outdir, self.hosts_raw)
+        index.render(self.state.states)
+        _log.info('Run finished; see your results at %s', self.index_url(index))
         # Remove the source and the diffs etc, we just need the output.
-        self.m.cleanup()
+        self.managecode.cleanup()
         return self.success
 
     def index_url(self, index):
@@ -179,16 +169,19 @@ class Controller(object):
         Currently it just tries to see if more than half of the hosts are
         marked "fail"
         """
-        for mode in self.run_modes.keys():
-            if not self.count[mode]:
-                # We still didn't run
-                continue
-            try:
-                f = len(self.state.modes[mode]['fail'])
-            except KeyError:
-                continue
-            if (2 * f >= self.count[mode]):
-                return False
+        if not self.count:
+            # We still didn't run
+            return True
+
+        try:
+            failures = len(self.state.states['fail'])
+
+        except KeyError:
+            return True
+
+        if (2 * failures >= self.count):
+            return False
+
         return True
 
     def on_node_compiled(self, payload):
@@ -197,22 +190,20 @@ class Controller(object):
         completed in a worker thread.
         """
         hostname = payload.kwargs['hostname']
-        state_class, html_class = payload.kwargs['classes']
-        mode = payload.kwargs['mode']
-        self.count[mode] += 1
+        self.count += 1
         if payload.is_error:
             # Running _run_host returned with an exception, this is unexpected
-            state = state_class(mode, hostname, False, False, False)
+            state = ChangeState(hostname, False, False, False)
             self.state.add(state)
             _log.critical("Unexpected error running the payload: %s",
                           payload.value)
         else:
             base, change, diff = payload.value
-            host_state = state_class(mode, hostname, base, change, diff)
+            host_state = ChangeState(hostname, base, change, diff)
             self.state.add(host_state)
 
-        if not self.count[mode] % 5:
-            index = html_class(self.outdir, self.hosts_raw)
-            index.render(self.state.modes[mode])
+        if not self.count % 5:
+            index = Index(self.outdir, self.hosts_raw)
+            index.render(self.state.states)
             _log.info('Index updated, you can see detailed progress for your work at %s', self.index_url(index))
-        _log.info(self.state.mode_to_str(mode))
+        _log.info(self.state.summary())
