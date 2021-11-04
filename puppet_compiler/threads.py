@@ -1,11 +1,11 @@
 import queue
 import threading
 import time
-
 from collections import namedtuple
+
 from puppet_compiler import _log
 
-Msg = namedtuple('Msg', ['is_error', 'value', 'args', 'kwargs'])
+Msg = namedtuple("Msg", ["is_error", "value", "args", "kwargs"])
 
 
 class ThreadExecutor(threading.Thread):
@@ -19,14 +19,14 @@ class ThreadExecutor(threading.Thread):
         self.out_queue = out_queue
 
     def run(self):
-        _log.debug('Spawning a Thread executor')
+        _log.debug("Spawning a Thread executor")
         while True:
             # grab data from queue
             (payload, args, kwargs) = self.queue.get()
-            if payload == '__exit__':
-                _log.debug('Stopping Thread')
+            if payload == "__exit__":
+                _log.debug("Stopping Thread")
                 return
-            _log.debug('Executing payload %s', payload)
+            _log.debug("Executing payload %s", payload)
             try:
                 retval = payload(*args, **kwargs)
                 msg = Msg(is_error=False, value=retval, args=args, kwargs=kwargs)
@@ -39,12 +39,11 @@ class ThreadExecutor(threading.Thread):
                 msg = Msg(is_error=True, value=e, args=args, kwargs=kwargs)
                 self.out_queue.put(msg)
             finally:
-                _log.debug('Execution terminated')
+                _log.debug("Execution terminated")
                 self.queue.task_done()
 
 
 class ThreadOrchestrator(object):
-
     def __init__(self, pool_size=4):
         self.pool_size = int(pool_size)
         self._TP = []
@@ -68,7 +67,7 @@ class ThreadOrchestrator(object):
         try:
             callback(res)
         except Exception as e:
-            _log.warn('post-exec callback failed: %s', e)
+            _log.warn("post-exec callback failed: %s", e)
         self._incoming_queue.task_done()
 
     def fetch(self, callback):
@@ -85,6 +84,6 @@ class ThreadOrchestrator(object):
 
         # Now send a death signal to all workers.
         for i in range(len(self._TP)):
-            self._payload_queue.put(('__exit__', None, None))
+            self._payload_queue.put(("__exit__", None, None))
         self._TP = []
         return

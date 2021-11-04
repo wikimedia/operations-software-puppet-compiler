@@ -18,13 +18,13 @@ class HostWorker(object):
     def __init__(self, vardir, hostname):
         self.puppet_var = vardir
         self._files = HostFiles(hostname)
-        self._envs = ['prod', 'change']
+        self._envs = ["prod", "change"]
         self.hostname = hostname
         self.diffs = None
         self.full_diffs = None
 
     def facts_file(self):
-        """ Finds facts file for the current hostname """
+        """Finds facts file for the current hostname"""
         facts_file = utils.facts_file(self.puppet_var, self.hostname)
         if os.path.isfile(facts_file):
             return facts_file
@@ -35,8 +35,7 @@ class HostWorker(object):
         Compiles and diffs an host. Gets delegated to a worker thread
         """
         if not self.facts_file():
-            _log.error('Unable to find facts for host %s, skipping',
-                       self.hostname)
+            _log.error("Unable to find facts for host %s, skipping", self.hostname)
             return (True, True, None)
         else:
             # Refresh the facts file first
@@ -54,13 +53,12 @@ class HostWorker(object):
             state = ChangeState(self.hostname, base, change, diff)
             self._build_html(state.name)
         except Exception as e:
-            _log.error('Error preparing output for %s: %s', self.hostname, e,
-                       exc_info=True)
+            _log.error("Error preparing output for %s: %s", self.hostname, e, exc_info=True)
         return (base, change, diff)
 
     def _check_if_compiled(self, env):
-        catalog = self._files.file_for(env, 'catalog')
-        err = self._files.file_for(env, 'errors')
+        catalog = self._files.file_for(env, "catalog")
+        err = self._files.file_for(env, "errors")
         if os.path.isfile(catalog) and os.stat(catalog).st_size > 0:
             # This is already compiled and it worked.
             return True
@@ -76,24 +74,18 @@ class HostWorker(object):
         check = self._check_if_compiled(env)
         if check is not None:
             return check
-        if env != 'prod' \
-           and os.path.isfile(os.path.join(FHS.change_dir, 'src', '.configs')):
-            with open(os.path.join(FHS.change_dir, 'src', '.configs')) as f:
+        if env != "prod" and os.path.isfile(os.path.join(FHS.change_dir, "src", ".configs")):
+            with open(os.path.join(FHS.change_dir, "src", ".configs")) as f:
                 configs = f.readlines()
             # Make sure every item has exactly 2 dashes prepended
-            configs = map(lambda x: "--{}".format(x.lstrip('-')), configs)
+            configs = map(lambda x: "--{}".format(x.lstrip("-")), configs)
             args.extend(configs)
 
         try:
             _log.info("Compiling host %s (%s)", self.hostname, env)
-            puppet.compile(self.hostname,
-                           env,
-                           self.puppet_var,
-                           None,
-                           *args)
+            puppet.compile(self.hostname, env, self.puppet_var, None, *args)
         except subprocess.CalledProcessError as e:
-            _log.error("Compilation failed for hostname %s "
-                       " in environment %s.", self.hostname, env)
+            _log.error("Compilation failed for hostname %s " " in environment %s.", self.hostname, env)
             _log.info("Compilation exited with code %d", e.returncode)
             _log.debug("Failed command: %s", e.cmd)
             return False
@@ -121,8 +113,8 @@ class HostWorker(object):
         """
         _log.info("Calculating diffs for %s", self.hostname)
         try:
-            original = PuppetCatalog(self._files.file_for(self._envs[0], 'catalog'))
-            new = PuppetCatalog(self._files.file_for(self._envs[1], 'catalog'))
+            original = PuppetCatalog(self._files.file_for(self._envs[0], "catalog"))
+            new = PuppetCatalog(self._files.file_for(self._envs[1], "catalog"))
             self.diffs = original.diff_if_present(new)
             self.full_diffs = original.diff_full_diff(new)
         except Exception as e:
@@ -144,7 +136,7 @@ class HostWorker(object):
         if not os.path.isdir(self._files.outdir):
             os.makedirs(self._files.outdir, 0o755)
         for env in self._envs:
-            for label in 'catalog', 'errors':
+            for label in "catalog", "errors":
                 filename = self._files.file_for(env, label)
                 if os.path.isfile(filename):
                     newname = self._files.outfile_for(env, label)

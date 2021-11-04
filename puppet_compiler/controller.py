@@ -4,11 +4,11 @@ import subprocess
 
 import yaml
 
-from puppet_compiler import directories, _log, nodegen, prepare, \
-    threads, worker
-from puppet_compiler.state import ChangeState, StatesCollection
+from puppet_compiler import _log, directories, nodegen, prepare, threads, worker
 from puppet_compiler.presentation import html
 from puppet_compiler.presentation.html import Index
+from puppet_compiler.state import ChangeState, StatesCollection
+
 """
 How data are organized:
 
@@ -32,32 +32,30 @@ class ControllerNoHostsError(Exception):
 
 
 class Controller(object):
-    def __init__(self, configfile, job_id, change_id, host_list=[],
-                 nthreads=2, force=False):
+    def __init__(self, configfile, job_id, change_id, host_list=[], nthreads=2, force=False):
         # Let's first detect the installed puppet version
         self.set_puppet_version()
         self.config = {
             # Url under which results will be found
-            'http_url': 'https://puppet-compiler.wmflabs.org/html',
+            "http_url": "https://puppet-compiler.wmflabs.org/html",
             # Base working directory of the compiler
-            'base': '/mnt/jenkins-workspace',
+            "base": "/mnt/jenkins-workspace",
             # Location (either on disk, or at a remote HTTP location)
             # of the operations/puppet repository
-            'puppet_src': 'https://gerrit.wikimedia.org/r/operations/puppet',
+            "puppet_src": "https://gerrit.wikimedia.org/r/operations/puppet",
             # Location (either on disk, or at a remote HTTP location)
             # of the labs/private repository
-            'puppet_private': 'https://gerrit.wikimedia.org/r/labs/private',
+            "puppet_private": "https://gerrit.wikimedia.org/r/labs/private",
             # Directory hosting all of puppet's runtime files usually
             # under /var/lib/puppet on debian-derivatives
-            'puppet_var': '/var/lib/catalog-differ/puppet',
-            'pool_size': nthreads,
+            "puppet_var": "/var/lib/catalog-differ/puppet",
+            "pool_size": nthreads,
         }
         try:
             if configfile is not None:
                 self._parse_conf(configfile)
         except yaml.error.YAMLError as error:
-            _log.exception("Configuration file %s contains malformed yaml: %s",
-                           configfile, error)
+            _log.exception("Configuration file %s contains malformed yaml: %s", configfile, error)
             raise ControllerError from error
         except Exception:
             _log.exception("Couldn't load the configuration from %s", configfile)
@@ -65,7 +63,7 @@ class Controller(object):
         self.count = 0
         self.hosts_raw = host_list
         self.pick_hosts(host_list)
-        directories.FHS.setup(job_id, self.config['base'])
+        directories.FHS.setup(job_id, self.config["base"])
         self.managecode = prepare.ManageCode(self.config, job_id, change_id, self.realm, force)
         self.outdir = directories.FHS.output_dir
         # State of all nodes
@@ -75,12 +73,12 @@ class Controller(object):
         html.job_id = job_id
 
     def set_puppet_version(self):
-        if not os.environ.get('PUPPET_VERSION_FULL', False):
-            full = subprocess.check_output(['puppet', '--version']).decode().rstrip()
-            os.environ['PUPPET_VERSION_FULL'] = full
-        if not os.environ.get('PUPPET_VERSION', False):
-            major = os.environ['PUPPET_VERSION_FULL'].split('.')[0]
-            os.environ['PUPPET_VERSION'] = major
+        if not os.environ.get("PUPPET_VERSION_FULL", False):
+            full = subprocess.check_output(["puppet", "--version"]).decode().rstrip()
+            os.environ["PUPPET_VERSION_FULL"] = full
+        if not os.environ.get("PUPPET_VERSION", False):
+            major = os.environ["PUPPET_VERSION_FULL"].split(".")[0]
+            os.environ["PUPPET_VERSION"] = major
 
     def pick_hosts(self, host_list):
         if not host_list:
@@ -89,33 +87,34 @@ class Controller(object):
         elif host_list.startswith("re:"):
             host_regex = host_list[3:]
             self.hosts = nodegen.get_nodes_regex(self.config, host_regex)
-        elif host_list.startswith('O:'):
+        elif host_list.startswith("O:"):
             role = host_list[2:]
-            self.hosts = nodegen.get_nodes_puppetdb_class('Role::{}'.format(role))
-        elif host_list.startswith('P:'):
+            self.hosts = nodegen.get_nodes_puppetdb_class("Role::{}".format(role))
+        elif host_list.startswith("P:"):
             profile = host_list[2:]
-            self.hosts = nodegen.get_nodes_puppetdb_class('Profile::{}'.format(profile))
-        elif host_list.startswith('C:'):
+            self.hosts = nodegen.get_nodes_puppetdb_class("Profile::{}".format(profile))
+        elif host_list.startswith("C:"):
             puppet_class = host_list[2:]
             self.hosts = nodegen.get_nodes_puppetdb_class(puppet_class)
-        elif host_list.startswith('cumin:'):
+        elif host_list.startswith("cumin:"):
             query = host_list[6:]
             self.hosts = nodegen.get_nodes_cumin(query)
         else:
             # Standard comma-separated list of hosts
-            self.hosts = set(host for host in re.split(r'\s*,\s*', host_list) if host)
+            self.hosts = set(host for host in re.split(r"\s*,\s*", host_list) if host)
 
         if not self.hosts:
             raise ControllerNoHostsError
-        is_labs = [host.endswith(('.wmflabs', '.wikimedia.cloud')) for host in self.hosts]
+        is_labs = [host.endswith((".wmflabs", ".wikimedia.cloud")) for host in self.hosts]
         if any(is_labs) and not all(is_labs):
-            _log.critical("Cannot compile production and labs hosts in the "
-                          "same run. Please run puppet-compiler twice.")
+            _log.critical(
+                "Cannot compile production and labs hosts in the " "same run. Please run puppet-compiler twice."
+            )
             raise ControllerError
-        self.realm = 'labs' if any(is_labs) else 'production'
+        self.realm = "labs" if any(is_labs) else "production"
 
     def _parse_conf(self, configfile):
-        with open(configfile, 'r') as f:
+        with open(configfile, "r") as f:
             data = yaml.load(f, Loader=yaml.SafeLoader)
         # TODO: add data validation here
         self.config.update(data)
@@ -124,14 +123,14 @@ class Controller(object):
         _log.info("Refreshing the common repos from upstream if needed")
         # If using local filesystem repositories, we need to refresh them
         # before of a run.
-        if self.config['puppet_src'].startswith('/'):
-            _log.debug("refreshing %s", self.config['puppet_src'])
-            self.managecode.refresh(self.config['puppet_src'])
-        if self.config['puppet_private'].startswith('/'):
-            _log.debug("refreshing %s", self.config['puppet_private'])
-            self.managecode.refresh(self.config['puppet_private'])
+        if self.config["puppet_src"].startswith("/"):
+            _log.debug("refreshing %s", self.config["puppet_src"])
+            self.managecode.refresh(self.config["puppet_src"])
+        if self.config["puppet_private"].startswith("/"):
+            _log.debug("refreshing %s", self.config["puppet_private"])
+            self.managecode.refresh(self.config["puppet_private"])
 
-        _log.info("Creating directories under %s", self.config['base'])
+        _log.info("Creating directories under %s", self.config["base"])
         self.managecode.prepare()
 
         # For each host, the threadpool will execute
@@ -139,10 +138,10 @@ class Controller(object):
         # When this main payload is executed in a thread, the presentation
         # work is executed in the main thread via
         # Controller.on_node_compiled
-        threadpool = threads.ThreadOrchestrator(self.config['pool_size'])
-        _log.info('Starting run')
+        threadpool = threads.ThreadOrchestrator(self.config["pool_size"])
+        _log.info("Starting run")
         for host in self.hosts:
-            host_worker = worker.HostWorker(self.config['puppet_var'], host)
+            host_worker = worker.HostWorker(self.config["puppet_var"], host)
             threadpool.add(
                 host_worker.run_host,
                 hostname=host,
@@ -153,13 +152,13 @@ class Controller(object):
         # Let's create the index
         index = Index(self.outdir, self.hosts_raw)
         index.render(self.state.states)
-        _log.info('Run finished; see your results at %s', self.index_url(index))
+        _log.info("Run finished; see your results at %s", self.index_url(index))
         # Remove the source and the diffs etc, we just need the output.
         self.managecode.cleanup()
         return self.success
 
     def index_url(self, index):
-        return "%s/%s/%s" % (self.config['http_url'], html.job_id, index.url)
+        return "%s/%s/%s" % (self.config["http_url"], html.job_id, index.url)
 
     @property
     def success(self):
@@ -174,12 +173,12 @@ class Controller(object):
             return True
 
         try:
-            failures = len(self.state.states['fail'])
+            failures = len(self.state.states["fail"])
 
         except KeyError:
             return True
 
-        if (2 * failures >= self.count):
+        if 2 * failures >= self.count:
             return False
 
         return True
@@ -189,14 +188,13 @@ class Controller(object):
         This callback is called in the main thread once one payload has been
         completed in a worker thread.
         """
-        hostname = payload.kwargs['hostname']
+        hostname = payload.kwargs["hostname"]
         self.count += 1
         if payload.is_error:
             # Running _run_host returned with an exception, this is unexpected
             state = ChangeState(hostname, False, False, False)
             self.state.add(state)
-            _log.critical("Unexpected error running the payload: %s",
-                          payload.value)
+            _log.critical("Unexpected error running the payload: %s", payload.value)
         else:
             base, change, diff = payload.value
             host_state = ChangeState(hostname, base, change, diff)
@@ -205,5 +203,5 @@ class Controller(object):
         if not self.count % 5:
             index = Index(self.outdir, self.hosts_raw)
             index.render(self.state.states)
-            _log.info('Index updated, you can see detailed progress for your work at %s', self.index_url(index))
+            _log.info("Index updated, you can see detailed progress for your work at %s", self.index_url(index))
         _log.info(self.state.summary())

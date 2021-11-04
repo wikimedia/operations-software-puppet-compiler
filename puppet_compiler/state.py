@@ -2,6 +2,7 @@ class StatesCollection(object):
     """
     Helper class that is used to store the state of each host.
     """
+
     def __init__(self):
         self.states = {}
 
@@ -21,14 +22,13 @@ class StatesCollection(object):
         """
         Outputs a summary of the status.
         """
-        output = 'Nodes: '
+        output = "Nodes: "
         for state, hosts in self.states.items():
             output += "%s %s " % (len(hosts), state.upper())
         return output
 
 
 class ChangeState(object):
-
     def __init__(self, hostname, base, change, diff):
         """
         Class for storing the state for a traditional run that
@@ -59,14 +59,14 @@ class ChangeState(object):
         """
         if self.prod_error:
             if self.change_error:
-                return 'fail'
+                return "fail"
             else:
-                return 'noop'
+                return "noop"
         elif self.change_error:
-            return 'error'
+            return "error"
         elif self.diff is None:
-            return 'noop'
+            return "noop"
         elif self.diff is False:
-            return 'fail'
+            return "fail"
         else:
-            return 'diff'
+            return "diff"

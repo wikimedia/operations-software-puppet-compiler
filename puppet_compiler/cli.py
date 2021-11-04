@@ -10,16 +10,16 @@ def get_args():
     parser = argparse.ArgumentParser(
         description="Puppet Compiler - allows to see differences in catalogs between revisions"
     )
-    parser.add_argument('--debug', action='store_true', default=False, help="Print debug output")
-    parser.add_argument('--force', action='store_true', default=False, help="Print debug output")
+    parser.add_argument("--debug", action="store_true", default=False, help="Print debug output")
+    parser.add_argument("--force", action="store_true", default=False, help="Print debug output")
     return parser.parse_args()
 
 
-change = int(os.environ.get('CHANGE'))
-nodes = os.environ.get('NODES', None)
-job_id = int(os.environ.get('BUILD_NUMBER'))
-configfile = os.environ.get('PC_CONFIG', '/etc/puppet-compiler.conf')
-nthreads = os.environ.get('NUM_THREADS', 2)
+change = int(os.environ.get("CHANGE"))
+nodes = os.environ.get("NODES", None)
+job_id = int(os.environ.get("BUILD_NUMBER"))
+configfile = os.environ.get("PC_CONFIG", "/etc/puppet-compiler.conf")
+nthreads = os.environ.get("NUM_THREADS", 2)
 
 
 def main():
@@ -28,11 +28,7 @@ def main():
         args = get_args()
         lvl = logging.DEBUG if args.debug else logging.INFO
 
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s: %(message)s',
-            level=lvl,
-            datefmt='[ %Y-%m-%dT%H:%M:%S ]'
-        )
+        logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=lvl, datefmt="[ %Y-%m-%dT%H:%M:%S ]")
         if not change:
             _log.critical("No change provided, we cannot do anything")
             return 2
@@ -44,11 +40,10 @@ def main():
         _log.info("run manually with: ./utils/pcc %d %s", change, nodes)
 
         try:
-            c = controller.Controller(configfile, job_id, change, host_list=nodes,
-                                      nthreads=nthreads, force=args.force)
+            c = controller.Controller(configfile, job_id, change, host_list=nodes, nthreads=nthreads, force=args.force)
             success = c.run()
         except controller.ControllerNoHostsError:
-            _log.warning('No hosts found matching `%s` unable to do anything', nodes)
+            _log.warning("No hosts found matching `%s` unable to do anything", nodes)
             return 2
         except controller.ControllerError:
             return 1
@@ -61,5 +56,5 @@ def main():
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(main())

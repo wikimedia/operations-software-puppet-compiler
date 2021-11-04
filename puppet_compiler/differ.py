@@ -16,11 +16,13 @@ def clone_resource(resource, full_clone=True):
     """
     if full_clone:
         return resource
-    return PuppetResource({
-        'title': resource.title,
-        'type': resource.resource_type,
-        'exported': resource.exported,
-    })
+    return PuppetResource(
+        {
+            "title": resource.title,
+            "type": resource.resource_type,
+            "exported": resource.exported,
+        }
+    )
 
 
 def format_param(param, value, param_len):
@@ -29,10 +31,10 @@ def format_param(param, value, param_len):
     try:
         return param_format.format(p=param, v=value)
     except UnicodeEncodeError:
-        return param_format.format(p=param, v=value.encode('latin1'))
+        return param_format.format(p=param, v=value.encode("latin1"))
 
 
-def parameters_diff(orig, other, fromfile='a', tofile='b'):
+def parameters_diff(orig, other, fromfile="a", tofile="b"):
     """Function for diffing parameters"""
     output = "--- {f}\n+++ {t}\n\n".format(f=fromfile, t=tofile)
     old = set(orig.keys())
@@ -60,25 +62,24 @@ class PuppetResource(object):
     """Object to manage Puppet resources"""
 
     def __init__(self, data):
-        self.resource_type = data['type']
-        self.title = data['title']
-        self.exported = data['exported']
-        self._init_params(data.get('parameters', {}))
+        self.resource_type = data["type"]
+        self.title = data["title"]
+        self.exported = data["exported"]
+        self._init_params(data.get("parameters", {}))
 
     def _init_params(self, kwargs):
         self.parameters = {}
-        self.content = ''
+        self.content = ""
         self.source = None
         # Let's first look for special
         for k, v in kwargs.items():
-            if k == 'content':
+            if k == "content":
                 self.content = v
             else:
                 self.parameters[k] = v
 
     def __str__(self):
-        return "{res}[{title}]".format(res=self.resource_type,
-                                       title=self.title)
+        return "{res}[{title}]".format(res=self.resource_type, title=self.title)
 
     def is_same_of(self, other):
         """
@@ -89,9 +90,7 @@ class PuppetResource(object):
     def __eq__(self, other):
         if not self.is_same_of(other):
             return False
-        return (self.content == other.content and
-                self.source == other.source and
-                self.parameters == other.parameters)
+        return self.content == other.content and self.source == other.source and self.parameters == other.parameters
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -104,50 +103,49 @@ class PuppetResource(object):
         """
         parsed = content
         if isinstance(content, dict):
-            if content.get('__pcore_type__') == 'Binary':
+            if content.get("__pcore_type__") == "Binary":
                 # Prefix the content so we can detect when the type changes
-                parsed = 'Puppet::Pops::Types::PBinaryType::Binary\n{}'.format(
-                    content.get('__pcore_value__'))
+                parsed = "Puppet::Pops::Types::PBinaryType::Binary\n{}".format(content.get("__pcore_value__"))
         return parsed.splitlines()
 
     def diff_if_present(self, other):
         if self == other:
             return None
 
-        out = {'resource': str(self)}
-        if self.content != other.content and self.resource_type == 'File':
+        out = {"resource": str(self)}
+        if self.content != other.content and self.resource_type == "File":
             other_content = self.parse_file_content(other.content)
             my_content = self.parse_file_content(self.content)
             content_diff = [
-                line for line in difflib.unified_diff(
-                    my_content, other_content, lineterm="",
-                    fromfile='{}.orig'.format(self.title),
-                    tofile=self.title)
+                line
+                for line in difflib.unified_diff(
+                    my_content, other_content, lineterm="", fromfile="{}.orig".format(self.title), tofile=self.title
+                )
             ]
-            out['content'] = "\n".join(content_diff)
+            out["content"] = "\n".join(content_diff)
         if self.parameters != other.parameters:
-            out['parameters'] = parameters_diff(
-                self.parameters, other.parameters,
-                fromfile='{}.orig'.format(str(self)), tofile=str(self)
+            out["parameters"] = parameters_diff(
+                self.parameters, other.parameters, fromfile="{}.orig".format(str(self)), tofile=str(self)
             )
         return out
 
 
 class PuppetCatalog(object):
     """Object for working with a  Puppet catalog"""
+
     def __init__(self, filename):
         self.resources = {}
-        with open(filename, 'r', encoding='latin_1') as catalog_fh:
+        with open(filename, "r", encoding="latin_1") as catalog_fh:
             catalog = json.load(catalog_fh)
-        if 'data' in catalog:
-            base = catalog['data']  # Puppet 3
+        if "data" in catalog:
+            base = catalog["data"]  # Puppet 3
         else:
             base = catalog  # Puppet 4 and above
-        for resource in base['resources']:
+        for resource in base["resources"]:
             res = PuppetResource(resource)
             self.resources[str(res)] = res
         self.all_resources = set(self.resources.keys())
-        self.name = base['name']
+        self.name = base["name"]
 
     def diff_if_present(self, other):
         return self._diff(self.all_resources & other.all_resources, other)
@@ -176,14 +174,14 @@ class PuppetCatalog(object):
         num_changed = len(diffs)
         num_other = len(only_in_other)
         num_self = len(only_in_self)
-        total_affected = (num_changed + num_other + num_self)
+        total_affected = num_changed + num_other + num_self
         num_resources = len(self.all_resources)
         if (total_affected) == 0:
             return None
         return {
-            'total': num_resources,
-            'only_in_self': only_in_self,
-            'only_in_other': only_in_other,
-            'resource_diffs': diffs,
-            'perc_changed': '%.2f%%' % (100 * float(total_affected) / num_resources)
+            "total": num_resources,
+            "only_in_self": only_in_self,
+            "only_in_other": only_in_other,
+            "resource_diffs": diffs,
+            "perc_changed": "%.2f%%" % (100 * float(total_affected) / num_resources),
         }
