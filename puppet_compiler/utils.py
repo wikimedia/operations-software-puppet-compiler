@@ -16,7 +16,7 @@ def facts_file(vardir, hostname):
     filename = "{}.yaml".format(hostname)
     latestfile = ""
     mtime = 0
-    for dirpath, dirnames, files in os.walk(os.path.join(vardir, "yaml")):
+    for dirpath, _, files in os.walk(os.path.join(vardir, "yaml")):
         # Puppet can only see things in directories named 'facts'
         if os.path.basename(os.path.normpath(dirpath)) == "facts" and filename in files:
             filepath = os.path.join(dirpath, filename)
@@ -25,7 +25,7 @@ def facts_file(vardir, hostname):
                 mtime = os.path.getmtime(filepath)
     if latestfile:
         return latestfile
-    raise FactsFileNotFound("Unable to find fact file for: {}".format(hostname))
+    raise FactsFileNotFound("Unable to find fact file for: {} under directory {}".format(hostname, vardir))
 
 
 def refresh_yaml_date(facts_file):
