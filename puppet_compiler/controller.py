@@ -32,7 +32,10 @@ class ControllerNoHostsError(Exception):
 
 
 class Controller(object):
-    def __init__(self, configfile, job_id, change_id, host_list=[], nthreads=2, force=False):
+    cloud_domains = (".wmflabs", ".wikimedia.cloud")
+
+    def __init__(self, configfile, job_id, change_id, host_list, nthreads=2, force=False):
+
         # Let's first detect the installed puppet version
         self.set_puppet_version()
         self.config = {
@@ -64,7 +67,7 @@ class Controller(object):
         self.hosts_raw = host_list
         self.pick_hosts(host_list)
         directories.FHS.setup(job_id, self.config["base"])
-        self.managecode = prepare.ManageCode(self.config, job_id, change_id, self.realm, force)
+        self.managecode = prepare.ManageCode(self.config, job_id, change_id, force)
         self.outdir = directories.FHS.output_dir
         # State of all nodes
         self.state = StatesCollection()
@@ -83,35 +86,29 @@ class Controller(object):
     def pick_hosts(self, host_list):
         if not host_list:
             _log.info("No host list provided, generating the nodes list")
-            self.hosts = nodegen.get_nodes(self.config)
+            hosts = nodegen.get_nodes(self.config)
         elif host_list.startswith("re:"):
             host_regex = host_list[3:]
-            self.hosts = nodegen.get_nodes_regex(self.config, host_regex)
+            hosts = nodegen.get_nodes_regex(self.config, host_regex)
         elif host_list.startswith("O:"):
             role = host_list[2:]
-            self.hosts = nodegen.get_nodes_puppetdb_class("Role::{}".format(role))
+            hosts = nodegen.get_nodes_puppetdb_class("Role::{}".format(role))
         elif host_list.startswith("P:"):
             profile = host_list[2:]
-            self.hosts = nodegen.get_nodes_puppetdb_class("Profile::{}".format(profile))
+            hosts = nodegen.get_nodes_puppetdb_class("Profile::{}".format(profile))
         elif host_list.startswith("C:"):
             puppet_class = host_list[2:]
-            self.hosts = nodegen.get_nodes_puppetdb_class(puppet_class)
+            hosts = nodegen.get_nodes_puppetdb_class(puppet_class)
         elif host_list.startswith("cumin:"):
             query = host_list[6:]
-            self.hosts = nodegen.get_nodes_cumin(query)
+            hosts = nodegen.get_nodes_cumin(query)
         else:
-            # Standard comma-separated list of hosts
-            self.hosts = set(host for host in re.split(r"\s*,\s*", host_list) if host)
+            hosts = set(host for host in re.split(r"\s*,\s*", host_list) if host)
 
-        if not self.hosts:
+        if not hosts:
             raise ControllerNoHostsError
-        is_labs = [host.endswith((".wmflabs", ".wikimedia.cloud")) for host in self.hosts]
-        if any(is_labs) and not all(is_labs):
-            _log.critical(
-                "Cannot compile production and labs hosts in the " "same run. Please run puppet-compiler twice."
-            )
-            raise ControllerError
-        self.realm = "labs" if any(is_labs) else "production"
+        self.cloud_hosts = {h for h in hosts if h.endswith(self.cloud_domains)}
+        self.prod_hosts = hosts - self.cloud_hosts
 
     def _parse_conf(self, configfile):
         with open(configfile, "r") as f:
@@ -133,22 +130,9 @@ class Controller(object):
         _log.info("Creating directories under %s", self.config["base"])
         self.managecode.prepare()
 
-        # For each host, the threadpool will execute
-        # Controller._run_host with the host as the only argument.
-        # When this main payload is executed in a thread, the presentation
-        # work is executed in the main thread via
-        # Controller.on_node_compiled
-        threadpool = threads.ThreadOrchestrator(self.config["pool_size"])
-        _log.info("Starting run")
-        for host in self.hosts:
-            host_worker = worker.HostWorker(self.config["puppet_var"], host)
-            threadpool.add(
-                host_worker.run_host,
-                hostname=host,
-            )
+        self._run_hosts(self.prod_hosts, "production")
+        self._run_hosts(self.cloud_hosts, "labs")
 
-        # Let's wait for all runs to complete
-        threadpool.fetch(self.on_node_compiled)
         # Let's create the index
         index = Index(self.outdir, self.hosts_raw)
         index.render(self.state.states)
@@ -159,6 +143,27 @@ class Controller(object):
 
     def index_url(self, index):
         return "%s/%s/%s" % (self.config["http_url"], html.job_id, index.url)
+
+    def _run_hosts(self, hosts, realm):
+        if not hosts:
+            return
+        self.managecode.update_config(realm)
+        # For each host, the threadpool will execute
+        # Controller._run_host with the host as the only argument.
+        # When this main payload is executed in a thread, the presentation
+        # work is executed in the main thread via
+        # Controller.on_node_compiled
+        threadpool = threads.ThreadOrchestrator(self.config["pool_size"])
+        _log.info("Starting run (%s)", realm)
+        for host in hosts:
+            host_worker = worker.HostWorker(self.config["puppet_var"], host)
+            threadpool.add(
+                host_worker.run_host,
+                hostname=host,
+            )
+
+        # Let's wait for all runs to complete
+        threadpool.fetch(self.on_node_compiled)
 
     @property
     def success(self):

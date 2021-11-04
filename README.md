@@ -34,3 +34,13 @@ Changing `PATH_TO_REPO` for the full path to the root of the gite repository.
 ## Running the CI tests locally
 You can easily run the same tests that CI is running using the script:
 * ./utils/run_ci_locally.sh
+
+## Working with cloud hosts
+
+If you would also like to test cloud hosts then you will need access to the openstack api for both the enc and custom hiera backend.  for this you will need a copy of
+    * /usr/local/bin/puppet-enc
+    * /etc/puppet-enc.yaml
+and also set up a tunnle to the cloud puppetmaster (notice the different port number used to bypass nginx)
+    * ssh -N -L8100:localhost:8101 cloud-puppetmaster-03.cloudinfra.eqiad.wmflabs
+Finaly add the following to /etc/hosts
+    * `127.0.0.1 puppetmaster.cloudinfra.wmflabs.org`

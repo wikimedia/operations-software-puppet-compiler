@@ -23,13 +23,12 @@ def pushd(dirname):
 class ManageCode(object):
     private_modules = ["passwords", "contacts", "privateexim"]
 
-    def __init__(self, config, jobid, changeid, realm="production", force=False):
+    def __init__(self, config, jobid, changeid, force=False):
         self.base_dir = FHS.base_dir
         self.puppet_src = config["puppet_src"]
         self.puppet_private = config["puppet_private"]
         self.puppet_var = config["puppet_var"]
         self.change_id = changeid
-        self.realm = realm
         self.force = force
 
         self.change_dir = FHS.change_dir
@@ -45,7 +44,7 @@ class ManageCode(object):
         shutil.rmtree(self.base_dir, True)
 
     def prepare(self):
-        _log.debug("Creating directories under %s", self.base_dir)
+        _log.debug("Creating directories under %s %s", self.base_dir, self.force)
         # Create the base directory now
         if self.force:
             # This is manly used during development where you dont care about the output
@@ -61,19 +60,21 @@ class ManageCode(object):
 
         # Production
         self._prepare_dir(self.prod_dir)
-        prod_src = os.path.join(self.prod_dir, "src")
-        with pushd(prod_src):
-            self._copy_hiera(self.prod_dir, self.realm)
-            self._create_puppetconf(self.change_dir, self.realm)
-
-        # Change
         self._prepare_dir(self.change_dir)
         change_src = os.path.join(self.change_dir, "src")
         with pushd(change_src):
             self._fetch_change()
-            # Re-do in case of hiera config changes
-            self._copy_hiera(self.change_dir, self.realm)
-            self._create_puppetconf(self.change_dir, self.realm)
+
+    def update_config(self, realm):
+        prod_src = os.path.join(self.prod_dir, "src")
+        with pushd(prod_src):
+            self._copy_hiera(self.prod_dir, realm)
+            self._create_puppetconf(self.change_dir, realm)
+
+        change_src = os.path.join(self.change_dir, "src")
+        with pushd(change_src):
+            self._copy_hiera(self.change_dir, realm)
+            self._create_puppetconf(self.change_dir, realm)
 
     def refresh(self, gitdir):
         """

@@ -55,7 +55,7 @@ class TestController(unittest.TestCase):
 
     def test_initialize_no_configfile(self):
         c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet", nthreads=2)
-        self.assertEquals(c.hosts, set(["test.eqiad.wmnet"]))
+        self.assertEquals(c.prod_hosts, set(["test.eqiad.wmnet"]))
         self.assertEquals(c.config["http_url"], "https://puppet-compiler.wmflabs.org/html")
         self.assertEquals(c.config["base"], "/mnt/jenkins-workspace")
 
@@ -80,13 +80,12 @@ class TestController(unittest.TestCase):
 
     @mock.patch("puppet_compiler.presentation.html.Index.render")
     @mock.patch("puppet_compiler.worker.HostWorker.run_host")
-    def test_run_single_host(self, mocker, html_mocker):
+    def test_run_single_host(self, run_host_mock, render_mocker):
         c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
-        mocker.return_value = (False, False, False)
-        c.managecode.prepare = mock.MagicMock()
-        c.managecode.prepare.return_value = True
-        c.managecode.refresh = mock.MagicMock()
-        c.managecode.refresh.return_value = True
+        run_host_mock.return_value = (False, False, False)
+        c.managecode.prepare = mock.MagicMock(return_value=True)
+        c.managecode.refresh = mock.MagicMock(return_value=True)
+        c.managecode.update_config = mock.MagicMock()
 
         with mock.patch("time.sleep"):
             c.run()
@@ -96,7 +95,7 @@ class TestController(unittest.TestCase):
         c.managecode.refresh.reset_mocks()
         c.config["puppet_src"] = "/src"
         c.config["puppet_private"] = "/private"
-        mocker.return_value = (False, False, None)
+        run_host_mock.return_value = (False, False, None)
         with mock.patch("time.sleep"):
             c.run()
         c.managecode.refresh.assert_has_calls([mock.call("/src"), mock.call("/private")])
@@ -150,21 +149,21 @@ class TestController(unittest.TestCase):
         c.config["puppet_src"] = self.fixtures
         # Single node
         c.pick_hosts("test1.eqiad.wmnet")
-        self.assertEquals(c.hosts, set(["test1.eqiad.wmnet"]))
+        self.assertEquals(c.prod_hosts, set(["test1.eqiad.wmnet"]))
         # Comma-separated nodes
         c.pick_hosts("test.eqiad.wmnet,test1.eqiad.wmnet")
-        self.assertEquals(c.hosts, set(["test.eqiad.wmnet", "test1.eqiad.wmnet"]))
+        self.assertEquals(c.prod_hosts, set(["test.eqiad.wmnet", "test1.eqiad.wmnet"]))
         # Comma-separated nodes trailing comma
         c.pick_hosts("test.eqiad.wmnet,test1.eqiad.wmnet,")
-        self.assertEquals(c.hosts, set(["test.eqiad.wmnet", "test1.eqiad.wmnet"]))
+        self.assertEquals(c.prod_hosts, set(["test.eqiad.wmnet", "test1.eqiad.wmnet"]))
         # Regex-based matching
         c.pick_hosts(r"re:test\d.eqiad.wmnet")
-        self.assertEquals(c.hosts, set(["test1.eqiad.wmnet", "test2.eqiad.wmnet"]))
+        self.assertEquals(c.prod_hosts, set(["test1.eqiad.wmnet", "test2.eqiad.wmnet"]))
         # Nodegen based on parsing site.pp
         c.pick_hosts(None)
         s1 = set(["test.eqiad.wmnet", "test1.eqiad.wmnet"])
         s2 = set(["test.eqiad.wmnet", "test2.eqiad.wmnet"])
-        s = c.hosts
+        s = c.prod_hosts
         assert s == s1 or s == s2
 
     @requests_mock.mock()
@@ -176,34 +175,36 @@ class TestController(unittest.TestCase):
         # Role-based matching
         r_mock.get(PUPPETDB_URI.format("Role::Grafana"), json=get_mocked_response("role"), status_code=200)
         c.pick_hosts("O:grafana")
-        self.assertEqual(c.hosts, set(["grafana2001.codfw.wmnet"]))
+        self.assertEqual(c.prod_hosts, set(["grafana2001.codfw.wmnet"]))
         # Profile-based matching
         r_mock.get(PUPPETDB_URI.format("Profile::Grafana::Production"), json=get_mocked_response(), status_code=200)
         c.pick_hosts("P:grafana::production")
-        self.assertEqual(c.hosts, set(["grafana2001.codfw.wmnet", "cloudmetrics1002.eqiad.wmnet"]))
+        self.assertEqual(c.prod_hosts, set(["grafana2001.codfw.wmnet", "cloudmetrics1002.eqiad.wmnet"]))
         # Class-based matching
         r_mock.get(PUPPETDB_URI.format("Grafana"), json=get_mocked_response(), status_code=200)
         c.pick_hosts("C:grafana")
-        self.assertEqual(c.hosts, set(["grafana2001.codfw.wmnet", "cloudmetrics1002.eqiad.wmnet"]))
+        self.assertEqual(c.prod_hosts, set(["grafana2001.codfw.wmnet", "cloudmetrics1002.eqiad.wmnet"]))
         # Class-based matching (empty result)
         r_mock.get(PUPPETDB_URI.format("Grafana"), json=get_mocked_response("empty"), status_code=200)
 
         with self.assertRaises(controller.ControllerNoHostsError):
             c.pick_hosts("C:grafana")
 
-    def test_realm_detection(self):
-        c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
-        self.assertEquals(c.realm, "production")
-
+    def test_mixed_nodes(self):
+        c = controller.Controller(None, 19, 224570, "test.tools.eqiad.wmflabs")
         c.pick_hosts("test.tools.eqiad.wmflabs")
-        self.assertEquals(c.realm, "labs")
+        self.assertEqual(c.cloud_hosts, set(["test.tools.eqiad.wmflabs"]))
+        self.assertEqual(c.prod_hosts, set())
 
-        with self.assertRaises(controller.ControllerError):
-            c.pick_hosts("test.eqiad.wmnet,test.tools.eqiad.wmflabs")
+        c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
+        c.pick_hosts("test.eqiad.wmnet")
+        self.assertEqual(c.cloud_hosts, set())
+        self.assertEqual(c.prod_hosts, set(["test.eqiad.wmnet"]))
 
-        c = controller.Controller(None, 19, 224570, "test.eqiad.wmflabs")
-        self.assertEqual(c.realm, "labs")
-        self.assertEqual(c.managecode.realm, "labs")
+        c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet,test.tools.eqiad.wmflabs")
+        c.pick_hosts("test.eqiad.wmnet,test.tools.eqiad.wmflabs")
+        self.assertEqual(c.cloud_hosts, set(["test.tools.eqiad.wmflabs"]))
+        self.assertEqual(c.prod_hosts, set(["test.eqiad.wmnet"]))
 
     def test_success(self):
         c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
