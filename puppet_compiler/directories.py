@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 
 class FHS(object):
@@ -10,17 +10,18 @@ class FHS(object):
 
     @classmethod
     def setup(cls, job_id, base):
-        cls.base_dir = os.path.join(base, str(job_id))
-        cls.prod_dir = os.path.join(cls.base_dir, "production")
-        cls.change_dir = os.path.join(cls.base_dir, "change")
-        cls.diff_dir = os.path.join(cls.base_dir, "diffs")
-        cls.output_dir = os.path.join(base, "output", str(job_id))
+        base = Path(base)
+        cls.base_dir = base / str(job_id)
+        cls.prod_dir = cls.base_dir / "production"
+        cls.change_dir = cls.base_dir / "change"
+        cls.diff_dir = cls.base_dir / "diffs"
+        cls.output_dir = base / "output" / str(job_id)
 
 
 class HostFiles(object):
     def __init__(self, hostname):
         self.hostname = hostname
-        self.outdir = os.path.join(FHS.output_dir, self.hostname)
+        self.outdir = FHS.output_dir / self.hostname
 
     def file_for(self, env, what):
         if env in ["prod", "change"]:
@@ -29,7 +30,7 @@ class HostFiles(object):
             suffix = "-%s" % env
 
         if what == "diff":
-            return os.path.join(FHS.diff_dir, self.hostname + suffix + ".diff")
+            return FHS.diff_dir / f"{self.hostname}{suffix}.diff"
 
         if env == "prod":
             base = FHS.prod_dir
@@ -42,8 +43,8 @@ class HostFiles(object):
             ext = ".err"
         else:
             raise ValueError("Unrecognized object: %s" % what)
-        return os.path.join(base, "catalogs", self.hostname + suffix + ext)
+        return base / "catalogs" / f"{self.hostname}{suffix}{ext}"
 
     def outfile_for(self, env, what):
-        name = os.path.basename(self.file_for(env, what))
-        return os.path.join(self.outdir, env + "." + name)
+        name = self.file_for(env, what).name
+        return self.outdir / f"{env}.{name}"

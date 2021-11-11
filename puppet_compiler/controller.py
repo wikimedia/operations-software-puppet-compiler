@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+from pathlib import Path
 
 import yaml
 
@@ -37,6 +38,7 @@ class Controller(object):
     def __init__(self, configfile, job_id, change_id, host_list, nthreads=2, force=False):
 
         # Let's first detect the installed puppet version
+        configfile = Path(configfile) if isinstance(configfile, str) else configfile
         self.set_puppet_version()
         self.config = {
             # Url under which results will be found
@@ -56,6 +58,8 @@ class Controller(object):
         }
         try:
             if configfile is not None:
+                if not configfile.is_file():
+                    raise ControllerError(f"Configuration file {configfile} is not a file")
                 self._parse_conf(configfile)
         except yaml.error.YAMLError as error:
             _log.exception("Configuration file %s contains malformed yaml: %s", configfile, error)
@@ -111,8 +115,7 @@ class Controller(object):
         self.prod_hosts = hosts - self.cloud_hosts
 
     def _parse_conf(self, configfile):
-        with open(configfile, "r") as f:
-            data = yaml.load(f, Loader=yaml.SafeLoader)
+        data = yaml.safe_load(configfile.read_text())
         # TODO: add data validation here
         self.config.update(data)
 

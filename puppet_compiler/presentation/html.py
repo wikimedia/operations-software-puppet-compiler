@@ -36,9 +36,8 @@ class Host(object):
         data["page_name"] = page_name
         tpl = env.get_template(self.tpl)
         page = tpl.render(jid=job_id, chid=change_id, **data)
-        file_path = os.path.join(self.outdir, page_name)
-        with open(file_path, "w") as outfile:
-            outfile.write(page)
+        file_path = self.outdir / page_name
+        file_path.write_text(page)
 
     def htmlpage(self, diffs=None, full_diffs=None):
         """
@@ -61,7 +60,7 @@ class Index(object):
             self.url = ""
         else:
             self.url = self.page_name
-        self.outfile = os.path.join(outdir, self.page_name)
+        self.outfile = outdir / self.page_name
         self.hosts_raw = hosts_raw
 
     def render(self, state):

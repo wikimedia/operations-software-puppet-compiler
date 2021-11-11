@@ -1,6 +1,6 @@
-import os
 import unittest
 from copy import deepcopy
+from pathlib import Path
 
 import mock
 
@@ -73,9 +73,9 @@ class TestPuppetResource(unittest.TestCase):
 
 class TestPuppetCatalog(unittest.TestCase):
     def setUp(self):
-        fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
-        self.orig = PuppetCatalog(os.path.join(fixtures, "catalog.pson"))
-        self.change = PuppetCatalog(os.path.join(fixtures, "catalog-change.pson"))
+        fixtures = Path(__file__).parent.resolve() / "fixtures"
+        self.orig = PuppetCatalog(fixtures / "catalog.pson")
+        self.change = PuppetCatalog(fixtures / "catalog-change.pson")
 
     def test_init(self):
         """Test initialization."""

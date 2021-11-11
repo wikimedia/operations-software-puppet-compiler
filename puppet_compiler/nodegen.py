@@ -1,4 +1,3 @@
-import os
 import re
 
 from cumin.query import Query
@@ -11,9 +10,9 @@ def get_nodes(config):
     """
     Get all the available nodes that have separate declarations in site.pp
     """
-    facts_dir = os.path.join(config["puppet_var"], "yaml")
+    facts_dir = config["puppet_var"] / "yaml"
     _log.info("Walking dir %s", facts_dir)
-    site_pp = os.path.join(config["puppet_src"], "manifests", "site.pp")
+    site_pp = config["puppet_src"] / "manifests" / "site.pp"
     # Read site.pp
     with open(site_pp, "r") as sitepp:
         n = NodeFinder(sitepp)
@@ -23,7 +22,7 @@ def get_nodes(config):
 def get_nodes_regex(config, regex):
     nodes = set()
     r = re.compile(regex)
-    facts_dir = os.path.join(config["puppet_var"], "yaml")
+    facts_dir = config["puppet_var"] / "yaml"
     _log.info("Walking dir %s", facts_dir)
     for node in nodelist(facts_dir):
         if r.search(node):
@@ -63,9 +62,9 @@ def get_nodes_cumin(query_str):
 
 
 def nodelist(facts_dir):
-    for subdir in os.walk(facts_dir):
-        for node in subdir[2]:
-            yield node.replace(".yaml", "")
+    for node in facts_dir.glob("**/*.yaml"):
+        _log.info("testingting node:  %s", node.stem)
+        yield node.stem
 
 
 class NodeFinder(object):

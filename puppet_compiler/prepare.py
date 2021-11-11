@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 from contextlib import contextmanager
+from pathlib import Path
 
 import requests
 
@@ -14,7 +15,7 @@ LDAP_YAML_PATH = "/etc/ldap.yaml"
 
 @contextmanager
 def pushd(dirname):
-    cur_dir = os.getcwd()
+    cur_dir = Path.cwd()
     os.chdir(dirname)
     yield
     os.chdir(cur_dir)
@@ -27,7 +28,7 @@ class ManageCode(object):
         self.base_dir = FHS.base_dir
         self.puppet_src = config["puppet_src"]
         self.puppet_private = config["puppet_private"]
-        self.puppet_var = config["puppet_var"]
+        self.puppet_var = Path(config["puppet_var"])
         self.change_id = changeid
         self.force = force
 
@@ -52,26 +53,26 @@ class ManageCode(object):
             _log.debug("removing old directories, [%s, %s]", self.base_dir, self.output_dir)
             self.cleanup()
             shutil.rmtree(self.output_dir, True)
-        os.mkdir(self.base_dir, 0o755)
+        self.base_dir.mkdir(mode=0o755)
         for dirname in [self.prod_dir, self.change_dir]:
-            os.makedirs(os.path.join(dirname, "catalogs"), 0o755)
-        os.makedirs(self.diff_dir, 0o755)
-        os.makedirs(self.output_dir, 0o755)
+            (dirname / "catalogs").mkdir(mode=0o755, parents=True)
+        self.diff_dir.mkdir(mode=0o755, parents=True)
+        self.output_dir.mkdir(mode=0o755, parents=True)
 
         # Production
         self._prepare_dir(self.prod_dir)
         self._prepare_dir(self.change_dir)
-        change_src = os.path.join(self.change_dir, "src")
+        change_src = self.change_dir / "src"
         with pushd(change_src):
             self._fetch_change()
 
     def update_config(self, realm):
-        prod_src = os.path.join(self.prod_dir, "src")
+        prod_src = self.prod_dir / "src"
         with pushd(prod_src):
             self._copy_hiera(self.prod_dir, realm)
-            self._create_puppetconf(self.change_dir, realm)
+            self._create_puppetconf(self.prod_dir, realm)
 
-        change_src = os.path.join(self.change_dir, "src")
+        change_src = self.change_dir / "src"
         with pushd(change_src):
             self._copy_hiera(self.change_dir, realm)
             self._create_puppetconf(self.change_dir, realm)
@@ -89,40 +90,40 @@ class ManageCode(object):
         prepare a specific directory to compile puppet
         """
         _log.debug("Cloning directories...")
-        src = os.path.join(dirname, "src")
+        src = dirname / "src"
         self.git.clone("-q", self.puppet_src, src)
-        priv = os.path.join(dirname, "private")
+        priv = dirname / "private"
         self.git.clone("-q", self.puppet_private, priv)
 
         _log.debug("Adding symlinks")
         for module in self.private_modules:
-            source = os.path.join(priv, "modules", module)
-            dst = os.path.join(src, "modules", module)
-            os.symlink(source, dst)
+            source = priv / "modules" / module
+            dst = src / "modules" / module
+            dst.symlink_to(source)
 
-        shutil.copytree(os.path.join(self.puppet_var, "ssl"), os.path.join(src, "ssl"))
+        shutil.copytree(self.puppet_var / "ssl", src / "ssl")
         # Puppetdb-related configs
-        puppetdb_conf = os.path.join(self.puppet_var, "puppetdb.conf")
-        if os.path.isfile(puppetdb_conf):
+        puppetdb_conf = self.puppet_var / "puppetdb.conf"
+        if puppetdb_conf.is_file():
             _log.debug("Copying the puppetdb config file")
-            shutil.copy(puppetdb_conf, os.path.join(src, "puppetdb.conf"))
-        routes_conf = os.path.join(self.puppet_var, "routes.yaml")
-        if os.path.isfile(routes_conf):
+            shutil.copy(puppetdb_conf, src / "puppetdb.conf")
+        routes_conf = self.puppet_var / "routes.yaml"
+        if routes_conf.is_file():
             _log.debug("Copying the routes file")
-            shutil.copy(routes_conf, os.path.join(src, "routes.yaml"))
+            shutil.copy(routes_conf, src / "routes.yaml")
 
     @staticmethod
     def _copy_hiera(dirname, realm):
         """
         Copy the hiera file
         """
-        hiera_file = "modules/puppetmaster/files/{realm}.hiera.yaml".format(realm=realm)
-        priv = os.path.join(dirname, "private")
-        pub = os.path.join(dirname, "src")
-        with open(hiera_file, "r") as g, open("hiera.yaml", "w") as f:
-            for line in g:
-                data = line.replace("/etc/puppet/private", priv).replace("/etc/puppet", pub)
-                f.write(data)
+        hiera_file = Path(f"modules/puppetmaster/files/{realm}.hiera.yaml")
+        priv = dirname / "private"
+        pub = dirname / "src"
+        with hiera_file.open() as f_in, Path("hiera.yaml").open("w") as f_out:
+            for line in f_in:
+                data = line.replace("/etc/puppet/private", str(priv)).replace("/etc/puppet", str(pub))
+                f_out.write(data)
 
     @staticmethod
     def _create_puppetconf(dirname, realm):
@@ -136,8 +137,7 @@ class ManageCode(object):
     external_nodes = /usr/local/bin/puppet-enc
 """
 
-        with open("puppet.conf", "w") as f:
-            f.write(template)
+        Path("puppet.conf").write_text(template)
         _log.debug("Wrote puppet.conf with puppet-enc settings")
 
     def _fetch_change(self):

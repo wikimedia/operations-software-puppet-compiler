@@ -1,7 +1,7 @@
-import os
 import shutil
 import tempfile
 import unittest
+from pathlib import Path
 
 import mock
 
@@ -32,17 +32,17 @@ class TestManageCode(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.base = tempfile.mkdtemp(prefix="puppet-compiler")
+        cls.base = Path(tempfile.mkdtemp(prefix="puppet-compiler"))
         FHS.setup(19, cls.base)
 
     def setUp(self):
-        fixtures = os.path.join(os.path.dirname(__file__), "fixtures", "puppet_var")
+        self.fixtures = Path(__file__).parent.resolve() / "fixtures"
         self.m = prepare.ManageCode(
             {
                 "base": self.base,
                 "puppet_src": "https://gerrit.wikimedia.org/r/operations/puppet",
                 "puppet_private": "https://gerrit.wikimedia.org/r/labs/private",
-                "puppet_var": fixtures,
+                "puppet_var": self.fixtures / "puppet_var",
             },
             19,
             227450,
@@ -54,13 +54,13 @@ class TestManageCode(unittest.TestCase):
 
     def _test_copy_hiera(self, realm):
         """Check the hiera file gets copied"""
-        with prepare.pushd(os.path.join(os.path.dirname(__file__), "fixtures")):
+        with prepare.pushd(self.fixtures):
             self.m._copy_hiera(self.base, realm)
             with open("hiera.yaml") as f:
                 data = f.readlines()
-            os.unlink("hiera.yaml")
-        self.assertIn(os.path.join(self.base, "src", "hieradata"), data[0])
-        self.assertIn(os.path.join(self.base, "private"), data[1])
+            Path("hiera.yaml").unlink()
+        self.assertIn(str(self.base / "src" / "hieradata"), data[0])
+        self.assertIn(str(self.base / "private"), data[1])
         self.assertIn(realm, data[2])
 
     def test_copy_hiera(self):
@@ -69,17 +69,16 @@ class TestManageCode(unittest.TestCase):
 
     @mock.patch("puppet_compiler.prepare.LDAP_YAML_PATH", "ldap.yaml")
     def test_create_puppetconf(self):
-        fn = "puppet.conf"
-        with prepare.pushd(os.path.join(os.path.dirname(__file__), "fixtures")):
-            if os.path.isfile(fn):
-                os.unlink(fn)
+        fn = Path("puppet.conf")
+        with prepare.pushd(self.fixtures):
+            if fn.is_file():
+                fn.unlink()
             self.m._create_puppetconf(self, "production")
-            self.assertFalse(os.path.isfile(fn))
+            self.assertFalse(fn.is_file())
 
             self.m._create_puppetconf(self, "labs")
-            with open(fn) as f:
-                data = f.read()
-            os.unlink(fn)
+            data = fn.read_text()
+            fn.unlink()
         self.assertIn("node_terminus = exec", data)
 
     @mock.patch("subprocess.check_call")
@@ -98,22 +97,22 @@ class TestManageCode(unittest.TestCase):
         self.m.change_id = 363216
         self.assertRaises(RuntimeError, self.m._fetch_change)
 
-    @mock.patch("os.symlink")
+    @mock.patch("puppet_compiler.prepare.Path.symlink_to")
     @mock.patch("shutil.copytree")
-    def test_prepare_dir(self, mock_copy, mock_symlink):
+    def test_prepare_dir(self, mock_copy, mock_symlink_to):
         """Changes get properly prepared"""
         # pushd support
-        os.makedirs(os.path.join(self.base, "19", "production", "src"))
+
+        (self.base / "19" / "production" / "src").mkdir(parents=True)
         self.m.git = mock.MagicMock()
         self.m._prepare_dir(self.m.prod_dir)
-        prod_src = os.path.join(self.m.prod_dir, "src")
+        prod_src = self.m.prod_dir / "src"
         self.m.git.clone.assert_any_call("-q", "https://gerrit.wikimedia.org/r/operations/puppet", prod_src)
         assert 2 == self.m.git.clone.call_count
-        mock_copy.assert_called_with(self.m.puppet_var + "/ssl", prod_src + "/ssl")
-        assert 3 == mock_symlink.call_count
-        exim_priv = os.path.join(self.m.prod_dir, "private/modules/privateexim")
-        exim_pub = os.path.join(self.m.prod_dir, "src/modules/privateexim")
-        mock_symlink.assert_any_call(exim_priv, exim_pub)
+        mock_copy.assert_called_with(self.m.puppet_var / "ssl", prod_src / "ssl")
+        assert 3 == mock_symlink_to.call_count
+        exim_priv = self.m.prod_dir / "private/modules/privateexim"
+        mock_symlink_to.assert_any_call(exim_priv)
 
     @mock.patch("puppet_compiler.prepare.pushd")
     def test_refresh(self, pushd):
@@ -130,7 +129,7 @@ class TestManageCode(unittest.TestCase):
         self.m._create_puppetconf = mock.MagicMock()
         self.m.prepare()
         for dirname in self.m.base_dir, self.m.prod_dir, self.m.change_dir:
-            assert os.path.isdir(dirname)
+            assert dirname.is_dir()
         self.m._prepare_dir.assert_has_calls(
             [mock.call(self.m.prod_dir)],
             [mock.call(self.m.change_dir)],

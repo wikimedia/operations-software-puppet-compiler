@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-import os
 import shutil
 import tempfile
 
@@ -62,19 +61,19 @@ def main():
     )
 
     config = {
-        "puppet_var": os.path.join(args.basedir, "puppet"),
-        "puppet_src": os.path.join(args.basedir, "production"),
-        "puppet_private": os.path.join(args.basedir, "private"),
+        "puppet_var": args.basedir / "puppet",
+        "puppet_src": args.basedir / "production",
+        "puppet_private": args.basedir / "private",
     }
     # Do the whole compilation in a dedicated directory.
     tmpdir = tempfile.mkdtemp(prefix="fill-puppetdb")
     jobid = "1"
     directories.FHS.setup(jobid, tmpdir)
     managecode = prepare.ManageCode(config, jobid, None)
-    os.mkdir(managecode.base_dir, 0o755)
-    os.makedirs(managecode.prod_dir, 0o755)
+    managecode.base_dir.mkdir(mode=0o755)
+    managecode.prod_dir.mkdir(mode=0o755, parents=True)
     managecode._prepare_dir(managecode.prod_dir)
-    srcdir = os.path.join(managecode.prod_dir, "src")
+    srcdir = managecode.prod_dir / "src"
     nodes = set([args.host]) if args.host else nodegen.get_nodes(config)
     cloud_nodes = set(n for n in nodes if n.endswith(("wikimedia.cloud", "wmflabs")))
     prod_nodes = nodes - cloud_nodes

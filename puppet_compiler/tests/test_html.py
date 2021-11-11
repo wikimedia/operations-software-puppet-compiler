@@ -1,7 +1,7 @@
-import os
 import shutil
 import tempfile
 import unittest
+from pathlib import Path
 
 from puppet_compiler.differ import PuppetCatalog
 from puppet_compiler.directories import FHS, HostFiles
@@ -11,13 +11,13 @@ from puppet_compiler.presentation import html
 class TestHost(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp(prefix="puppet-compiler")
-        fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
-        orig = PuppetCatalog(os.path.join(fixtures, "catalog.pson"))
-        change = PuppetCatalog(os.path.join(fixtures, "catalog-change.pson"))
+        fixtures = Path(__file__).parent.resolve() / "fixtures"
+        orig = PuppetCatalog(fixtures / "catalog.pson")
+        change = PuppetCatalog(fixtures / "catalog-change.pson")
         self.diffs = orig.diff_if_present(change)
         FHS.setup("10", self.tempdir)
         self.files = HostFiles("test.example.com")
-        os.makedirs(self.files.outdir)
+        self.files.outdir.mkdir(parents=True)
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
@@ -32,8 +32,8 @@ class TestHost(unittest.TestCase):
         h = html.Host("test.example.com", self.files, "diff")
         h.htmlpage(self.diffs)
         # Test the test file has been produced
-        output = os.path.join(h.outdir, h.page_name)
-        assert os.path.isfile(output)
+        output = h.outdir / h.page_name
+        assert output.is_file()
         with open(output, "r") as fh:
             html_data = fh.read()
         assert len(html_data) > 0

@@ -14,11 +14,11 @@ def compile_cmd_env(hostname, label, vardir, manifests_dir=None, *extra_flags):
     else:
         basedir = FHS.change_dir
 
-    srcdir = os.path.join(basedir, "src")
-    privdir = os.path.join(basedir, "private")
-    env["RUBYLIB"] = os.path.join(srcdir, "modules/wmflib/lib/")
-    manifests_dir = os.path.join(srcdir, "manifests") if manifests_dir is None else manifests_dir
-    environments_dir = os.path.join(srcdir, "environments")
+    srcdir = basedir / "src"
+    privdir = basedir / "private"
+    env["RUBYLIB"] = srcdir / "modules/wmflib/lib/"
+    manifests_dir = srcdir / "manifests" if manifests_dir is None else manifests_dir
+    environments_dir = srcdir / "environments"
 
     # factsfile will be something like
     #  "/foo/yaml/facts/production/facts/hostname.yaml
@@ -30,13 +30,13 @@ def compile_cmd_env(hostname, label, vardir, manifests_dir=None, *extra_flags):
     # since we would have errored out earlier if it's
     # unknown.
     factsfile = utils.facts_file(vardir, hostname)
-    yamldir = os.path.dirname(os.path.dirname(factsfile))
+    yamldir = factsfile.parent.parent
 
     cmd = [
         "puppet",
         "master",
         "--vardir=%s" % vardir,
-        "--modulepath=%s:%s" % (os.path.join(privdir, "modules"), os.path.join(srcdir, "modules")),
+        "--modulepath=%s:%s" % (privdir / "modules", srcdir / "modules"),
         "--confdir=%s" % srcdir,
         "--compile=%s" % hostname,
         "--color=false",
@@ -55,12 +55,12 @@ def compile(hostname, label, vardir, manifests_dir=None, *extra_flags):
     cmd, env = compile_cmd_env(hostname, label, vardir, manifests_dir, *extra_flags)
     hostfiles = HostFiles(hostname)
 
-    with open(hostfiles.file_for(label, "errors"), "w") as err:
+    with hostfiles.file_for(label, "errors").open("w") as err:
         out = SpooledTemporaryFile()
         subprocess.check_call(cmd, stdout=out, stderr=err, env=env)
 
     # Puppet outputs a lot of garbage to stdout...
-    with open(hostfiles.file_for(label, "catalog"), "wb") as f:
+    with hostfiles.file_for(label, "catalog").open("wb") as f:
         out.seek(0)
         for line in out:
             if not re.match(b"(Info|[Nn]otice|[Ww]arning)", line):

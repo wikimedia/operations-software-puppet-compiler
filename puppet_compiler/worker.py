@@ -1,7 +1,7 @@
-import os
 import shutil
 import subprocess
 import traceback
+from pathlib import Path
 
 from puppet_compiler import _log, puppet, utils
 from puppet_compiler.differ import PuppetCatalog
@@ -16,7 +16,7 @@ class HostWorker(object):
     E_CHANGED = 2
 
     def __init__(self, vardir, hostname):
-        self.puppet_var = vardir
+        self.puppet_var = Path(vardir) if isinstance(vardir, str) else vardir
         self._files = HostFiles(hostname)
         self._envs = ["prod", "change"]
         self.hostname = hostname
@@ -26,7 +26,7 @@ class HostWorker(object):
     def facts_file(self):
         """Finds facts file for the current hostname"""
         facts_file = utils.facts_file(self.puppet_var, self.hostname)
-        if os.path.isfile(facts_file):
+        if facts_file.is_file():
             return facts_file
         return None
 
@@ -64,10 +64,10 @@ class HostWorker(object):
     def _check_if_compiled(self, env):
         catalog = self._files.file_for(env, "catalog")
         err = self._files.file_for(env, "errors")
-        if os.path.isfile(catalog) and os.stat(catalog).st_size > 0:
+        if catalog.is_file() and catalog.stat().st_size > 0:
             # This is already compiled and it worked.
             return True
-        if os.path.isfile(err):
+        if err.is_file():
             # This complied, and it just outputs an error:
             return False
         # Nothing is found
@@ -135,12 +135,12 @@ class HostWorker(object):
         Prepare the node output, copying the relevant files in place
         in the output directory
         """
-        if not os.path.isdir(self._files.outdir):
-            os.makedirs(self._files.outdir, 0o755)
+        if not self._files.outdir.is_dir():
+            self._files.outdir.mkdir(mode=0o755, parents=True)
         for env in self._envs:
             for label in "catalog", "errors":
                 filename = self._files.file_for(env, label)
-                if os.path.isfile(filename):
+                if filename.is_file():
                     newname = self._files.outfile_for(env, label)
                     shutil.copy(filename, newname)
 
