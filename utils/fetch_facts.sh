@@ -1,7 +1,7 @@
 #!/bin/bash -e
 REMOTE_TMP_PATH=/tmp/puppet-facts-export.tar.xz
 LOCAL_TMP_PATH=/tmp/puppet-facts-export.tar.xz
-LOCAL_DST_PATH=.workspace/puppet-compiler/catalog-differ/puppet
+LOCAL_DST_PATH=.workspace/catalog-differ/puppet
 
 
 help() {
@@ -40,10 +40,10 @@ main() {
     echo "Copying locally to ${LOCAL_TMP_PATH}"
     scp "${puppetmaster}:${REMOTE_TMP_PATH}" "${LOCAL_TMP_PATH}"
     echo "Extracting..."
-    rm -rf "${LOCAL_DST_PATH}"
+    rm -rf "${LOCAL_DST_PATH}/yaml"
     mkdir -p "${LOCAL_DST_PATH}"
     tar xvf "${LOCAL_TMP_PATH}" --directory "${LOCAL_DST_PATH}"
-    echo "Cleaning up"
+    echo "Cleaning up ${REMOTE_TMP_PATH}"
     ssh "${puppetmaster}" sudo rm "${REMOTE_TMP_PATH}"
     echo "Done!"
 }

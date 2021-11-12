@@ -1,14 +1,42 @@
 #!/bin/bash -e
 
 
+setup_repo() {
+    local repo_path="${1?No repo_path passed}"
+    local repo_url="${2?No repo_url passed}"
+
+    if [[ -e "$repo_path/.git" ]]; then
+        reset_git "$repo_path"
+    else
+        mkdir -p "$repo_path"
+        git clone "$repo_url" "$repo_path"
+    fi
+}
+
+
+reset_git() {
+    local repo_path="${1?No repo_path passed}"
+    cd "$repo_path"
+    git fetch --all
+    git reset --hard FETCH_HEAD
+    cd -
+}
+
+
 main() {
     local workspace_path="${1:-.workspace}"
+    local prod_puppet_git_path="${workspace_path}/catalog-differ/production"
+    local private_git_path="${workspace_path}/catalog-differ/private"
+
     mkdir -p "${workspace_path}"/catalog-differ/{production,private,puppet/ssl} "${workspace_path}/jenkins-workspace"
-    git clone "https://gerrit.wikimedia.org/r/operations/puppet" "${workspace_path}/catalog-differ/production"
-    git clone "https://gerrit.wikimedia.org/r/labs/private" "${workspace_path}/catalog-differ/private"
+
+    setup_repo "$prod_puppet_git_path" "https://gerrit.wikimedia.org/r/operations/puppet" 
+    setup_repo "$private_git_path" "https://gerrit.wikimedia.org/r/labs/private" 
+
     puppet master \
         --compile test \
         --vardir  "${workspace_path}/catalog-differ/puppet"
+
     puppet cert \
         --ssldir  "${workspace_path}/catalog-differ/puppet/ssl" \
         --vardir "${workspace_path}/catalog-differ/puppet" \

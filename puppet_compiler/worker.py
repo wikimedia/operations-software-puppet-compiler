@@ -5,7 +5,7 @@ import traceback
 
 from puppet_compiler import _log, puppet, utils
 from puppet_compiler.differ import PuppetCatalog
-from puppet_compiler.directories import FHS, HostFiles
+from puppet_compiler.directories import HostFiles
 from puppet_compiler.presentation.html import Host
 from puppet_compiler.state import ChangeState
 
@@ -74,13 +74,6 @@ class HostWorker(object):
         check = self._check_if_compiled(env)
         if check is not None:
             return check
-        if env != "prod" and os.path.isfile(os.path.join(FHS.change_dir, "src", ".configs")):
-            with open(os.path.join(FHS.change_dir, "src", ".configs")) as f:
-                configs = f.readlines()
-            # Make sure every item has exactly 2 dashes prepended
-            configs = map(lambda x: "--{}".format(x.lstrip("-")), configs)
-            args.extend(configs)
-
         try:
             _log.info("Compiling host %s (%s)", self.hostname, env)
             puppet.compile(self.hostname, env, self.puppet_var, None, *args)
