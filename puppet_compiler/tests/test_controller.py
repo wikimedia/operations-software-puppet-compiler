@@ -12,8 +12,14 @@ PUPPETDB_URI = "http://localhost:8080/pdb/query/v4/resources/Class/{}"
 
 def get_mocked_response(check=None):
     json_data = [
-        {"certname": "grafana2001.codfw.wmnet", "tags": ["role", "class", "role::grafana", "grafana"]},
-        {"certname": "grafana1001.eqiad.wmnet", "tags": ["role", "class", "role::grafana", "grafana"]},
+        {
+            "certname": "grafana2001.codfw.wmnet",
+            "tags": ["role", "class", "role::grafana", "grafana"],
+        },
+        {
+            "certname": "grafana1001.eqiad.wmnet",
+            "tags": ["role", "class", "role::grafana", "grafana"],
+        },
         {
             "certname": "cloudmetrics1002.eqiad.wmnet",
             "tags": [
@@ -173,19 +179,37 @@ class TestController(unittest.TestCase):
         c.config["puppet_var"] = os.path.join(self.fixtures, "puppet_var")
         c.config["puppet_src"] = self.fixtures
         # Role-based matching
-        r_mock.get(PUPPETDB_URI.format("Role::Grafana"), json=get_mocked_response("role"), status_code=200)
+        r_mock.get(
+            PUPPETDB_URI.format("Role::Grafana"),
+            json=get_mocked_response("role"),
+            status_code=200,
+        )
         c.pick_hosts("O:grafana")
         self.assertEqual(c.prod_hosts, set(["grafana2001.codfw.wmnet"]))
         # Profile-based matching
-        r_mock.get(PUPPETDB_URI.format("Profile::Grafana::Production"), json=get_mocked_response(), status_code=200)
+        r_mock.get(
+            PUPPETDB_URI.format("Profile::Grafana::Production"),
+            json=get_mocked_response(),
+            status_code=200,
+        )
         c.pick_hosts("P:grafana::production")
-        self.assertEqual(c.prod_hosts, set(["grafana2001.codfw.wmnet", "cloudmetrics1002.eqiad.wmnet"]))
+        self.assertEqual(
+            c.prod_hosts,
+            set(["grafana2001.codfw.wmnet", "cloudmetrics1002.eqiad.wmnet"]),
+        )
         # Class-based matching
         r_mock.get(PUPPETDB_URI.format("Grafana"), json=get_mocked_response(), status_code=200)
         c.pick_hosts("C:grafana")
-        self.assertEqual(c.prod_hosts, set(["grafana2001.codfw.wmnet", "cloudmetrics1002.eqiad.wmnet"]))
+        self.assertEqual(
+            c.prod_hosts,
+            set(["grafana2001.codfw.wmnet", "cloudmetrics1002.eqiad.wmnet"]),
+        )
         # Class-based matching (empty result)
-        r_mock.get(PUPPETDB_URI.format("Grafana"), json=get_mocked_response("empty"), status_code=200)
+        r_mock.get(
+            PUPPETDB_URI.format("Grafana"),
+            json=get_mocked_response("empty"),
+            status_code=200,
+        )
 
         with self.assertRaises(controller.ControllerNoHostsError):
             c.pick_hosts("C:grafana")
@@ -206,11 +230,14 @@ class TestController(unittest.TestCase):
         self.assertEqual(c.cloud_hosts, set(["test.tools.eqiad.wmflabs"]))
         self.assertEqual(c.prod_hosts, set(["test.eqiad.wmnet"]))
 
-    def test_success(self):
+    def test_check_success(self):
         c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
         # let's add just a successful run
-        c.count = 2
-        c.state.states = {"noop": 1}
-        self.assertTrue(c.success)
-        c.count = 0
-        self.assertTrue(c.success)
+        c.state.states = {}
+        self.assertTrue(c.check_success())
+
+        c.state.states = {"failed": 0}
+        self.assertTrue(c.check_success())
+
+        c.state.states = {"fail": ["test.eqiad.wmnet"]}
+        self.assertFalse(c.check_success())

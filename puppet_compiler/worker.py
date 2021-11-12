@@ -43,18 +43,23 @@ class HostWorker(object):
 
         errors = self._compile_all()
         if errors == self.E_OK:
-            diff = self._make_diff()
+            has_diff = self._make_diff()
         else:
-            diff = None
-        base = errors & self.E_BASE
-        change = errors & self.E_CHANGED
+            has_diff = None
+        base_error = errors & self.E_BASE
+        change_error = errors & self.E_CHANGED
         try:
             self._make_output()
-            state = ChangeState(self.hostname, base, change, diff)
+            state = ChangeState(
+                hostname=self.hostname,
+                base_error=base_error,
+                change_error=change_error,
+                has_diff=has_diff,
+            )
             self._build_html(state.name)
         except Exception as e:
             _log.error("Error preparing output for %s: %s", self.hostname, e, exc_info=True)
-        return (base, change, diff)
+        return (base_error, change_error, has_diff)
 
     def _check_if_compiled(self, env):
         catalog = self._files.file_for(env, "catalog")
@@ -78,7 +83,11 @@ class HostWorker(object):
             _log.info("Compiling host %s (%s)", self.hostname, env)
             puppet.compile(self.hostname, env, self.puppet_var, None, *args)
         except subprocess.CalledProcessError as e:
-            _log.error("Compilation failed for hostname %s " " in environment %s.", self.hostname, env)
+            _log.error(
+                "Compilation failed for hostname %s " " in environment %s.",
+                self.hostname,
+                env,
+            )
             _log.info("Compilation exited with code %d", e.returncode)
             _log.debug("Failed command: %s", e.cmd)
             return False

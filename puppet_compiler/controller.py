@@ -116,7 +116,7 @@ class Controller(object):
         # TODO: add data validation here
         self.config.update(data)
 
-    def run(self):
+    def run(self) -> None:
         _log.info("Refreshing the common repos from upstream if needed")
         # If using local filesystem repositories, we need to refresh them
         # before of a run.
@@ -139,7 +139,6 @@ class Controller(object):
         _log.info("Run finished; see your results at %s", self.index_url(index))
         # Remove the source and the diffs etc, we just need the output.
         self.managecode.cleanup()
-        return self.success
 
     def index_url(self, index):
         return "%s/%s/%s" % (self.config["http_url"], html.job_id, index.url)
@@ -165,28 +164,11 @@ class Controller(object):
         # Let's wait for all runs to complete
         threadpool.fetch(self.on_node_compiled)
 
-    @property
-    def success(self):
+    def check_success(self) -> bool:
         """
-        Try to determine if the build failed.
-
-        Currently it just tries to see if more than half of the hosts are
-        marked "fail"
+        True if there are no failures
         """
-        if not self.count:
-            # We still didn't run
-            return True
-
-        try:
-            failures = len(self.state.states["fail"])
-
-        except KeyError:
-            return True
-
-        if 2 * failures >= self.count:
-            return False
-
-        return True
+        return len(self.state.states.get("fail", [])) == 0
 
     def on_node_compiled(self, payload):
         """
@@ -197,16 +179,24 @@ class Controller(object):
         self.count += 1
         if payload.is_error:
             # Running _run_host returned with an exception, this is unexpected
-            state = ChangeState(hostname, False, False, False)
+            state = ChangeState(hostname=hostname, base_error=False, change_error=False, has_diff=False)
             self.state.add(state)
             _log.critical("Unexpected error running the payload: %s", payload.value)
         else:
-            base, change, diff = payload.value
-            host_state = ChangeState(hostname, base, change, diff)
+            base_error, change_error, has_diff = payload.value
+            host_state = ChangeState(
+                hostname=hostname,
+                base_error=base_error,
+                change_error=change_error,
+                has_diff=has_diff,
+            )
             self.state.add(host_state)
 
         if not self.count % 5:
-            index = Index(self.outdir, self.hosts_raw)
+            index = Index(outdir=self.outdir, hosts_raw=self.hosts_raw)
             index.render(self.state.states)
-            _log.info("Index updated, you can see detailed progress for your work at %s", self.index_url(index))
+            _log.info(
+                "Index updated, you can see detailed progress for your work at %s",
+                self.index_url(index),
+            )
         _log.info(self.state.summary())

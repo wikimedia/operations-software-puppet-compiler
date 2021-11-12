@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 class StatesCollection(object):
     """
     Helper class that is used to store the state of each host.
@@ -28,26 +31,32 @@ class StatesCollection(object):
         return output
 
 
-class ChangeState(object):
-    def __init__(self, hostname, base, change, diff):
+class ChangeState:
+    def __init__(
+        self,
+        hostname: str,
+        base_error: bool,
+        change_error: bool,
+        has_diff: Optional[bool],
+    ):
         """
         Class for storing the state for a traditional run that
         diffs between the current production repo and the proposed change.
 
         Params:
         hostname: the name of the host we're compiling for (str)
-        base: True if there were errors in the base compilation, False otherwise
-        change: Same as base, but for the change.
-        diff: Outcome of the diff between the two catalogs. Can either be True (diffs are present),
+        prod_error: True if there were errors in the base compilation, False otherwise
+        change_error: Same as base, but for the change.
+        has_diff: Outcome of the diff between the two catalogs. Can either be True (diffs are present),
               False (the diffing process failed) or None (for no changes, or if a catalog failed).
         """
         self.host = hostname
-        self.prod_error = base
-        self.change_error = change
-        self.diff = diff
+        self.base_error = base_error
+        self.change_error = change_error
+        self.has_diff = has_diff
 
     @property
-    def name(self):
+    def name(self) -> str:
         """
         Return the name of the state, depending on the outcomes registered.
 
@@ -57,16 +66,16 @@ class ChangeState(object):
         'noop' if there is no diff, or the change fixes compilation
         'diff' if there are differences.
         """
-        if self.prod_error:
+        if self.base_error:
             if self.change_error:
                 return "fail"
             else:
                 return "noop"
         elif self.change_error:
             return "error"
-        elif self.diff is None:
+        elif self.has_diff is None:
             return "noop"
-        elif self.diff is False:
+        elif self.has_diff is False:
             return "fail"
         else:
             return "diff"

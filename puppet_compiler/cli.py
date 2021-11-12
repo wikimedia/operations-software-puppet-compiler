@@ -2,7 +2,8 @@ import argparse
 import logging
 import os
 
-from puppet_compiler import _log, controller
+from puppet_compiler import _log
+from puppet_compiler.controller import Controller, ControllerError, ControllerNoHostsError
 
 
 def get_args():
@@ -28,7 +29,11 @@ def main():
         args = get_args()
         lvl = logging.DEBUG if args.debug else logging.INFO
 
-        logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=lvl, datefmt="[ %Y-%m-%dT%H:%M:%S ]")
+        logging.basicConfig(
+            format="%(asctime)s %(levelname)s: %(message)s",
+            level=lvl,
+            datefmt="[ %Y-%m-%dT%H:%M:%S ]",
+        )
         if not change:
             _log.critical("No change provided, we cannot do anything")
             return 2
@@ -40,15 +45,22 @@ def main():
         _log.info("run manually with: ./utils/pcc %d %s", change, nodes)
 
         try:
-            c = controller.Controller(configfile, job_id, change, host_list=nodes, nthreads=nthreads, force=args.force)
-            success = c.run()
-        except controller.ControllerNoHostsError:
+            controller = Controller(
+                configfile,
+                job_id,
+                change,
+                host_list=nodes,
+                nthreads=nthreads,
+                force=args.force,
+            )
+            controller.run()
+            # If the run is marked as failed, exit with a non-zero exit code
+            if not controller.check_success():
+                return 1
+        except ControllerNoHostsError:
             _log.warning("No hosts found matching `%s` unable to do anything", nodes)
             return 2
-        except controller.ControllerError:
-            return 1
-        # If the run is marked as failed, exit with a non-zero exit code
-        if not success:
+        except ControllerError:
             return 1
     except Exception as e:
         _log.critical("Build run failed: %s", e, exc_info=True)
