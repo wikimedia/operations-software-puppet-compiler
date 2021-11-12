@@ -16,6 +16,8 @@ extras_require = {
         "nose",
         "requests_mock",
         "GitPython>=3.1.18",
+        "black",
+        "isort",
     ],
 }
 

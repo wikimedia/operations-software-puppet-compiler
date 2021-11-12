@@ -1,0 +1,8 @@
+[tool.black]
+line-length = 120
+exclude = '(.workspace|.tox|.docker_tmp|.git)'
+
+[tool.isort]
+profile = 'black'
+line_length = 120
+skip = '.workspace,.docker_tmp,.tox,.git'
