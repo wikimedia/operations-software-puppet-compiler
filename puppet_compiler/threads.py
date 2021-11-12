@@ -1,3 +1,4 @@
+"""Class to manage threading"""
 import queue
 import threading
 import time
@@ -13,9 +14,9 @@ class ThreadExecutor(threading.Thread):
     Manages execution of payloads coming from the ThreadOrchestrator
     """
 
-    def __init__(self, queue, out_queue):
-        super(ThreadExecutor, self).__init__()
-        self.queue = queue
+    def __init__(self, in_queue, out_queue):
+        super().__init__()
+        self.queue = in_queue
         self.out_queue = out_queue
 
     def run(self):
@@ -44,6 +45,8 @@ class ThreadExecutor(threading.Thread):
 
 
 class ThreadOrchestrator(object):
+    """Manage threads"""
+
     def __init__(self, pool_size=4):
         self.pool_size = int(pool_size)
         self._TP = []

@@ -1,3 +1,4 @@
+"""Class for generating nod lists of nodes"""
 import re
 
 from cumin.query import Query
@@ -20,6 +21,15 @@ def get_nodes(config):
 
 
 def get_nodes_regex(config, regex):
+    """Get a list of nodes based on a reged
+
+    Arguments:
+        config (dict): a dictionary of app config
+        regex (str): the regex to search for
+    Returns
+        list(str): a list of hosts to work on
+
+    """
     nodes = set()
     r = re.compile(regex)
     facts_dir = config["puppet_var"] / "yaml"
@@ -62,12 +72,22 @@ def get_nodes_cumin(query_str):
 
 
 def nodelist(facts_dir):
+    """Return a list of nodes recursivly from a directory
+
+    Arguments:
+        facts_dir (Path): the directory to search
+
+    Yields:
+        The node name, i.e. the file path with basename with the extension removed
+    """
     for node in facts_dir.glob("**/*.yaml"):
         _log.info("testingting node:  %s", node.stem)
         yield node.stem
 
 
-class NodeFinder(object):
+class NodeFinder:
+    """Get a list of nodes based on site.pp"""
+
     regexp_node = re.compile(r"^node\s+/([^/]+)/")
     exact_node = re.compile(r"node\s*\'([^\']+)\'")
 
@@ -75,19 +95,27 @@ class NodeFinder(object):
         self.regexes = set()
         self.nodes = set()
         for line in sitepp.readlines():
-            m = self.regexp_node.search(line)
-            if m:
+            match = self.regexp_node.search(line)
+            if match:
                 _log.debug("Found regex in line %s", line.rstrip())
-                self.regexes.add(re.compile(m.group(1)))
+                self.regexes.add(re.compile(match.group(1)))
                 continue
-            m = self.exact_node.search(line)
-            if m:
+            match = self.exact_node.search(line)
+            if match:
                 _log.debug("Found node in line %s", line.rstrip())
-                self.nodes.add(m.group(1))
+                self.nodes.add(match.group(1))
 
-    def match_physical_nodes(self, nodelist):
+    def match_physical_nodes(self, node_list):
+        """Match a set of nodes against the list found locally
+
+        Arguments:
+            node_list (list): a list of nodes to search for
+
+        Returns:
+            list: a list of matching nodes
+        """
         nodes = set()
-        for node in nodelist:
+        for node in node_list:
             discarded = None
             if node in self.nodes:
                 _log.debug("Found node %s", node)
@@ -96,8 +124,8 @@ class NodeFinder(object):
                 continue
             for regex in self.regexes:
                 # TODO: this may be very slow, should calculate this
-                m = regex.search(node)
-                if m:
+                match = regex.search(node)
+                if match:
                     _log.debug("Found match for node %s: %s", node, regex.pattern)
                     nodes.add(node)
                     discarded = regex

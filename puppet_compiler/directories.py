@@ -1,7 +1,10 @@
+"""Classes for managing filsystem objects"""
 from pathlib import Path
 
 
-class FHS(object):
+class FHS:
+    """Object to manage the file system hieracry"""
+
     base_dir = None
     prod_dir = None
     change_dir = None
@@ -10,6 +13,7 @@ class FHS(object):
 
     @classmethod
     def setup(cls, job_id, base):
+        """Setup the base file system"""
         base = Path(base)
         cls.base_dir = base / str(job_id)
         cls.prod_dir = cls.base_dir / "production"
@@ -18,12 +22,15 @@ class FHS(object):
         cls.output_dir = base / "output" / str(job_id)
 
 
-class HostFiles(object):
+class HostFiles:
+    """Class to manage host files"""
+
     def __init__(self, hostname):
         self.hostname = hostname
         self.outdir = FHS.output_dir / self.hostname
 
     def file_for(self, env, what):
+        """Return the path of a file type in a specific environment"""
         if env in ["prod", "change"]:
             suffix = ""
         else:
@@ -46,5 +53,6 @@ class HostFiles(object):
         return base / "catalogs" / f"{self.hostname}{suffix}{ext}"
 
     def outfile_for(self, env, what):
+        """Return the outfile path of a file type in a specific environment"""
         name = self.file_for(env, what).name
         return self.outdir / f"{env}.{name}"

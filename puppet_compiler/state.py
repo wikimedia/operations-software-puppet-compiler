@@ -1,10 +1,9 @@
+"""Track State changes"""
 from typing import Optional
 
 
-class StatesCollection(object):
-    """
-    Helper class that is used to store the state of each host.
-    """
+class StatesCollection:
+    """Helper class that is used to store the state of each host."""
 
     def __init__(self):
         self.states = {}
@@ -27,7 +26,7 @@ class StatesCollection(object):
         """
         output = "Nodes: "
         for state, hosts in self.states.items():
-            output += "%s %s " % (len(hosts), state.upper())
+            output += f"{len(hosts)} {state.upper()} "
         return output
 
 
@@ -39,16 +38,15 @@ class ChangeState:
         change_error: bool,
         has_diff: Optional[bool],
     ):
-        """
-        Class for storing the state for a traditional run that
-        diffs between the current production repo and the proposed change.
+        """Class for the state of the change catalog.
 
-        Params:
-        hostname: the name of the host we're compiling for (str)
-        prod_error: True if there were errors in the base compilation, False otherwise
-        change_error: Same as base, but for the change.
-        has_diff: Outcome of the diff between the two catalogs. Can either be True (diffs are present),
-              False (the diffing process failed) or None (for no changes, or if a catalog failed).
+        Arguments:
+            hostname: the name of the host we're compiling for (str)
+            prod_error: True if there were errors in the base compilation, False otherwise
+            change_error: Same as base, but for the change.
+            has_diff: Outcome of the diff between the two catalogs. Can either be True (diffs are present),
+                False (the diffing process failed) or None (for no changes, or if a catalog failed).
+
         """
         self.host = hostname
         self.base_error = base_error
@@ -61,21 +59,20 @@ class ChangeState:
         Return the name of the state, depending on the outcomes registered.
 
         For this class:
-        'fail' if both catalogs failed to compile, or if the diff process errors out
-        'error' if the change breaks compilation
-        'noop' if there is no diff, or the change fixes compilation
-        'diff' if there are differences.
+            'fail' if both catalogs failed to compile, or if the diff process errors out
+            'error' if the change breaks compilation
+            'noop' if there is no diff, or the change fixes compilation
+            'diff' if there are differences.
+
         """
         if self.base_error:
             if self.change_error:
                 return "fail"
-            else:
-                return "noop"
-        elif self.change_error:
-            return "error"
-        elif self.has_diff is None:
             return "noop"
-        elif self.has_diff is False:
+        if self.change_error:
+            return "error"
+        if self.has_diff is None:
+            return "noop"
+        if self.has_diff is False:
             return "fail"
-        else:
-            return "diff"
+        return "diff"

@@ -1,3 +1,4 @@
+"""Pepare the enironment"""
 import json
 import os
 import shutil
@@ -15,16 +16,21 @@ LDAP_YAML_PATH = "/etc/ldap.yaml"
 
 @contextmanager
 def pushd(dirname):
+    """Context manager to change pwd"""
     cur_dir = Path.cwd()
     os.chdir(dirname)
     yield
     os.chdir(cur_dir)
 
 
-class ManageCode(object):
+class ManageCode:
+    """Class tp prepare code directories"""
+
     private_modules = ["passwords", "contacts", "privateexim"]
 
     def __init__(self, config, jobid, changeid, force=False):
+        # TODO: jobid is unused
+        self.jobid = jobid
         self.base_dir = FHS.base_dir
         self.puppet_src = config["puppet_src"]
         self.puppet_private = config["puppet_private"]
@@ -45,6 +51,7 @@ class ManageCode(object):
         shutil.rmtree(self.base_dir, True)
 
     def prepare(self):
+        """Prepare the directories"""
         _log.debug("Creating directories under %s %s", self.base_dir, self.force)
         # Create the base directory now
         if self.force:
@@ -67,6 +74,12 @@ class ManageCode(object):
             self._fetch_change()
 
     def update_config(self, realm):
+        """update hiera and puppet config files
+
+        Arguments:
+            realm (str): the realm to change to
+
+        """
         prod_src = self.prod_dir / "src"
         with pushd(prod_src):
             self._copy_hiera(self.prod_dir, realm)
@@ -78,16 +91,22 @@ class ManageCode(object):
             self._create_puppetconf(self.change_dir, realm)
 
     def refresh(self, gitdir):
-        """
-        Refresh a git repository
+        """Refresh a git repository.
+
+        Arguments:
+            gitdir (Path): the directory to refresh
+
         """
         with pushd(gitdir):
             self.git.pull("-q", "--rebase")
 
     # Private methods
     def _prepare_dir(self, dirname):
-        """
-        prepare a specific directory to compile puppet
+        """Prepare a specific directory to compile puppet.
+
+        Arguments
+            dirname (Path): the directory to prepare
+
         """
         _log.debug("Cloning directories...")
         src = dirname / "src"
@@ -114,8 +133,12 @@ class ManageCode(object):
 
     @staticmethod
     def _copy_hiera(dirname, realm):
-        """
-        Copy the hiera file
+        """Copy the realm specific hiera file to dirname.
+
+        Arguments:
+            dirname (Path): the directory to copy to
+            realm (str): The realm to use
+
         """
         hiera_file = Path(f"modules/puppetmaster/files/{realm}.hiera.yaml")
         priv = dirname / "private"
@@ -127,6 +150,14 @@ class ManageCode(object):
 
     @staticmethod
     def _create_puppetconf(dirname, realm):
+        """Copy the realm specific puppet conf file to dirname.
+
+        Arguments:
+            dirname (Path): the directory to copy to
+            realm (str): The realm to use
+
+        """
+        # TODO: dirname is not used here
         if realm != "labs":
             _log.debug("Realm is %s, skipping writing puppet.conf", realm)
             return
@@ -166,7 +197,7 @@ class ManageCode(object):
             raise RuntimeError("Unsupported Gerrit project: " + project)
 
     def _checkout_gerrit_revision(self, project, revision):
-        self.git.fetch("-q", "https://gerrit.wikimedia.org/r/" + project, revision)
+        self.git.fetch("-q", f"https://gerrit.wikimedia.org/r/{project}", revision)
         self.git.checkout("FETCH_HEAD")
 
     def _pull_rebase_origin(self, origin_branch):
@@ -185,16 +216,18 @@ class Git:
     def __getattr__(self, action):
         action = action.replace("_", "-")
 
-        def git_exec(*args, **kwdargs):
+        def git_exec(*args):
+            """Executes a git command and returns the output"""
             return self._execute_command(action, *args)
 
         return git_exec
 
-    def _execute_command(self, command, *args):
+    @staticmethod
+    def _execute_command(command, *args):
         cmd = ["git", command]
         cmd.extend(args)
         try:
             return subprocess.check_call(cmd)
         except subprocess.CalledProcessError as error:
-            _log.critical("`{}` failed: {}".format(" ".join(cmd), error))
-            raise SystemExit(2)
+            _log.critical("`%s` failed: %s", " ".join(cmd), error)
+            raise SystemExit(2) from error

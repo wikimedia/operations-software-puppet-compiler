@@ -1,3 +1,4 @@
+"""Module responsible for diffing puppet catalogs"""
 import difflib
 import json
 
@@ -28,15 +29,12 @@ def clone_resource(resource, full_clone=True):
 def format_param(param, value, param_len):
     """format a parameter handeling none ascii characters"""
     param_format = "{p:<%d} => {v}\n" % param_len
-    try:
-        return param_format.format(p=param, v=value)
-    except UnicodeEncodeError:
-        return param_format.format(p=param, v=value.encode("latin1"))
+    return param_format.format(p=param, v=value)
 
 
 def parameters_diff(orig, other, fromfile="a", tofile="b"):
     """Function for diffing parameters"""
-    output = "--- {f}\n+++ {t}\n\n".format(f=fromfile, t=tofile)
+    output = f"--- {fromfile}\n+++ {tofile}\n\n"
     old = set(orig.keys())
     new = set(other.keys())
     # Parameters only in the old definition
@@ -58,7 +56,7 @@ def parameters_diff(orig, other, fromfile="a", tofile="b"):
     return output
 
 
-class PuppetResource(object):
+class PuppetResource:
     """Object to manage Puppet resources"""
 
     def __init__(self, data):
@@ -79,7 +77,7 @@ class PuppetResource(object):
                 self.parameters[k] = v
 
     def __str__(self):
-        return "{res}[{title}]".format(res=self.resource_type, title=self.title)
+        return f"{self.resource_type}[{self.title}]"
 
     def is_same_of(self, other):
         """
@@ -119,24 +117,25 @@ class PuppetResource(object):
             content_diff = [
                 line
                 for line in difflib.unified_diff(
-                    my_content, other_content, lineterm="", fromfile="{}.orig".format(self.title), tofile=self.title
+                    my_content, other_content, lineterm="", fromfile=f"{self.title}.orig", tofile=self.title
                 )
             ]
             out["content"] = "\n".join(content_diff)
         if self.parameters != other.parameters:
             out["parameters"] = parameters_diff(
-                self.parameters, other.parameters, fromfile="{}.orig".format(str(self)), tofile=str(self)
+                self.parameters, other.parameters, fromfile=f"{self}.orig", tofile=str(self)
             )
         return out
 
 
-class PuppetCatalog(object):
+class PuppetCatalog:
     """Object for working with a  Puppet catalog"""
 
     def __init__(self, filename):
         self.resources = {}
         with open(filename, "r", encoding="latin_1") as catalog_fh:
             catalog = json.load(catalog_fh)
+        # TODO: can likley drop this as we dont use puppet3
         if "data" in catalog:
             base = catalog["data"]  # Puppet 3
         else:
@@ -148,9 +147,11 @@ class PuppetCatalog(object):
         self.name = base["name"]
 
     def diff_if_present(self, other):
+        """Diff content if entries are present in both catalogs"""
         return self._diff(self.all_resources & other.all_resources, other)
 
     def diff_full_diff(self, other):
+        """Diff content"""
         return self._diff(self.all_resources | other.all_resources, other)
 
     def _diff(self, resources, other):
@@ -183,5 +184,5 @@ class PuppetCatalog(object):
             "only_in_self": only_in_self,
             "only_in_other": only_in_other,
             "resource_diffs": diffs,
-            "perc_changed": "%.2f%%" % (100 * float(total_affected) / num_resources),
+            "perc_changed": f"{100 * float(total_affected) / num_resources:.2f}%",
         }

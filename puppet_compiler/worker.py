@@ -1,3 +1,4 @@
+"""Class for compiling a host"""
 import shutil
 import subprocess
 import traceback
@@ -10,7 +11,9 @@ from puppet_compiler.presentation.html import Host
 from puppet_compiler.state import ChangeState
 
 
-class HostWorker(object):
+class HostWorker:
+    """Class for compiling a host"""
+
     E_OK = 0
     E_BASE = 1
     E_CHANGED = 2

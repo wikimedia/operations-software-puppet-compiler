@@ -1,3 +1,16 @@
+"""This class is the main ochestration class for the puppet puppet_compiler
+
+How data are organized:
+
+- each job has its base directory, e.g. '/tmp/differ/2456'
+- inside this directory we have the proper puppet directories, 'production'
+  and 'change', and the 'diff' directory which - you guessed it - contains the
+  diffs.
+- Also  in the base, we have a output directory, that holds the final output for
+  the user (which includes the compiled catalog, the errors and warnings, and a
+  html page with some status and the diffs nicely represented, if any)
+"""
+
 import os
 import re
 import subprocess
@@ -10,19 +23,6 @@ from puppet_compiler.presentation import html
 from puppet_compiler.presentation.html import Index
 from puppet_compiler.state import ChangeState, StatesCollection
 
-"""
-How data are organized:
-
-- each job has its base directory, e.g. '/tmp/differ/2456'
-- inside this directory we have the proper puppet directories, 'production'
-  and 'change', and the 'diff' directory which - you guessed it - contains the
-  diffs.
-- Also  in the base, we have a output directory, that holds the final output for
-  the user (which includes the compiled catalog, the errors and warnings, and a
-  html page with some status and the diffs nicely represented, if any)
-
-"""
-
 
 class ControllerError(Exception):
     """Generic Exception for Controller Errors"""
@@ -32,7 +32,9 @@ class ControllerNoHostsError(Exception):
     """Generic Exception for Controller Errors"""
 
 
-class Controller(object):
+class Controller:
+    """Class responsible for controling the flow of the compilation run"""
+
     cloud_domains = (".wmflabs", ".wikimedia.cloud")
 
     def __init__(self, configfile, job_id, change_id, host_list, nthreads=2, force=False):
@@ -79,7 +81,9 @@ class Controller(object):
         html.change_id = change_id
         html.job_id = job_id
 
-    def set_puppet_version(self):
+    @staticmethod
+    def set_puppet_version():
+        """Set the puppet version"""
         if not os.environ.get("PUPPET_VERSION_FULL", False):
             full = subprocess.check_output(["puppet", "--version"]).decode().rstrip()
             os.environ["PUPPET_VERSION_FULL"] = full
@@ -88,6 +92,12 @@ class Controller(object):
             os.environ["PUPPET_VERSION"] = major
 
     def pick_hosts(self, host_list):
+        """Pick the set of hosts
+
+        Arguments:
+            host_list: a string representing the hosts list
+
+        """
         if not host_list:
             _log.info("No host list provided, generating the nodes list")
             hosts = nodegen.get_nodes(self.config)
@@ -120,6 +130,7 @@ class Controller(object):
         self.config.update(data)
 
     def run(self) -> None:
+        """Perform the compilation run"""
         _log.info("Refreshing the common repos from upstream if needed")
         # If using local filesystem repositories, we need to refresh them
         # before of a run.
@@ -144,9 +155,17 @@ class Controller(object):
         self.managecode.cleanup()
 
     def index_url(self, index):
+        """Return the index url"""
         return "%s/%s/%s" % (self.config["http_url"], html.job_id, index.url)
 
     def _run_hosts(self, hosts, realm):
+        """Run  the compilation on a set of hosts
+
+        Arguments:
+            hosts: The hosts to run the compilation on
+            realm: The realm (labs or production) to work on
+
+        """
         if not hosts:
             return
         self.managecode.update_config(realm)

@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+"""Tool used to populate the puppetdb with some node data"""
 
 import argparse
 import logging
@@ -37,7 +38,7 @@ def populate_node(node, config):
         print("ERROR: {}".format(error))
         return
     for manifest_dir in ["/dev/null", None]:
-        print("manifest_dir: {}".format(manifest_dir))
+        print(f"manifest_dir: {manifest_dir}")
         succ, _, err = puppet.compile_storeconfigs(node, config["puppet_var"], manifest_dir)
         if succ:
             print("OK")

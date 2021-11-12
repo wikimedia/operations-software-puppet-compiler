@@ -1,3 +1,4 @@
+"""Functions to call the puppet bunary"""
 import os
 import re
 import subprocess
@@ -8,6 +9,7 @@ from puppet_compiler.directories import FHS, HostFiles
 
 
 def compile_cmd_env(hostname, label, vardir, manifests_dir=None, *extra_flags):
+    """Compaile puppet with a specific environment"""
     env = os.environ.copy()
     if label == "prod":
         basedir = FHS.prod_dir
@@ -35,14 +37,14 @@ def compile_cmd_env(hostname, label, vardir, manifests_dir=None, *extra_flags):
     cmd = [
         "puppet",
         "master",
-        "--vardir=%s" % vardir,
-        "--modulepath=%s:%s" % (privdir / "modules", srcdir / "modules"),
-        "--confdir=%s" % srcdir,
-        "--compile=%s" % hostname,
+        f"--vardir={vardir}",
+        f"--modulepath={privdir / 'modules'}:{srcdir / 'modules'}",
+        f"--confdir={srcdir}",
+        f"--compile={hostname}",
         "--color=false",
-        "--yamldir=%s" % yamldir,
-        "--manifest=%s" % manifests_dir,
-        "--environmentpath=%s" % environments_dir,
+        f"--yamldir={yamldir}",
+        f"--manifest={manifests_dir}",
+        f"--environmentpath={environments_dir}",
     ]
     cmd.extend(extra_flags)
     return (cmd, env)

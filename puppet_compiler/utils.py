@@ -1,3 +1,4 @@
+"""Collections of helpers"""
 import re
 import shutil
 from datetime import datetime, timedelta
@@ -36,8 +37,8 @@ def refresh_yaml_date(facts_file):
     exp_re = r"(\s+expiration:) .*"
     datetime_facts = datetime.utcnow()
     datetime_exp = datetime_facts + timedelta(days=1)
-    ts_sub = r"\1 {}".format(datetime_facts.strftime(date_format))
-    exp_sub = r"\1 {}".format(datetime_exp.strftime(date_format))
+    ts_sub = f"\\1 {datetime_facts.strftime(date_format)}"
+    exp_sub = f"\\1 {datetime_exp.strftime(date_format)}"
     with facts_file.open() as facts_fh:
         tmp_facts_file = facts_file.parent / (facts_file.name + ".tmp")
         with tmp_facts_file.open("w") as tmp:
