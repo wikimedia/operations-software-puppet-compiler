@@ -7,6 +7,7 @@ import mock
 
 from puppet_compiler import controller, worker
 from puppet_compiler.directories import FHS
+from puppet_compiler.utils import FactsFileNotFound
 
 
 class TestHostWorker(unittest.TestCase):
@@ -15,11 +16,11 @@ class TestHostWorker(unittest.TestCase):
         self.fixtures = Path(__file__).parent.resolve() / "fixtures"
         self.c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
         # TODO: there should be an easier way to reset the working dir
-        self.c.config["puppet_var"] = self.fixtures / "puppet_var"
+        self.c.config.puppet_var = self.fixtures / "puppet_var"
         FHS.setup(19, base)
-        self.c.config["base"] = FHS.base_dir
+        self.c.config.base = FHS.base_dir
         self.c.outdir = FHS.output_dir
-        self.hw = worker.HostWorker(self.c.config["puppet_var"], "test.example.com")
+        self.hw = worker.HostWorker(self.c.config.puppet_var, "test.example.com")
 
     def test_initialize(self):
 
@@ -29,18 +30,19 @@ class TestHostWorker(unittest.TestCase):
 
     @mock.patch("puppet_compiler.directories.Path.is_file")
     def test_facts_file(self, is_file_mock):
-        fact_file = self.c.config["puppet_var"] / "yaml" / "facts" / "test.example.com.yaml"
+        fact_file = self.c.config.puppet_var / "yaml" / "facts" / "test.example.com.yaml"
         self.assertEqual(self.hw.facts_file(), fact_file)
         is_file_mock.return_value = False
-        self.assertIsNone(self.hw.facts_file())
+        self.hw.facts_file = mock.Mock()
+        self.hw.facts_file.side_effect = FactsFileNotFound
 
     @mock.patch("puppet_compiler.puppet.compile")
     def test_compile_all(self, mocker):
         # Verify simple calls
         err = self.hw._compile_all()
         calls = [
-            mock.call("test.example.com", "prod", self.c.config["puppet_var"], None),
-            mock.call("test.example.com", "change", self.c.config["puppet_var"], None),
+            mock.call("test.example.com", "prod", self.c.config.puppet_var, None),
+            mock.call("test.example.com", "change", self.c.config.puppet_var, None),
         ]
         mocker.assert_has_calls(calls)
         self.assertEquals(err, 0)
@@ -72,8 +74,8 @@ class TestHostWorker(unittest.TestCase):
 
         puppetcatalog_mock.assert_has_calls(
             [
-                mock.call(self.c.config["base"] / "production/catalogs/test.example.com.pson"),
-                mock.call(self.c.config["base"] / "change/catalogs/test.example.com.pson"),
+                mock.call(self.c.config.base / "production/catalogs/test.example.com.pson"),
+                mock.call(self.c.config.base / "change/catalogs/test.example.com.pson"),
             ]
         )
         instance_mock.diff_if_present.return_value = {"foo": "bar"}
@@ -88,7 +90,7 @@ class TestHostWorker(unittest.TestCase):
     @mock.patch("shutil.copy")
     def test_make_output(self, mock_copy, mkdir_mock, is_file_mock, host_files_mock):
         is_file_mock.return_value = False
-        source = self.c.config["base"] / "change/catalogs/test.example.com.err"
+        source = self.c.config.base / "change/catalogs/test.example.com.err"
         dest = self.c.outdir / "test.example.com" / "change.test.example.com.err"
         host_files_mock.return_value.file_for.return_value = source
         host_files_mock.return_value.outfile_for.return_value = dest

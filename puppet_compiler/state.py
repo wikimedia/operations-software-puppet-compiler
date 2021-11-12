@@ -1,41 +1,17 @@
 """Track State changes"""
-from typing import Optional
+
+from typing import Dict, Optional, Set
 
 
-class StatesCollection:
-    """Helper class that is used to store the state of each host."""
-
-    def __init__(self):
-        self.states = {}
-
-    def add(self, state):
-        """
-        Add a state object to the collection.
-
-        Params:
-          state - a ChangeState (or derived) object for a run on a specific host.
-        """
-        if state.name not in self.states:
-            self.states[state.name] = set([state.host])
-        else:
-            self.states[state.name].add(state.host)
-
-    def summary(self):
-        """
-        Outputs a summary of the status.
-        """
-        output = "Nodes: "
-        for state, hosts in self.states.items():
-            output += f"{len(hosts)} {state.upper()} "
-        return output
-
-
+# pylint: disable=too-few-public-methods
 class ChangeState:
+    """Class to track change state"""
+
     def __init__(
         self,
         hostname: str,
-        base_error: bool,
-        change_error: bool,
+        base_error: int,
+        change_error: int,
         has_diff: Optional[bool],
     ):
         """Class for the state of the change catalog.
@@ -55,8 +31,7 @@ class ChangeState:
 
     @property
     def name(self) -> str:
-        """
-        Return the name of the state, depending on the outcomes registered.
+        """Return the name of the state, depending on the outcomes registered.
 
         For this class:
             'fail' if both catalogs failed to compile, or if the diff process errors out
@@ -76,3 +51,29 @@ class ChangeState:
         if self.has_diff is False:
             return "fail"
         return "diff"
+
+
+class StatesCollection:
+    """Helper class that is used to store the state of each host."""
+
+    def __init__(self):
+        self.states: Dict[str, Set[str]] = {}
+
+    def add(self, state: ChangeState) -> None:
+        """Add a state object to the collection.
+
+        Arguments:
+          state - a ChangeState (or derived) object for a run on a specific host.
+
+        """
+        if state.name not in self.states:
+            self.states[state.name] = set([state.host])
+        else:
+            self.states[state.name].add(state.host)
+
+    def summary(self) -> str:
+        """Outputs a summary of the status."""
+        output = "Nodes: "
+        for state, hosts in self.states.items():
+            output += f"{len(hosts)} {state.upper()} "
+        return output

@@ -9,32 +9,39 @@ from pathlib import Path
 import requests
 
 from puppet_compiler import _log
+from puppet_compiler.config import ControllerConfig
 from puppet_compiler.directories import FHS
 
 LDAP_YAML_PATH = "/etc/ldap.yaml"
 
 
 @contextmanager
-def pushd(dirname):
-    """Context manager to change pwd"""
+def pushd(dirname: Path):
+    """Context manager to change pwd
+
+    Arguments:
+        dirname: The directory to change to
+
+    """
     cur_dir = Path.cwd()
     os.chdir(dirname)
     yield
     os.chdir(cur_dir)
 
 
+# pylint: disable=too-many-instance-attributes
 class ManageCode:
     """Class tp prepare code directories"""
 
     private_modules = ["passwords", "contacts", "privateexim"]
 
-    def __init__(self, config, jobid, changeid, force=False):
+    def __init__(self, config: ControllerConfig, jobid: int, changeid: int, force=False):
         # TODO: jobid is unused
         self.jobid = jobid
         self.base_dir = FHS.base_dir
-        self.puppet_src = config["puppet_src"]
-        self.puppet_private = config["puppet_private"]
-        self.puppet_var = Path(config["puppet_var"])
+        self.puppet_src = config.puppet_src
+        self.puppet_private = config.puppet_private
+        self.puppet_var = config.puppet_var
         self.change_id = changeid
         self.force = force
 
@@ -44,13 +51,11 @@ class ManageCode:
         self.output_dir = FHS.output_dir
         self.git = Git()
 
-    def cleanup(self):
-        """
-        Remove the whole change tree.
-        """
+    def cleanup(self) -> None:
+        """Remove the whole change tree."""
         shutil.rmtree(self.base_dir, True)
 
-    def prepare(self):
+    def prepare(self) -> None:
         """Prepare the directories"""
         _log.debug("Creating directories under %s %s", self.base_dir, self.force)
         # Create the base directory now
@@ -73,11 +78,11 @@ class ManageCode:
         with pushd(change_src):
             self._fetch_change()
 
-    def update_config(self, realm):
+    def update_config(self, realm: str) -> None:
         """update hiera and puppet config files
 
         Arguments:
-            realm (str): the realm to change to
+            realm: the realm to change to
 
         """
         prod_src = self.prod_dir / "src"
@@ -90,22 +95,22 @@ class ManageCode:
             self._copy_hiera(self.change_dir, realm)
             self._create_puppetconf(self.change_dir, realm)
 
-    def refresh(self, gitdir):
+    def refresh(self, gitdir: Path) -> None:
         """Refresh a git repository.
 
         Arguments:
-            gitdir (Path): the directory to refresh
+            gitdir: the directory to refresh
 
         """
         with pushd(gitdir):
             self.git.pull("-q", "--rebase")
 
     # Private methods
-    def _prepare_dir(self, dirname):
+    def _prepare_dir(self, dirname: Path) -> None:
         """Prepare a specific directory to compile puppet.
 
         Arguments
-            dirname (Path): the directory to prepare
+            dirname: the directory to prepare
 
         """
         _log.debug("Cloning directories...")
@@ -132,12 +137,12 @@ class ManageCode:
             shutil.copy(routes_conf, src / "routes.yaml")
 
     @staticmethod
-    def _copy_hiera(dirname, realm):
+    def _copy_hiera(dirname: Path, realm: str) -> None:
         """Copy the realm specific hiera file to dirname.
 
         Arguments:
-            dirname (Path): the directory to copy to
-            realm (str): The realm to use
+            dirname: the directory to copy to
+            realm: The realm to use
 
         """
         hiera_file = Path(f"modules/puppetmaster/files/{realm}.hiera.yaml")
@@ -149,12 +154,12 @@ class ManageCode:
                 f_out.write(data)
 
     @staticmethod
-    def _create_puppetconf(dirname, realm):
+    def _create_puppetconf(dirname: Path, realm: str) -> None:
         """Copy the realm specific puppet conf file to dirname.
 
         Arguments:
-            dirname (Path): the directory to copy to
-            realm (str): The realm to use
+            dirname: the directory to copy to
+            realm: The realm to use
 
         """
         # TODO: dirname is not used here
@@ -171,7 +176,7 @@ class ManageCode:
         Path("puppet.conf").write_text(template)
         _log.debug("Wrote puppet.conf with puppet-enc settings")
 
-    def _fetch_change(self):
+    def _fetch_change(self) -> None:
         """get changes from the change directly"""
         headers = {"Accept": "application/json", "Content-Type": "application/json; charset=UTF-8"}
         change = requests.get(
@@ -196,14 +201,15 @@ class ManageCode:
         else:
             raise RuntimeError("Unsupported Gerrit project: " + project)
 
-    def _checkout_gerrit_revision(self, project, revision):
+    def _checkout_gerrit_revision(self, project: str, revision: str) -> None:
         self.git.fetch("-q", f"https://gerrit.wikimedia.org/r/{project}", revision)
         self.git.checkout("FETCH_HEAD")
 
-    def _pull_rebase_origin(self, origin_branch):
+    def _pull_rebase_origin(self, origin_branch: str) -> None:
         self.git.pull("--rebase", "origin", origin_branch)
 
 
+# pylint: disable=too-few-public-methods
 class Git:
     """
     This class is not strictly needed. It's just a container for the member
@@ -223,7 +229,7 @@ class Git:
         return git_exec
 
     @staticmethod
-    def _execute_command(command, *args):
+    def _execute_command(command: str, *args):
         cmd = ["git", command]
         cmd.extend(args)
         try:

@@ -3,6 +3,7 @@ import queue
 import threading
 import time
 from collections import namedtuple
+from typing import Callable, Union
 
 from puppet_compiler import _log
 
@@ -14,12 +15,12 @@ class ThreadExecutor(threading.Thread):
     Manages execution of payloads coming from the ThreadOrchestrator
     """
 
-    def __init__(self, in_queue, out_queue):
+    def __init__(self, in_queue: queue.Queue, out_queue: queue.Queue) -> None:
         super().__init__()
         self.queue = in_queue
         self.out_queue = out_queue
 
-    def run(self):
+    def run(self) -> None:
         _log.debug("Spawning a Thread executor")
         while True:
             # grab data from queue
@@ -33,47 +34,62 @@ class ThreadExecutor(threading.Thread):
                 msg = Msg(is_error=False, value=retval, args=args, kwargs=kwargs)
                 _log.debug(msg)
                 self.out_queue.put(msg)
-            except Exception as e:
-                # TODO: log correctly
+            # pylint: disable=broad-except
+            except Exception as err:
                 _log.error("Error in payload")
-                _log.debug(str(e))
-                msg = Msg(is_error=True, value=e, args=args, kwargs=kwargs)
+                _log.exception(str(err))
+                msg = Msg(is_error=True, value=err, args=args, kwargs=kwargs)
                 self.out_queue.put(msg)
             finally:
                 _log.debug("Execution terminated")
                 self.queue.task_done()
 
 
-class ThreadOrchestrator(object):
+class ThreadOrchestrator:
     """Manage threads"""
 
-    def __init__(self, pool_size=4):
+    def __init__(self, pool_size: int = 4):
         self.pool_size = int(pool_size)
-        self._TP = []
-        self._payload_queue = queue.Queue()
-        self._incoming_queue = queue.Queue()
-        for i in range(self.pool_size):
-            t = ThreadExecutor(self._payload_queue, self._incoming_queue)
+        self._thread_processes = []
+        self._payload_queue: queue.Queue = queue.Queue()
+        self._incoming_queue: queue.Queue = queue.Queue()
+        for _ in range(self.pool_size):
+            theard = ThreadExecutor(self._payload_queue, self._incoming_queue)
             # this thread will exit with the main program
-            self._TP.append(t)
-            t.start()
+            self._thread_processes.append(theard)
+            theard.start()
 
-    def add(self, payload, *args, **kwdargs):
+    def add(self, payload: Union[str, Callable], *args, **kwdargs) -> None:
+        """Add an item to the queue
+
+        Arguments:
+            payload: The payload to add
+
+        """
         self._payload_queue.put((payload, args, kwdargs))
 
-    def _process_result(self, callback):
-        """
-        Execute the callback, with the threads.Msg received from the
-        executor as an argument.
+    def _process_result(self, callback: Callable) -> None:
+        """Execute the callback, with the threads.Msg received from the executor as an argument.
+
+        Arguments:
+            callback: The callback to execute
+
         """
         res = self._incoming_queue.get(True)
         try:
             callback(res)
-        except Exception as e:
-            _log.warn("post-exec callback failed: %s", e)
+        # pylint: disable=broad-except
+        except Exception as err:
+            _log.warning("post-exec callback failed: %s", err)
         self._incoming_queue.task_done()
 
-    def fetch(self, callback):
+    def fetch(self, callback: Callable) -> None:
+        """Process all results
+
+        Arguments:
+            callback: The callback to execute
+
+        """
         while not self._payload_queue.empty():
             if self._incoming_queue.empty():
                 time.sleep(5)
@@ -86,7 +102,6 @@ class ThreadOrchestrator(object):
             self._process_result(callback)
 
         # Now send a death signal to all workers.
-        for i in range(len(self._TP)):
+        for _ in range(len(self._thread_processes)):
             self._payload_queue.put(("__exit__", None, None))
-        self._TP = []
-        return
+        self._thread_processes = []

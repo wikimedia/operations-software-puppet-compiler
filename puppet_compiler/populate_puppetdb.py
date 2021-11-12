@@ -1,17 +1,19 @@
 #!/usr/bin/python3
 """Tool used to populate the puppetdb with some node data"""
 
-import argparse
 import logging
 import shutil
 import tempfile
+from argparse import ArgumentParser, Namespace
+from pathlib import Path
+from typing import Dict
 
 from puppet_compiler import directories, nodegen, prepare, puppet, utils
 
 
-def get_args():
+def get_args() -> Namespace:
     """Get Arguments"""
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         description=(
             "Puppetdb filler - this script allows to properly populate "
             "PuppetDB with data useful for the puppet compiler"
@@ -27,8 +29,14 @@ def get_args():
     return parser.parse_args()
 
 
-def populate_node(node, config):
-    """populate puppetdb for this specific node"""
+def populate_node(node: str, config: Dict) -> None:
+    """Populate puppetdb for this specific node
+
+    Arguments:
+        node: The node to work on
+        config: a dictionary representing the config
+
+    """
     print("=" * 80)
     print("Compiling catalog for {}".format(node))
 
@@ -37,9 +45,9 @@ def populate_node(node, config):
     except utils.FactsFileNotFound as error:
         print("ERROR: {}".format(error))
         return
-    for manifest_dir in ["/dev/null", None]:
+    for manifest_dir in [Path("/dev/null"), None]:
         print(f"manifest_dir: {manifest_dir}")
-        succ, _, err = puppet.compile_storeconfigs(node, config["puppet_var"], manifest_dir)
+        succ, _, err = puppet.compile_storeconfigs(node, Path(config["puppet_var"]), manifest_dir)
         if succ:
             print("OK")
         else:
@@ -73,18 +81,18 @@ def main():
     managecode = prepare.ManageCode(config, jobid, None)
     managecode.base_dir.mkdir(mode=0o755)
     managecode.prod_dir.mkdir(mode=0o755, parents=True)
-    managecode._prepare_dir(managecode.prod_dir)
+    managecode._prepare_dir(managecode.prod_dir)  # pylint: disable=protected-access
     srcdir = managecode.prod_dir / "src"
     nodes = set([args.host]) if args.host else nodegen.get_nodes(config)
     cloud_nodes = set(n for n in nodes if n.endswith(("wikimedia.cloud", "wmflabs")))
     prod_nodes = nodes - cloud_nodes
     with prepare.pushd(srcdir):
         print(f"{30 * '#'} working on {len(prod_nodes)} prod nodes {30 * '#'}")
-        managecode._copy_hiera(managecode.prod_dir, "production")
+        managecode._copy_hiera(managecode.prod_dir, "production")  # pylint: disable=protected-access
         for node in prod_nodes:
             populate_node(node, config)
         print(f"{30 * '#'} working on {len(cloud_nodes)} cloud nodes {30 * '#'}")
-        managecode._copy_hiera(managecode.prod_dir, "labs")
+        managecode._copy_hiera(managecode.prod_dir, "labs")  # pylint: disable=protected-access
         for node in cloud_nodes:
             populate_node(node, config)
     shutil.rmtree(tmpdir)

@@ -1,47 +1,64 @@
 """Class for generating nod lists of nodes"""
 import re
+from pathlib import Path
+from typing import Iterable, Pattern, Set
 
-from cumin.query import Query
+from cumin.query import Query  # type: ignore
 from requests import get
 
 from puppet_compiler import _log
+from puppet_compiler.config import ControllerConfig
 
 
-def get_nodes(config):
+def get_nodes(config: ControllerConfig) -> Set:
+    """Get all the available nodes that have separate declarations in site.pp
+
+    Arguments:
+        config: a dict representing the onfig
+
+    Returns:
+        set: A set of nodes to work on
+
     """
-    Get all the available nodes that have separate declarations in site.pp
-    """
-    facts_dir = config["puppet_var"] / "yaml"
+    facts_dir = config.puppet_var / "yaml"
     _log.info("Walking dir %s", facts_dir)
-    site_pp = config["puppet_src"] / "manifests" / "site.pp"
+    site_pp = config.puppet_src / "manifests" / "site.pp"
     # Read site.pp
-    with open(site_pp, "r") as sitepp:
-        n = NodeFinder(sitepp)
-    return n.match_physical_nodes(nodelist(facts_dir))
+    node_finder = NodeFinder(site_pp)
+    return node_finder.match_physical_nodes(nodelist(facts_dir))
 
 
-def get_nodes_regex(config, regex):
+def get_nodes_regex(config: ControllerConfig, regex: str) -> Set:
     """Get a list of nodes based on a reged
 
     Arguments:
         config (dict): a dictionary of app config
         regex (str): the regex to search for
+
     Returns
-        list(str): a list of hosts to work on
+        set: a set of hosts to work on
 
     """
     nodes = set()
-    r = re.compile(regex)
-    facts_dir = config["puppet_var"] / "yaml"
+    matcher = re.compile(regex)
+    facts_dir = config.puppet_var / "yaml"
     _log.info("Walking dir %s", facts_dir)
     for node in nodelist(facts_dir):
-        if r.search(node):
+        if matcher.search(node):
             nodes.add(node)
     return nodes
 
 
-def get_nodes_puppetdb_class(title):
-    """return a set of nodes which have the class 'title' applied"""
+def get_nodes_puppetdb_class(title: str) -> Set:
+    """Return a set of nodes which have the class 'title' applied
+
+    Arguments:
+        title: The Class title to search for
+
+    Returns
+        set: a set of hosts to work on
+
+    """
     title = "::".join(s.capitalize() for s in title.split("::"))
     params = {"query": '["extract",["certname","tags"]]'}
     puppetdb_uri = "http://localhost:8080/pdb/query/v4/resources/Class/{}".format(title)
@@ -63,15 +80,23 @@ def get_nodes_puppetdb_class(title):
     return set(deduplicated_nodes.values())
 
 
-def get_nodes_cumin(query_str):
-    """get a list of nodes using a raw cumin query"""
+def get_nodes_cumin(query_str: str) -> Set:
+    """Get a list of nodes using a raw cumin query.
+
+    Arguments:
+        query_str: The raw cumin query string
+
+    Returns
+        set: a set of hosts to work on
+
+    """
     # Just create the config object manually so we don't have to manage a config file
     config = {"default_backend": "puppetdb", "puppetdb": {"port": 8080, "scheme": "http"}}
     hosts = Query(config).execute(query_str)
     return set(hosts)
 
 
-def nodelist(facts_dir):
+def nodelist(facts_dir: Path) -> Iterable[str]:
     """Return a list of nodes recursivly from a directory
 
     Arguments:
@@ -85,16 +110,17 @@ def nodelist(facts_dir):
         yield node.stem
 
 
+# pylint: disable=too-few-public-methods
 class NodeFinder:
     """Get a list of nodes based on site.pp"""
 
     regexp_node = re.compile(r"^node\s+/([^/]+)/")
     exact_node = re.compile(r"node\s*\'([^\']+)\'")
 
-    def __init__(self, sitepp):
-        self.regexes = set()
-        self.nodes = set()
-        for line in sitepp.readlines():
+    def __init__(self, sitepp: Path) -> None:
+        self.regexes: Set[Pattern] = set()
+        self.nodes: Set[str] = set()
+        for line in sitepp.read_text().splitlines():
             match = self.regexp_node.search(line)
             if match:
                 _log.debug("Found regex in line %s", line.rstrip())
@@ -105,7 +131,7 @@ class NodeFinder:
                 _log.debug("Found node in line %s", line.rstrip())
                 self.nodes.add(match.group(1))
 
-    def match_physical_nodes(self, node_list):
+    def match_physical_nodes(self, node_list: Iterable[str]) -> Set[str]:
         """Match a set of nodes against the list found locally
 
         Arguments:
@@ -114,7 +140,7 @@ class NodeFinder:
         Returns:
             list: a list of matching nodes
         """
-        nodes = set()
+        nodes: Set[str] = set()
         for node in node_list:
             discarded = None
             if node in self.nodes:
@@ -123,7 +149,6 @@ class NodeFinder:
                 self.nodes.discard(node)
                 continue
             for regex in self.regexes:
-                # TODO: this may be very slow, should calculate this
                 match = regex.search(node)
                 if match:
                     _log.debug("Found match for node %s: %s", node, regex.pattern)

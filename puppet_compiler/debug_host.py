@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
+"""Tools for debugging the compilation run of a single host"""
 import logging
 import shutil
 import tempfile
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from puppet_compiler import directories, prepare, puppet, utils
+from puppet_compiler.config import ControllerConfig
 
 
-def get_args() -> None:
+def get_args() -> Namespace:
     """Get Arguments"""
     parser = ArgumentParser(
         description=(
@@ -42,17 +44,17 @@ def main() -> None:
         datefmt="[ %Y-%m-%dT%H:%M:%S ]",
     )
 
-    config = {
-        "puppet_var": args.basedir / "puppet",
-        "puppet_src": args.basedir / "production",
-        "puppet_private": args.basedir / "private",
-    }
+    config = ControllerConfig(
+        puppet_var=args.basedir / "puppet",
+        puppet_src=args.basedir / "production",
+        puppet_private=args.basedir / "private",
+    )
     # Do the whole compilation in a dedicated directory.
     if args.build_dir:
         tmpdir = args.build_dir
     else:
         tmpdir = tempfile.mkdtemp(prefix="fill-puppetdb")
-    jobid = "1"
+    jobid = 1
     realm = "production" if args.host.endswith(("wmnet", "wikimedia.org")) else "labs"
 
     directories.FHS.setup(jobid, tmpdir)
@@ -61,19 +63,19 @@ def main() -> None:
         mangecode.base_dir.mkdir(mode=0o755)
         mangecode.change_dir.mkdir(mode=0o755, parents=True)
         (mangecode.change_dir / "catalogs").mkdir(mode=0o755, parents=True)
-        mangecode._prepare_dir(mangecode.change_dir)
+        mangecode._prepare_dir(mangecode.change_dir)  # pylint: disable=protected-access
     srcdir = mangecode.change_dir / "src"
     with prepare.pushd(srcdir):
         if not args.build_dir:
-            mangecode._fetch_change()
-        mangecode._copy_hiera(mangecode.change_dir, realm)
-        mangecode._create_puppetconf(mangecode.change_dir, realm)
+            mangecode._fetch_change()  # pylint: disable=protected-access
+        mangecode._copy_hiera(mangecode.change_dir, realm)  # pylint: disable=protected-access
+        mangecode._create_puppetconf(mangecode.change_dir, realm)  # pylint: disable=protected-access
         try:
-            utils.refresh_yaml_date(utils.facts_file(config["puppet_var"], args.host))
+            utils.refresh_yaml_date(utils.facts_file(config.puppet_var, args.host))
         except utils.FactsFileNotFound as error:
             logging.error(error)
         logging.debug("%s: compiling", args.host)
-        puppet.compile_debug(args.host, config["puppet_var"])
+        puppet.compile_debug(args.host, config.puppet_var)
     if not args.no_clean:
         shutil.rmtree(tmpdir)
 

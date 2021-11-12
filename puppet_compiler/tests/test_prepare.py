@@ -6,6 +6,7 @@ from pathlib import Path
 import mock
 
 from puppet_compiler import prepare
+from puppet_compiler.config import ControllerConfig
 from puppet_compiler.directories import FHS
 
 
@@ -37,16 +38,13 @@ class TestManageCode(unittest.TestCase):
 
     def setUp(self):
         self.fixtures = Path(__file__).parent.resolve() / "fixtures"
-        self.m = prepare.ManageCode(
-            {
-                "base": self.base,
-                "puppet_src": "https://gerrit.wikimedia.org/r/operations/puppet",
-                "puppet_private": "https://gerrit.wikimedia.org/r/labs/private",
-                "puppet_var": self.fixtures / "puppet_var",
-            },
-            19,
-            227450,
+        config = ControllerConfig(
+            base=self.base,
+            puppet_src="https://gerrit.wikimedia.org/r/operations/puppet",
+            puppet_private="https://gerrit.wikimedia.org/r/labs/private",
+            puppet_var=self.fixtures / "puppet_var",
         )
+        self.m = prepare.ManageCode(config, 19, 227450)
 
     @classmethod
     def tearDownClass(cls):

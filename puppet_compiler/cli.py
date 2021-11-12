@@ -1,30 +1,34 @@
-import argparse
+"""Module for composing CLI tools"""
 import logging
 import os
+from argparse import ArgumentParser, Namespace
+from pathlib import Path
 
 from puppet_compiler import _log
 from puppet_compiler.controller import Controller, ControllerError, ControllerNoHostsError
 
 
-def get_args():
-    """Return the parsed arguments"""
-    parser = argparse.ArgumentParser(
-        description="Puppet Compiler - allows to see differences in catalogs between revisions"
-    )
+def get_args() -> Namespace:
+    """Return the parsed arguments.
+
+    Returns:
+        Namespace: the arguments
+    """
+    parser = ArgumentParser(description="Puppet Compiler - allows to see differences in catalogs between revisions")
     parser.add_argument("--debug", action="store_true", default=False, help="Print debug output")
     parser.add_argument("--force", action="store_true", default=False, help="Print debug output")
     return parser.parse_args()
 
 
-change = int(os.environ.get("CHANGE"))
-nodes = os.environ.get("NODES", None)
-job_id = int(os.environ.get("BUILD_NUMBER"))
-configfile = os.environ.get("PC_CONFIG", "/etc/puppet-compiler.conf")
-nthreads = os.environ.get("NUM_THREADS", 2)
-
-
-def main():
+# pylint: disable=too-many-return-statements
+def main() -> int:
     """Main entry point"""
+
+    change = int(os.environ.get("CHANGE", 0))
+    nodes = os.environ.get("NODES", "")
+    job_id = int(os.environ.get("BUILD_NUMBER", 0))
+    configfile = os.environ.get("PC_CONFIG", "/etc/puppet-compiler.conf")
+    nthreads = int(os.environ.get("NUM_THREADS", 2))
     try:
         args = get_args()
         lvl = logging.DEBUG if args.debug else logging.INFO
@@ -46,7 +50,7 @@ def main():
 
         try:
             controller = Controller(
-                configfile,
+                Path(configfile),
                 job_id,
                 change,
                 host_list=nodes,
@@ -62,8 +66,8 @@ def main():
             return 2
         except ControllerError:
             return 1
-    except Exception as e:
-        _log.critical("Build run failed: %s", e, exc_info=True)
+    except Exception as err:
+        _log.critical("Build run failed: %s", err, exc_info=True)
         return 1
     return 0
 

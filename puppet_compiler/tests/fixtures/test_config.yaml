@@ -1,4 +1,6 @@
 http_url: http://www.example.com/garbagehere
-test_non_existent:
-  - 'definitely'
-  - 'maybe'
+base: /base
+puppet_src: /puppet
+puppet_private: /private
+puppet_var: /var
+pool_size: 2

@@ -18,6 +18,9 @@ extras_require = {
         "GitPython>=3.1.18",
         "black",
         "isort",
+        "types-requests",
+        "types-PyYAML",
+        "types-mock",
     ],
 }
 

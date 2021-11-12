@@ -63,14 +63,13 @@ class TestController(unittest.TestCase):
     def test_initialize_no_configfile(self):
         c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet", nthreads=2)
         self.assertEquals(c.prod_hosts, set(["test.eqiad.wmnet"]))
-        self.assertEquals(c.config["http_url"], "https://puppet-compiler.wmflabs.org/html")
-        self.assertEquals(c.config["base"], "/mnt/jenkins-workspace")
+        self.assertEquals(c.config.http_url, "https://puppet-compiler.wmflabs.org/html")
+        self.assertEquals(c.config.base, Path("/mnt/jenkins-workspace"))
 
     def test_parse_config(self):
         filename = self.fixtures / "test_config.yaml"
         c = controller.Controller(filename, 19, 224570, "test.eqiad.wmnet", nthreads=2)
-        self.assertEquals(len(c.config["test_non_existent"]), 2)
-        self.assertEquals(c.config["http_url"], "http://www.example.com/garbagehere")
+        self.assertEquals(c.config.http_url, "http://www.example.com/garbagehere")
         # This will log an error, but not raise an exception
         controller.Controller(Path("unexistent"), 19, 224570, "test.eqiad.wmnet", nthreads=2)
         with self.assertRaises(controller.ControllerError):
@@ -97,11 +96,10 @@ class TestController(unittest.TestCase):
         with mock.patch("time.sleep"):
             c.run()
         c.managecode.prepare.assert_called_once_with()
-        c.managecode.refresh.assert_not_called()
         self.assertEquals(c.state.states["fail"], set(["test.eqiad.wmnet"]))
         c.managecode.refresh.reset_mocks()
-        c.config["puppet_src"] = "/src"
-        c.config["puppet_private"] = "/private"
+        c.config.puppet_src = "/src"
+        c.config.puppet_private = "/private"
         run_host_mock.return_value = (False, False, None)
         with mock.patch("time.sleep"):
             c.run()
@@ -152,8 +150,8 @@ class TestController(unittest.TestCase):
     def test_pick_hosts(self):
         # Initialize a simple controller
         c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
-        c.config["puppet_var"] = self.fixtures / "puppet_var"
-        c.config["puppet_src"] = self.fixtures
+        c.config.puppet_var = self.fixtures / "puppet_var"
+        c.config.puppet_src = self.fixtures
         # Single node
         c.pick_hosts("test1.eqiad.wmnet")
         self.assertEquals(c.prod_hosts, set(["test1.eqiad.wmnet"]))
@@ -177,8 +175,8 @@ class TestController(unittest.TestCase):
     def test_pick_puppetdb_hosts(self, r_mock):
         # Initialize a simple controller
         c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
-        c.config["puppet_var"] = self.fixtures / "puppet_var"
-        c.config["puppet_src"] = self.fixtures
+        c.config.puppet_var = self.fixtures / "puppet_var"
+        c.config.puppet_src = self.fixtures
         # Role-based matching
         r_mock.get(
             PUPPETDB_URI.format("Role::Grafana"),

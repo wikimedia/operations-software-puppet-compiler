@@ -1,32 +1,39 @@
+"""Html templating module"""
 import os
+from pathlib import Path
+from typing import Any, Dict, Optional, Set
 
 from jinja2 import Environment, PackageLoader
 
 from puppet_compiler import _log
+from puppet_compiler.directories import HostFiles
 
 env = Environment(loader=PackageLoader("puppet_compiler", "templates"))
-change_id = None
-job_id = None
+change_id: Optional[int] = None
+job_id: Optional[int] = None
 
 
-class Host(object):
-    tpl = "hostpage.jinja2"
-    page_name = "index.html"
-    mode = "prod"
-    pretty_mode = "Production"
-    retcode_descriptions = {"noop": "no change", "diff": "changes detected", "error": "change fails"}
+# pylint: disable=too-few-public-methods
+class Host:
+    """Template for a host"""
 
-    def __init__(self, hostname, files, retcode):
+    tpl: str = "hostpage.jinja2"
+    page_name: str = "index.html"
+    mode: str = "prod"
+    pretty_mode: str = "Production"
+    retcode_descriptions: Dict[str, str] = {"noop": "no change", "diff": "changes detected", "error": "change fails"}
+
+    def __init__(self, hostname: str, files: HostFiles, retcode: str):
         self.retcode = retcode
         self.hostname = hostname
         self.outdir = files.outdir
 
-    def _retcode_to_desc(self):
+    def _retcode_to_desc(self) -> str:
         return self.retcode_descriptions.get(self.retcode, "compiler failure")
 
-    def _renderpage(self, page_name, diffs=None):
+    def _renderpage(self, page_name: str, diffs: Optional[Dict] = None) -> None:
         _log.debug("Rendering %s for %s", page_name, self.hostname)
-        data = {"retcode": self.retcode, "host": self.hostname}
+        data: Dict[Any, Any] = {"retcode": self.retcode, "host": self.hostname}
         if self.retcode == "diff" and diffs is not None:
             data["diffs"] = diffs
         data["desc"] = self._retcode_to_desc()
@@ -39,7 +46,7 @@ class Host(object):
         file_path = self.outdir / page_name
         file_path.write_text(page)
 
-    def htmlpage(self, diffs=None, full_diffs=None):
+    def htmlpage(self, diffs: Optional[Dict] = None, full_diffs: Optional[Dict] = None) -> None:
         """
         Create the html page
         """
@@ -47,15 +54,17 @@ class Host(object):
         self._renderpage(self.page_name, diffs)
 
 
-class Index(object):
-    tpl = "index.jinja2"
-    page_name = "index.html"
-    messages = {
+class Index:
+    """Class for rendering index page"""
+
+    tpl: str = "index.jinja2"
+    page_name: str = "index.html"
+    messages: Dict[str, str] = {
         "change": "when the change is applied",
         "fail": "have failed to compile completely",
     }
 
-    def __init__(self, outdir, hosts_raw):
+    def __init__(self, outdir: Path, hosts_raw: str) -> None:
         if self.page_name == "index.html":
             self.url = ""
         else:
@@ -63,12 +72,12 @@ class Index(object):
         self.outfile = outdir / self.page_name
         self.hosts_raw = hosts_raw
 
-    def render(self, state):
+    def render(self, state: Dict[str, Set[str]]) -> None:
         """
         Render the index page with info coming from state
         """
-        ok_hosts = state.get("noop", [])
-        fail_hosts = state.get("fail", [])
+        ok_hosts: Set[str] = state.get("noop", set())
+        fail_hosts: Set[str] = state.get("fail", set())
 
         _log.debug("Rendering the main index page")
         tpl = env.get_template(self.tpl)

@@ -1,36 +1,47 @@
 """Classes for managing filsystem objects"""
 from pathlib import Path
+from typing import Union
 
 
+# pylint: disable=too-few-public-methods
 class FHS:
     """Object to manage the file system hieracry"""
 
-    base_dir = None
-    prod_dir = None
-    change_dir = None
-    diff_dir = None
-    output_dir = None
+    base_dir: Path
+    prod_dir: Path
+    change_dir: Path
+    diff_dir: Path
+    output_dir: Path
 
     @classmethod
-    def setup(cls, job_id, base):
+    def setup(cls, job_id: int, base: Union[str, Path]) -> None:
         """Setup the base file system"""
-        base = Path(base)
-        cls.base_dir = base / str(job_id)
+        base_dir = Path(base) if isinstance(base, str) else base
+        cls.base_dir = base_dir / str(job_id)
         cls.prod_dir = cls.base_dir / "production"
         cls.change_dir = cls.base_dir / "change"
         cls.diff_dir = cls.base_dir / "diffs"
-        cls.output_dir = base / "output" / str(job_id)
+        cls.output_dir = base_dir / "output" / str(job_id)
 
 
 class HostFiles:
     """Class to manage host files"""
 
-    def __init__(self, hostname):
+    def __init__(self, hostname: str) -> None:
         self.hostname = hostname
         self.outdir = FHS.output_dir / self.hostname
 
-    def file_for(self, env, what):
-        """Return the path of a file type in a specific environment"""
+    def file_for(self, env: str, what: str) -> Path:
+        """Return the path of a file type in a specific environment
+
+        Argumnets:
+            env: The envorinment to search in
+            what: The type of file to look for
+
+        Returns:
+            Path: The file path to the file
+
+        """
         if env in ["prod", "change"]:
             suffix = ""
         else:
@@ -52,7 +63,16 @@ class HostFiles:
             raise ValueError("Unrecognized object: %s" % what)
         return base / "catalogs" / f"{self.hostname}{suffix}{ext}"
 
-    def outfile_for(self, env, what):
-        """Return the outfile path of a file type in a specific environment"""
+    def outfile_for(self, env: str, what: str) -> Path:
+        """Return the outfile path of a file type in a specific environment
+
+        Argumnets:
+            env: The envorinment to search in
+            what: The type of file to look for
+
+        Returns:
+            Path: The file path to the file
+
+        """
         name = self.file_for(env, what).name
         return self.outdir / f"{env}.{name}"
