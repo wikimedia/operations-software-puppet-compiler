@@ -40,25 +40,37 @@ if ! (docker info > /dev/null); then
     exit 1
 fi
 
+
 # make pycache world writable
 # If we dont like this then we can merge the following and mount to local at the end
 # i.e. no need for seperate rw mounts for .egg, doc/build and .tox
 # https://gerrit.wikimedia.org/r/c/integration/config/+/665133
 SCRIPT_DIR="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 REPO_DIR="${SCRIPT_DIR}/.."
-sudo find "${REPO_DIR}" -type d -name __pycache__ -exec chmod -R 0777 {} +
-sudo chmod -R 0777 puppet_compiler/tests/fixtures
+TEMP_WORK_DIRS=(
+    .docker_tmp
+    .docker_tmp/.tox
+    .docker_tmp/.eggs
+    .docker_tmp/puppet_compiler.egg-info
+    build
+    .mypy_cache
+    doc/build
+    __pycache__
+    puppet_compiler/tests/fixtures
+)
 DOCKER_TMP_DIR="${REPO_DIR}/.docker_tmp"
-mkdir -p "${DOCKER_TMP_DIR}"/{.tox,doc,.eggs,puppet_compiler.egg-info}
-# We need to make sure the following directories exist before preforming the mount
-# otherwise docker (on linux) will create them as root
-mkdir -p "${REPO_DIR}"/{.tox,.eggs,puppet_compiler.egg-info}
-mkdir -p "${REPO_DIR}/doc/build"
-# We could probably make this clener?
-sudo find "${DOCKER_TMP_DIR}" \! -user nobody -exec chmod 0777 {} +
+
 # The following may be required depending on the users umask
 sudo find "${REPO_DIR}" \! -perm -o=r -exec chmod o+r {} +
 sudo find "${REPO_DIR}" -type d \! -perm -o=x -exec chmod o+x {} +
+
+# We need to make sure the following directories exist before preforming the mount
+# otherwise docker (on linux) will create them as root, also make sure the user
+# inside docker has rights
+for dir in "${TEMP_WORK_DIRS[@]}"; do
+    mkdir -p "${REPO_DIR}/${dir}"
+    sudo find "${REPO_DIR}/${dir}" \! -user nobody -exec chmod 0777 {} +
+done
 
 IMG_VERSION=${IMG_VERSION:-"latest"}
 IMG_NAME=docker-registry.wikimedia.org/releng/tox-buster:$IMG_VERSION

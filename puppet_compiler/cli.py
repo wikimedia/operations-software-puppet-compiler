@@ -1,4 +1,5 @@
 """Module for composing CLI tools"""
+import asyncio
 import logging
 import os
 from argparse import ArgumentParser, Namespace
@@ -16,7 +17,16 @@ def get_args() -> Namespace:
     """
     parser = ArgumentParser(description="Puppet Compiler - allows to see differences in catalogs between revisions")
     parser.add_argument("--debug", action="store_true", default=False, help="Print debug output")
-    parser.add_argument("--force", action="store_true", default=False, help="Print debug output")
+    parser.add_argument("--force", action="store_true", default=False, help="Cleanup the outdirs if they exist.")
+    parser.add_argument(
+        "--fail-fast",
+        action="store_true",
+        default=bool(os.environ.get("FAIL_FAST", "")),
+        help=(
+            "If set, will stop running the compilations on the first host failing, set the env var FAIL_FAST to any "
+            "value to set through the environment."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -56,10 +66,10 @@ def main() -> int:
                 host_list=nodes,
                 nthreads=nthreads,
                 force=args.force,
+                fail_fast=args.fail_fast,
             )
-            controller.run()
-            # If the run is marked as failed, exit with a non-zero exit code
-            if not controller.check_success():
+            run_failed = asyncio.run(controller.run())
+            if run_failed:
                 return 1
         except ControllerNoHostsError:
             _log.warning("No hosts found matching `%s` unable to do anything", nodes)

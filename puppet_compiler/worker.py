@@ -1,15 +1,22 @@
 """Class for compiling a host"""
 import shutil
-import subprocess
 import traceback
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional
 
 from puppet_compiler import _log, puppet, utils
 from puppet_compiler.differ import PuppetCatalog
 from puppet_compiler.directories import HostFiles
 from puppet_compiler.presentation.html import Host
 from puppet_compiler.state import ChangeState
+
+
+@dataclass(frozen=True)
+class RunHostResult:
+    base_error: bool
+    change_error: bool
+    has_diff: Optional[bool]
 
 
 class HostWorker:
@@ -41,7 +48,7 @@ class HostWorker:
             return facts_file
         raise utils.FactsFileNotFound
 
-    def run_host(self, *args: List, **kwdargs: Dict) -> Tuple[Union[int, bool], Union[int, bool], Optional[bool]]:
+    async def run_host(self, *args: List, **kwdargs: Dict) -> RunHostResult:
         """Compiles and diffs a host.
 
         This function gets delegated to a worker thread.
@@ -49,24 +56,25 @@ class HostWorker:
         """
         if not self.facts_file():
             _log.error("Unable to find facts for host %s, skipping", self.hostname)
-            return (True, True, None)
+            return RunHostResult(base_error=True, change_error=True, has_diff=None)
         # Refresh the facts file first
         try:
             utils.refresh_yaml_date(self.facts_file())
         except utils.FactsFileNotFound:
             pass
 
-        errors = self._compile_all()
+        errors = await self._compile_all()
+
         if errors == self.E_OK:
             has_diff = self._make_diff()
         else:
             has_diff = None
-        base_error = errors & self.E_BASE
-        change_error = errors & self.E_CHANGED
+        base_error = bool(errors & self.E_BASE)
+        change_error = bool(errors & self.E_CHANGED)
         try:
             self._make_output()
             state = ChangeState(
-                hostname=self.hostname,
+                host=self.hostname,
                 base_error=base_error,
                 change_error=change_error,
                 has_diff=has_diff,
@@ -75,7 +83,7 @@ class HostWorker:
         # pylint: disable=broad-except
         except Exception as err:
             _log.exception("Error preparing output for %s: %s", self.hostname, err)
-        return (base_error, change_error, has_diff)
+        return RunHostResult(base_error=base_error, change_error=change_error, has_diff=has_diff)
 
     def _check_if_compiled(self, env: str) -> Optional[bool]:
         """Check if we have allready compiled the host for a specific environment.
@@ -100,7 +108,7 @@ class HostWorker:
         # Nothing is found
         return None
 
-    def _compile(self, env: str, args: List) -> bool:
+    async def _compile(self, env: str, args: List) -> bool:
         """Compile the host.
 
         This can run multiple times for the same env in different workers.
@@ -117,33 +125,34 @@ class HostWorker:
         check = self._check_if_compiled(env)
         if check is not None:
             return check
+
+        _log.info("Compiling host %s (%s)", self.hostname, env)
         try:
-            _log.info("Compiling host %s (%s)", self.hostname, env)
-            puppet.compile(self.hostname, env, self.puppet_var, None, *args)
-        except subprocess.CalledProcessError as e:
+            await puppet.compile(self.hostname, env, self.puppet_var, None, *args)
+        except puppet.CompilationFailedError as error:
             _log.error(
                 "Compilation failed for hostname %s " " in environment %s.",
                 self.hostname,
                 env,
             )
-            _log.info("Compilation exited with code %d", e.returncode)
-            _log.debug("Failed command: %s", e.cmd)
+            _log.info("Compilation exited with code %d", error.return_code)
+            _log.debug("Failed command: %s", error.command)
             return False
-        else:
-            return True
 
-    def _compile_all(self) -> int:
+        return True
+
+    async def _compile_all(self) -> int:
         """Does the grindwork of compiling the catalogs.
 
         Returns:
-            list: An integer indicateing the status
+            int: An integer indicating the status
         """
         errors = self.E_OK
         args: List[str] = []
         # TODO: shouldn't we be using boolean math here
-        if not self._compile(self._envs[0], args):
+        if not await self._compile(self._envs[0], args):
             errors += self.E_BASE
-        if not self._compile(self._envs[1], args):
+        if not await self._compile(self._envs[1], args):
             errors += self.E_CHANGED
         return errors
 

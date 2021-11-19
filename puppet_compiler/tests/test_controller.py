@@ -1,12 +1,12 @@
 import os
-import unittest
 from pathlib import Path
 
 import mock
 import requests_mock
+from aiounittest import AsyncTestCase  # type: ignore
 
-from puppet_compiler import controller, state, threads
-from puppet_compiler.presentation import html
+from puppet_compiler import controller
+from puppet_compiler.worker import RunHostResult
 
 PUPPETDB_URI = "http://localhost:8080/pdb/query/v4/resources/Class/{}"
 
@@ -53,7 +53,7 @@ def get_mocked_response(check=None):
     return json_data
 
 
-class TestController(unittest.TestCase):
+class TestController(AsyncTestCase):
     @classmethod
     def setUpClass(cls):
         cls.fixtures = Path(__file__).parent.resolve() / "fixtures"
@@ -71,7 +71,7 @@ class TestController(unittest.TestCase):
         c = controller.Controller(filename, 19, 224570, "test.eqiad.wmnet", nthreads=2)
         self.assertEquals(c.config.http_url, "http://www.example.com/garbagehere")
         # This will log an error, but not raise an exception
-        controller.Controller(Path("unexistent"), 19, 224570, "test.eqiad.wmnet", nthreads=2)
+        controller.Controller(Path("nonexistent"), 19, 224570, "test.eqiad.wmnet", nthreads=2)
         with self.assertRaises(controller.ControllerError):
             controller.Controller(filename.parent / (filename.name + ".invalid"), 1, 1, "test.eqiad.wmnet")
 
@@ -86,66 +86,26 @@ class TestController(unittest.TestCase):
 
     @mock.patch("puppet_compiler.presentation.html.Index.render")
     @mock.patch("puppet_compiler.worker.HostWorker.run_host")
-    def test_run_single_host(self, run_host_mock, render_mocker):
+    async def test_run_single_host(self, run_host_mock, _):
+        # TODO: Improve this tests
         c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
-        run_host_mock.return_value = (False, False, False)
+        run_host_mock.return_value = RunHostResult(base_error=False, change_error=False, has_diff=False)
         c.managecode.prepare = mock.MagicMock(return_value=True)
         c.managecode.refresh = mock.MagicMock(return_value=True)
         c.managecode.update_config = mock.MagicMock()
 
         with mock.patch("time.sleep"):
-            c.run()
+            run_failed = await c.run()
         c.managecode.prepare.assert_called_once_with()
-        self.assertEquals(c.state.states["fail"], set(["test.eqiad.wmnet"]))
+        self.assertFalse(run_failed)
         c.managecode.refresh.reset_mocks()
         c.config.puppet_src = "/src"
         c.config.puppet_private = "/private"
-        run_host_mock.return_value = (False, False, None)
+        run_host_mock.return_value = RunHostResult(base_error=False, change_error=False, has_diff=None)
         with mock.patch("time.sleep"):
-            c.run()
+            run_failed = await c.run()
         c.managecode.refresh.assert_has_calls([mock.call("/src"), mock.call("/private")])
-        self.assertEquals(c.state.states["noop"], set(["test.eqiad.wmnet"]))
-
-    def test_node_callback(self):
-        c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
-        response = threads.Msg(
-            is_error=True,
-            value="Something to remember",
-            args=None,
-            kwargs={
-                "hostname": "test.eqiad.wmnet",
-                "classes": (state.ChangeState, html.Index),
-            },
-        )
-        c.count = 5
-        c.on_node_compiled(response)
-        self.assertIn("test.eqiad.wmnet", c.state.states["fail"])
-        self.assertEquals(c.count, 6)
-        response = threads.Msg(
-            is_error=False,
-            value=(False, False, None),
-            args=None,
-            kwargs={
-                "hostname": "test2.eqiad.wmnet",
-                "classes": (state.ChangeState, html.Index),
-            },
-        )
-        c.on_node_compiled(response)
-        self.assertIn("test2.eqiad.wmnet", c.state.states["noop"])
-        self.assertEquals(c.count, 7)
-        with mock.patch("puppet_compiler.presentation.html.Index.render") as index_render_mock:
-            response = threads.Msg(
-                is_error=False,
-                value=(False, False, None),
-                args=None,
-                kwargs={
-                    "hostname": "test2.eqiad.wmnet",
-                    "classes": (state.ChangeState, html.Index),
-                },
-            )
-            c.count = 4
-            c.on_node_compiled(response)
-            index_render_mock.assert_called_with({"fail": {"test.eqiad.wmnet"}, "noop": {"test2.eqiad.wmnet"}})
+        self.assertFalse(run_failed)
 
     def test_pick_hosts(self):
         # Initialize a simple controller
@@ -229,14 +189,27 @@ class TestController(unittest.TestCase):
         self.assertEqual(c.cloud_hosts, set(["test.tools.eqiad.wmflabs"]))
         self.assertEqual(c.prod_hosts, set(["test.eqiad.wmnet"]))
 
-    def test_check_success(self):
-        c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
-        # let's add just a successful run
-        c.state.states = {}
-        self.assertTrue(c.check_success())
+    def test_has_failures(self):
+        self.assertTrue(controller.Controller.has_failures(results=[Exception()]))
+        self.assertTrue(
+            controller.Controller.has_failures(
+                results=[RunHostResult(base_error=True, change_error=False, has_diff=False)]
+            )
+        )
+        self.assertTrue(
+            controller.Controller.has_failures(
+                results=[RunHostResult(base_error=False, change_error=True, has_diff=False)]
+            )
+        )
 
-        c.state.states = {"failed": 0}
-        self.assertTrue(c.check_success())
-
-        c.state.states = {"fail": ["test.eqiad.wmnet"]}
-        self.assertFalse(c.check_success())
+        self.assertFalse(controller.Controller.has_failures(results=[None]))
+        self.assertFalse(
+            controller.Controller.has_failures(
+                results=[RunHostResult(base_error=False, change_error=False, has_diff=False)]
+            )
+        )
+        self.assertFalse(
+            controller.Controller.has_failures(
+                results=[RunHostResult(base_error=False, change_error=False, has_diff=True)]
+            )
+        )

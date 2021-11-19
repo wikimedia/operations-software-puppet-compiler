@@ -1,16 +1,16 @@
-import subprocess
 import tempfile
-import unittest
 from pathlib import Path
 
 import mock
+from aiounittest import AsyncTestCase
+from aiounittest.helpers import futurized
 
-from puppet_compiler import controller, worker
+from puppet_compiler import controller, puppet, worker
 from puppet_compiler.directories import FHS
 from puppet_compiler.utils import FactsFileNotFound
 
 
-class TestHostWorker(unittest.TestCase):
+class TestHostWorker(AsyncTestCase):
     def setUp(self):
         base = Path(tempfile.mkdtemp(prefix="puppet-compiler"))
         self.fixtures = Path(__file__).parent.resolve() / "fixtures"
@@ -37,32 +37,32 @@ class TestHostWorker(unittest.TestCase):
         self.hw.facts_file.side_effect = FactsFileNotFound
 
     @mock.patch("puppet_compiler.puppet.compile")
-    def test_compile_all(self, mocker):
+    async def test_compile_all(self, compile_mock):
         # Verify simple calls
-        err = self.hw._compile_all()
+        err = await self.hw._compile_all()
         calls = [
             mock.call("test.example.com", "prod", self.c.config.puppet_var, None),
             mock.call("test.example.com", "change", self.c.config.puppet_var, None),
         ]
-        mocker.assert_has_calls(calls)
+        compile_mock.assert_has_calls(calls)
         self.assertEquals(err, 0)
 
         # Verify all compilation is wrong
-        mocker.reset_mock()
-        mocker.side_effect = subprocess.CalledProcessError(cmd="ehehe", returncode=30)
-        err = self.hw._compile_all()
+        compile_mock.reset_mock()
+        compile_mock.side_effect = puppet.CompilationFailedError(command=["dummy", "command"], return_code=30)
+        err = await self.hw._compile_all()
         self.assertEquals(err, 3)
 
         # Verify only the change is wrong
-        def complicated_side_effect(*args, **kwdargs):
+        async def complicated_side_effect(*args, **kwdargs):
             if "prod" in args:
                 return True
             else:
-                raise subprocess.CalledProcessError(cmd="ehehe", returncode=30)
+                raise puppet.CompilationFailedError(command=["dummy", "command"], return_code=30)
 
-        mocker.reset_mock()
-        mocker.side_effect = complicated_side_effect
-        err = self.hw._compile_all()
+        compile_mock.reset_mock()
+        compile_mock.side_effect = complicated_side_effect
+        err = await self.hw._compile_all()
         self.assertEquals(err, 2)
 
     @mock.patch("puppet_compiler.worker.PuppetCatalog")
@@ -102,16 +102,20 @@ class TestHostWorker(unittest.TestCase):
         mock_copy.assert_called_with(source, dest)
 
     @mock.patch("puppet_compiler.utils.refresh_yaml_date")
-    def test_run_host(self, mocked_refresh_yaml_date):
+    async def test_run_host(self, mocked_refresh_yaml_date: mock.Mock):
         self.hw.facts_file = mock.Mock(return_value=False)
-        self.assertEquals(self.hw.run_host(), (True, True, None))
+        self.assertEquals(
+            await self.hw.run_host(), worker.RunHostResult(base_error=True, change_error=True, has_diff=None)
+        )
         fname = self.fixtures / "puppet_var" / "yaml" / "facts" / "test.eqiad.wmnet"
         self.hw.facts_file.return_value = fname
-        self.hw._compile_all = mock.Mock(return_value=0)
+        self.hw._compile_all = mock.Mock(return_value=futurized(0))
         self.hw._make_diff = mock.Mock(return_value=True)
         self.hw._make_output = mock.Mock(return_value=None)
         self.hw._build_html = mock.Mock(return_value=None)
-        self.assertEquals(self.hw.run_host(), (False, False, True))
+        self.assertEquals(
+            await self.hw.run_host(), worker.RunHostResult(base_error=False, change_error=False, has_diff=True)
+        )
         assert mocked_refresh_yaml_date.called
         assert self.hw.facts_file.called
         assert self.hw._compile_all.called
@@ -119,10 +123,15 @@ class TestHostWorker(unittest.TestCase):
         assert self.hw._make_output.called
         assert self.hw._build_html.called
 
-        self.hw._compile_all.return_value = 1
         self.hw._make_diff.reset_mock()
-        self.assertEquals(self.hw.run_host(), (True, False, None))
+        self.hw._compile_all.return_value = futurized(1)
+        self.assertEquals(
+            await self.hw.run_host(), worker.RunHostResult(base_error=True, change_error=False, has_diff=None)
+        )
         assert not self.hw._make_diff.called
+
         # An exception writing the output doesn't make the payload fail
         self.hw._make_output.side_effect = Exception("Boom!")
-        self.assertEquals(self.hw.run_host(), (True, False, None))
+        self.assertEquals(
+            await self.hw.run_host(), worker.RunHostResult(base_error=True, change_error=False, has_diff=None)
+        )

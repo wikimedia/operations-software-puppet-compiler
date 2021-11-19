@@ -2,7 +2,7 @@
 from pathlib import Path
 from typing import List
 
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup  # type: ignore
 
 install_requires = ["cumin", "jinja2", "requests", "pyyaml"]
 extras_require = {
@@ -21,6 +21,9 @@ extras_require = {
         "types-requests",
         "types-PyYAML",
         "types-mock",
+        # This will not be needed once we move to python 3.8+
+        # then we can use unittest.IsolatedAsyncioTestCase
+        "aiounittest",
     ],
 }
 

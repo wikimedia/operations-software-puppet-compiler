@@ -1,4 +1,5 @@
 """Functions to call the puppet bunary"""
+import asyncio
 import os
 import re
 import subprocess
@@ -8,6 +9,14 @@ from typing import Dict, List, Optional, Tuple
 
 from puppet_compiler import _log, utils
 from puppet_compiler.directories import FHS, HostFiles
+
+
+class CompilationFailedError(Exception):
+    """Risen when compiling a catalog fails."""
+
+    def __init__(self, command: List[str], return_code: int):
+        self.command = command
+        self.return_code = return_code
 
 
 def compile_cmd_env(
@@ -66,7 +75,7 @@ def compile_cmd_env(
     return (cmd, env)
 
 
-def compile(hostname: str, label: str, vardir: Path, manifests_dir: Optional[Path] = None, *extra_flags) -> None:
+async def compile(hostname: str, label: str, vardir: Path, manifests_dir: Optional[Path] = None, *extra_flags) -> None:
     """Compile the catalog
 
     Arguments:
@@ -79,17 +88,24 @@ def compile(hostname: str, label: str, vardir: Path, manifests_dir: Optional[Pat
     """
     cmd, env = compile_cmd_env(hostname, label, vardir, manifests_dir, *extra_flags)
     hostfiles = HostFiles(hostname)
-
+    out = SpooledTemporaryFile()
     with hostfiles.file_for(label, "errors").open("w") as err:
-        out = SpooledTemporaryFile()
-        subprocess.check_call(cmd, stdout=out, stderr=err, env=env)
+        proc = await asyncio.subprocess.create_subprocess_shell(" ".join(cmd), stdout=out, stderr=err, env=env)
+        try:
+            await proc.wait()
+        except asyncio.CancelledError:
+            proc.kill()
+            raise
 
+    out.seek(0)
     # Puppet outputs a lot of garbage to stdout...
     with hostfiles.file_for(label, "catalog").open("wb") as f_in:
-        out.seek(0)
         for line in out:
             if not re.match(b"(Info|[Nn]otice|[Ww]arning)", line):
                 f_in.write(line)
+
+    if proc.returncode is not None and proc.returncode not in [0, 2]:
+        raise CompilationFailedError(return_code=proc.returncode, command=cmd)
 
 
 def compile_storeconfigs(

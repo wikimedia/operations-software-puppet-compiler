@@ -7,6 +7,7 @@ from jinja2 import Environment, PackageLoader
 
 from puppet_compiler import _log
 from puppet_compiler.directories import HostFiles
+from puppet_compiler.state import StatesCollection
 
 env = Environment(loader=PackageLoader("puppet_compiler", "templates"))
 change_id: Optional[int] = None
@@ -72,20 +73,24 @@ class Index:
         self.outfile = outdir / self.page_name
         self.hosts_raw = hosts_raw
 
-    def render(self, state: Dict[str, Set[str]]) -> None:
+    def render(self, states_col: StatesCollection, partial: bool = False) -> None:
         """
         Render the index page with info coming from state
         """
-        ok_hosts: Set[str] = state.get("noop", set())
-        fail_hosts: Set[str] = state.get("fail", set())
+        ok_hosts: Set[str] = states_col.states.get("noop", set())
+        fail_hosts: Set[str] = states_col.states.get("fail", set())
+        cancelled_hosts: Set[str] = set() if partial else states_col.states.get("cancelled", set())
+        unfinished_hosts: Set[str] = states_col.states.get("cancelled", set()) if partial else set()
 
         _log.debug("Rendering the main index page")
         tpl = env.get_template(self.tpl)
         page = tpl.render(
             ok_hosts=ok_hosts,
             fail_hosts=fail_hosts,
+            cancelled_hosts=cancelled_hosts,
+            unfinished_hosts=unfinished_hosts,
             msg=self.messages,
-            state=state,
+            state=states_col.states,
             jid=job_id,
             chid=change_id,
             page_name=self.page_name,

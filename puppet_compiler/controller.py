@@ -11,16 +11,16 @@ How data are organized:
   html page with some status and the diffs nicely represented, if any)
 """
 
-import dataclasses
+import asyncio
 import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Set
+from typing import Callable, Iterable, List, Optional, Set, Union
 
 import yaml
 
-from puppet_compiler import _log, directories, nodegen, prepare, threads, worker
+from puppet_compiler import _log, directories, nodegen, prepare, worker
 from puppet_compiler.config import ControllerConfig
 from puppet_compiler.presentation import html
 from puppet_compiler.presentation.html import Index
@@ -33,6 +33,17 @@ class ControllerError(Exception):
 
 class ControllerNoHostsError(Exception):
     """Generic Exception for Controller Errors"""
+
+
+RunTaskResult = Union[Optional[worker.RunHostResult], Exception]
+
+
+def with_semaphore(semaphore: asyncio.Semaphore, func: Callable):
+    async def _inner(*args, **kwargs):
+        async with semaphore:
+            return await func(*args, **kwargs)
+
+    return _inner
 
 
 # pylint: disable=too-many-instance-attributes
@@ -50,19 +61,17 @@ class Controller:
         host_list: str,
         nthreads: int = 2,
         force: bool = False,
+        fail_fast: bool = False,
     ):
 
         # Let's first detect the installed puppet version
-        configfile = Path(configfile) if isinstance(configfile, str) else configfile
         self.set_puppet_version()
-        self.config = ControllerConfig(pool_size=nthreads)
+        configfile = Path(configfile) if isinstance(configfile, str) else configfile
         try:
-            if configfile is not None:
-                self._parse_conf(configfile)
-        except FileNotFoundError as error:
-            _log.exception("Configuration file %s is not a file: %s", configfile, error)
+            self.config = ControllerConfig.from_file(
+                configfile=configfile, overrides={"pool_size": nthreads, "fail_fast": fail_fast}
+            )
         except yaml.error.YAMLError as error:
-            _log.exception("Configuration file %s contains malformed yaml: %s", configfile, error)
             raise ControllerError from error
 
         self.count = 0
@@ -71,8 +80,6 @@ class Controller:
         directories.FHS.setup(job_id, self.config.base)
         self.managecode = prepare.ManageCode(self.config, job_id, change_id, force)
         self.outdir = directories.FHS.output_dir
-        # State of all nodes
-        self.state = StatesCollection()
         # Set up variables to be used by the html output class
         html.change_id = change_id
         html.job_id = job_id
@@ -123,12 +130,12 @@ class Controller:
         self.cloud_hosts = {h for h in hosts if h.endswith(self.cloud_domains)}
         self.prod_hosts = hosts - self.cloud_hosts
 
-    def _parse_conf(self, configfile: Path) -> None:
-        data = yaml.safe_load(configfile.read_text())
-        self.config = dataclasses.replace(self.config, **data)
+    async def run(self) -> bool:
+        """Perform the compilation run.
 
-    def run(self) -> None:
-        """Perform the compilation run"""
+        Returns:
+            True if the run failed, False otherwise.
+        """
         _log.info("Refreshing the common repos from upstream if needed")
         # If using local filesystem repositories, we need to refresh them
         # before of a run.
@@ -140,21 +147,25 @@ class Controller:
         _log.info("Creating directories under %s", self.config.base)
         self.managecode.prepare()
 
-        self._run_hosts(self.prod_hosts, "production")
-        self._run_hosts(self.cloud_hosts, "labs")
+        results = await self.run_hosts(self.prod_hosts, "production")
+        results.extend(await self.run_hosts(self.cloud_hosts, "labs"))
 
-        # Let's create the index
-        index = Index(self.outdir, self.hosts_raw)
-        index.render(self.state.states)
-        _log.info("Run finished; see your results at %s", self.index_url(index))
+        index = self.generate_summary(
+            states_col=self.get_states(hosts=self.prod_hosts.union(self.cloud_hosts), results=results)
+        )
+        _log.info("Run finished; see your results at %s", index)
         # Remove the source and the diffs etc, we just need the output.
         self.managecode.cleanup()
+        return self.has_failures(results)
 
     def index_url(self, index: Index) -> str:
         """Return the index url"""
+        if self.config.http_url.startswith("/"):
+            return f"{self.config.http_url}/output/{html.job_id}/{index.url}index.html"
+
         return f"{self.config.http_url}/{html.job_id}/{index.url}"
 
-    def _run_hosts(self, hosts: Set, realm: str) -> None:
+    async def run_hosts(self, hosts: Set[str], realm: str) -> List[RunTaskResult]:
         """Run  the compilation on a set of hosts
 
         Arguments:
@@ -163,58 +174,109 @@ class Controller:
 
         """
         if not hosts:
-            return
+            return []
+
         self.managecode.update_config(realm)
-        # For each host, the threadpool will execute
-        # Controller._run_host with the host as the only argument.
-        # When this main payload is executed in a thread, the presentation
-        # work is executed in the main thread via
-        # Controller.on_node_compiled
-        threadpool = threads.ThreadOrchestrator(self.config.pool_size)
         _log.info("Starting run (%s)", realm)
+        semaphore = asyncio.Semaphore(self.config.pool_size)
+        tasks: List[asyncio.Task] = []
         for host in hosts:
             host_worker = worker.HostWorker(self.config.puppet_var, host)
-            threadpool.add(
-                host_worker.run_host,
-                hostname=host,
+            tasks.append(asyncio.create_task(with_semaphore(semaphore, host_worker.run_host)()))
+
+        results = await self.wait_for_tasks(hosts=hosts, tasks=tasks, fail_fast=self.config.fail_fast)
+        self.generate_summary(states_col=self.get_states(hosts=hosts, results=results))
+        return results
+
+    @staticmethod
+    def task_failed(result: RunTaskResult) -> bool:
+        return result is not None and (isinstance(result, Exception) or result.change_error or result.base_error)
+
+    @classmethod
+    def has_failures(cls, results: Iterable[RunTaskResult]) -> bool:
+        return any(cls.task_failed(res) for res in results)
+
+    async def wait_for_tasks(
+        self, hosts: Iterable[str], tasks: List[asyncio.Task], fail_fast: bool = False
+    ) -> List[RunTaskResult]:
+        results: List[RunTaskResult] = [None] * len(tasks)
+
+        last_results_len = len([res for res in results if res is not None])
+        some_pending = True
+        while some_pending:
+            for index, task in enumerate(tasks):
+                # give a chance to switch to another async task
+                await asyncio.sleep(0.1)
+                if results[index] is not None:
+                    continue
+
+                if task.done():
+                    try:
+                        results[index] = task.result()
+
+                    except Exception as error:
+                        results[index] = error
+
+            some_pending = any(res is None for res in results)
+            if fail_fast and self.has_failures(results):
+                _log.error(
+                    "A task failed, will cancel all the pending ones (--fail-fast was passed): %s",
+                    next(res for res in results if self.task_failed(res)),
+                )
+                for task in tasks:
+                    if not task.done():
+                        _log.debug("Cancelling task %s", str(task))
+                        task.cancel()
+
+                return results
+
+            cur_results_len = len([res for res in results if res is not None])
+            if cur_results_len != last_results_len:
+                last_results_len = cur_results_len
+                self.generate_summary(states_col=self.get_states(hosts=hosts, results=results), partial=True)
+
+        return results
+
+    def get_states(self, hosts: Iterable[str], results: List[RunTaskResult]) -> StatesCollection:
+        states_col = StatesCollection()
+        for host, result in zip(hosts, results):
+            states_col.add(self.result_to_state(hostname=host, result=result))
+
+        return states_col
+
+    def generate_summary(self, states_col: StatesCollection, partial: bool = False) -> str:
+        index = Index(outdir=self.outdir, hosts_raw=self.hosts_raw)
+        index.render(states_col, partial=partial)
+        _log.info(
+            "Index updated, you can see detailed progress for your work at %s",
+            self.index_url(index),
+        )
+        _log.info(states_col.summary(partial=partial))
+        return self.index_url(index)
+
+    def result_to_state(self, hostname: str, result: RunTaskResult) -> ChangeState:
+        if result is None:
+            # Run was cancelled, probably fail_fast, or we have not finished the run yet
+            state = ChangeState(
+                host=hostname,
+                base_error=False,
+                change_error=False,
+                has_diff=False,
+                cancelled=True,
             )
 
-        # Let's wait for all runs to complete
-        threadpool.fetch(self.on_node_compiled)
+        elif isinstance(result, Exception):
+            # Run failed for some unexpected reason
+            state = ChangeState(host=hostname, base_error=False, change_error=False, has_diff=False, cancelled=False)
+            _log.critical("Unexpected error running run_host on %s: %s", hostname, result)
 
-    def check_success(self) -> bool:
-        """True if there are no failures."""
-        return len(self.state.states.get("fail", [])) == 0
-
-    def on_node_compiled(self, payload: threads.Msg) -> None:
-        """This callback is called in the main thread once a payload has been completed in a worker thread.
-
-        Arguments:
-            payload: A payload containing the results of a specific thread executor
-
-        """
-        hostname = payload.kwargs["hostname"]
-        self.count += 1
-        if payload.is_error:
-            # Running _run_host returned with an exception, this is unexpected
-            state = ChangeState(hostname=hostname, base_error=False, change_error=False, has_diff=False)
-            self.state.add(state)
-            _log.critical("Unexpected error running the payload: %s", payload.value)
         else:
-            base_error, change_error, has_diff = payload.value
-            host_state = ChangeState(
-                hostname=hostname,
-                base_error=base_error,
-                change_error=change_error,
-                has_diff=has_diff,
+            state = ChangeState(
+                host=hostname,
+                base_error=result.base_error,
+                change_error=result.change_error,
+                has_diff=result.has_diff,
+                cancelled=False,
             )
-            self.state.add(host_state)
 
-        if not self.count % 5:
-            index = Index(outdir=self.outdir, hosts_raw=self.hosts_raw)
-            index.render(self.state.states)
-            _log.info(
-                "Index updated, you can see detailed progress for your work at %s",
-                self.index_url(index),
-            )
-        _log.info(self.state.summary())
+        return state

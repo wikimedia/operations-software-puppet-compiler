@@ -13,7 +13,7 @@ class TestChangeState(unittest.TestCase):
 
     def test_name(self):
         test = state.ChangeState(
-            hostname="test.example.com",
+            host="test.example.com",
             base_error=False,
             change_error=True,
             has_diff=None,
