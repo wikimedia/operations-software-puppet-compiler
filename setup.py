@@ -8,12 +8,12 @@ install_requires = ["cumin", "jinja2", "requests", "pyyaml"]
 extras_require = {
     # Test dependencies
     "tests": [
-        "coverage",
         "bandit>=1.5.1",
         "flake8>=3.6.0",
         "prospector[with_everything]>=1.4.1",
         "mock",
-        "nose",
+        "pytest",
+        "pytest-cov",
         "requests_mock",
         "GitPython>=3.1.18",
         "black",
@@ -44,7 +44,6 @@ setup(
     author_email="glavagetto@wikimedia.org",
     extras_require=extras_require,
     install_requires=install_requires,
-    test_suite="nose.collector",
     zip_safe=True,
     packages=find_packages(),
     package_data={"puppet_compiler": get_templates()},

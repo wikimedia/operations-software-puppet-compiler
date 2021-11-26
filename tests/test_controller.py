@@ -62,14 +62,14 @@ class TestController(AsyncTestCase):
 
     def test_initialize_no_configfile(self):
         c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet", nthreads=2)
-        self.assertEquals(c.prod_hosts, set(["test.eqiad.wmnet"]))
-        self.assertEquals(c.config.http_url, "https://puppet-compiler.wmflabs.org/html")
-        self.assertEquals(c.config.base, Path("/mnt/jenkins-workspace"))
+        self.assertEqual(c.prod_hosts, set(["test.eqiad.wmnet"]))
+        self.assertEqual(c.config.http_url, "https://puppet-compiler.wmflabs.org/html")
+        self.assertEqual(c.config.base, Path("/mnt/jenkins-workspace"))
 
     def test_parse_config(self):
         filename = self.fixtures / "test_config.yaml"
         c = controller.Controller(filename, 19, 224570, "test.eqiad.wmnet", nthreads=2)
-        self.assertEquals(c.config.http_url, "http://www.example.com/garbagehere")
+        self.assertEqual(c.config.http_url, "http://www.example.com/garbagehere")
         # This will log an error, but not raise an exception
         controller.Controller(Path("nonexistent"), 19, 224570, "test.eqiad.wmnet", nthreads=2)
         with self.assertRaises(controller.ControllerError):
@@ -114,16 +114,16 @@ class TestController(AsyncTestCase):
         c.config.puppet_src = self.fixtures
         # Single node
         c.pick_hosts("test1.eqiad.wmnet")
-        self.assertEquals(c.prod_hosts, set(["test1.eqiad.wmnet"]))
+        self.assertEqual(c.prod_hosts, set(["test1.eqiad.wmnet"]))
         # Comma-separated nodes
         c.pick_hosts("test.eqiad.wmnet,test1.eqiad.wmnet")
-        self.assertEquals(c.prod_hosts, set(["test.eqiad.wmnet", "test1.eqiad.wmnet"]))
+        self.assertEqual(c.prod_hosts, set(["test.eqiad.wmnet", "test1.eqiad.wmnet"]))
         # Comma-separated nodes trailing comma
         c.pick_hosts("test.eqiad.wmnet,test1.eqiad.wmnet,")
-        self.assertEquals(c.prod_hosts, set(["test.eqiad.wmnet", "test1.eqiad.wmnet"]))
+        self.assertEqual(c.prod_hosts, set(["test.eqiad.wmnet", "test1.eqiad.wmnet"]))
         # Regex-based matching
         c.pick_hosts(r"re:test\d.eqiad.wmnet")
-        self.assertEquals(c.prod_hosts, set(["test1.eqiad.wmnet", "test2.eqiad.wmnet"]))
+        self.assertEqual(c.prod_hosts, set(["test1.eqiad.wmnet", "test2.eqiad.wmnet"]))
         # Nodegen based on parsing site.pp
         c.pick_hosts(None)
         s1 = set(["test.eqiad.wmnet", "test1.eqiad.wmnet"])

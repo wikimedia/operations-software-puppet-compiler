@@ -24,7 +24,7 @@ class TestHostWorker(AsyncTestCase):
 
     def test_initialize(self):
 
-        self.assertEquals(self.hw.hostname, "test.example.com")
+        self.assertEqual(self.hw.hostname, "test.example.com")
         self.assertCountEqual(["prod", "change"], self.hw._envs)
         self.assertIsNone(self.hw.diffs)
 
@@ -45,13 +45,13 @@ class TestHostWorker(AsyncTestCase):
             mock.call("test.example.com", "change", self.c.config.puppet_var, None),
         ]
         compile_mock.assert_has_calls(calls)
-        self.assertEquals(err, 0)
+        self.assertEqual(err, 0)
 
         # Verify all compilation is wrong
         compile_mock.reset_mock()
         compile_mock.side_effect = puppet.CompilationFailedError(command=["dummy", "command"], return_code=30)
         err = await self.hw._compile_all()
-        self.assertEquals(err, 3)
+        self.assertEqual(err, 3)
 
         # Verify only the change is wrong
         async def complicated_side_effect(*args, **kwdargs):
@@ -63,7 +63,7 @@ class TestHostWorker(AsyncTestCase):
         compile_mock.reset_mock()
         compile_mock.side_effect = complicated_side_effect
         err = await self.hw._compile_all()
-        self.assertEquals(err, 2)
+        self.assertEqual(err, 2)
 
     @mock.patch("puppet_compiler.worker.PuppetCatalog")
     def test_make_diff(self, puppetcatalog_mock):
@@ -104,7 +104,7 @@ class TestHostWorker(AsyncTestCase):
     @mock.patch("puppet_compiler.utils.refresh_yaml_date")
     async def test_run_host(self, mocked_refresh_yaml_date: mock.Mock):
         self.hw.facts_file = mock.Mock(return_value=False)
-        self.assertEquals(
+        self.assertEqual(
             await self.hw.run_host(), worker.RunHostResult(base_error=True, change_error=True, has_diff=None)
         )
         fname = self.fixtures / "puppet_var" / "yaml" / "facts" / "test.eqiad.wmnet"
@@ -113,7 +113,7 @@ class TestHostWorker(AsyncTestCase):
         self.hw._make_diff = mock.Mock(return_value=True)
         self.hw._make_output = mock.Mock(return_value=None)
         self.hw._build_html = mock.Mock(return_value=None)
-        self.assertEquals(
+        self.assertEqual(
             await self.hw.run_host(), worker.RunHostResult(base_error=False, change_error=False, has_diff=True)
         )
         assert mocked_refresh_yaml_date.called
@@ -125,13 +125,13 @@ class TestHostWorker(AsyncTestCase):
 
         self.hw._make_diff.reset_mock()
         self.hw._compile_all.return_value = futurized(1)
-        self.assertEquals(
+        self.assertEqual(
             await self.hw.run_host(), worker.RunHostResult(base_error=True, change_error=False, has_diff=None)
         )
         assert not self.hw._make_diff.called
 
         # An exception writing the output doesn't make the payload fail
         self.hw._make_output.side_effect = Exception("Boom!")
-        self.assertEquals(
+        self.assertEqual(
             await self.hw.run_host(), worker.RunHostResult(base_error=True, change_error=False, has_diff=None)
         )
