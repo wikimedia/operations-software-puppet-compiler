@@ -1,3 +1,23 @@
+## 2021-12-09
+### 2.0.0
+#### Breaking changes
+ * Drop support for puppet < 5.5
+ * Drop support alternate puppet configurations (e.g. future parser)
+ * Drop support for python <3.7 and add support for python 3.9
+#### Change in behaviour
+ * Switch to using python asyncio
+ * Switch to pathlib Paths
+ * Update report to display host still running
+ * Display report url on completion of every host (use to be after every fifth)
+ * Add support for testing cloud and production hosts in the same run
+ * Add fast fail option
+# Docs, formatting and testing
+ * Add additional local hacking instructions and utils
+ * Consider a pcc run failed if any hosts fail
+ * Switch to using black and isort formatting
+ * move to pytest
+ * Add types and mypy
+
 ## 2020-12-24
 ### 1.2.0
  * Add support to use cumin queries to fetch hosts
