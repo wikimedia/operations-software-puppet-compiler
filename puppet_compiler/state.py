@@ -22,6 +22,7 @@ class ChangeState:
     base_error: bool
     change_error: bool
     has_diff: Optional[bool]
+    has_core_diff: Optional[bool]
     cancelled: bool = False
 
     @property
@@ -48,6 +49,8 @@ class ChangeState:
             return "noop"
         if self.has_diff is False:
             return "fail"
+        if self.has_core_diff:
+            return "core_diff"
         return "diff"
 
 

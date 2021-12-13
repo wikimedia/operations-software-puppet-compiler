@@ -24,6 +24,8 @@
 {% if diffs.resource_diffs %}
 {% if diffs.page_name == 'fulldiff.html' %}
 <h3>Full Diff</h3>
+{% elif diffs.page_name == 'corediff.html' %}
+<h3>Core resources modified</h3>
 {% else %}
 <h3>Resources modified</h3>
 {% endif %}

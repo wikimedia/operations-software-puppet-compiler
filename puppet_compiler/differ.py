@@ -118,6 +118,11 @@ class PuppetResource:
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
+    @property
+    def core_type(self):
+        """Indicate if the resource is a core type"""
+        return "::" not in self.resource_type
+
     @staticmethod
     def parse_file_content(content: Union[str, Dict]) -> List[str]:
         """Parse a resource content object and return the content string.
@@ -181,10 +186,17 @@ class PuppetCatalog:
         for resource in catalog["resources"]:
             res = PuppetResource(resource)
             self.resources[str(res)] = res
-        self.all_resources = set(self.resources.keys())
         self.name = catalog["name"]
 
-    def diff_if_present(self, other: PuppetCatalog) -> Optional[Dict]:
+    @property
+    def all_resources(self) -> Set:
+        return set(self.resources.keys())
+
+    @property
+    def core_resources(self) -> Set:
+        return {k for k, v in self.resources.items() if v.core_type}
+
+    def diff_if_present(self, other: PuppetCatalog, core_resources: bool = False) -> Optional[Dict]:
         """Diff content if entries are present in both catalogs
 
         Arguments:
@@ -194,9 +206,9 @@ class PuppetCatalog:
             dict: representing the differnces
 
         """
-        return self._diff(self.all_resources & other.all_resources, other)
+        return self._diff(self.all_resources & other.all_resources, other, core_resources)
 
-    def diff_full_diff(self, other: PuppetCatalog) -> Optional[Dict]:
+    def diff_full_diff(self, other: PuppetCatalog, core_resources: bool = False) -> Optional[Dict]:
         """Diff content
 
         Arguments:
@@ -206,9 +218,9 @@ class PuppetCatalog:
             dict: representing the differnces
 
         """
-        return self._diff(self.all_resources | other.all_resources, other)
+        return self._diff(self.all_resources | other.all_resources, other, core_resources)
 
-    def _diff(self, resources: Set[str], other: PuppetCatalog) -> Optional[Dict]:
+    def _diff(self, resources: Set[str], other: PuppetCatalog, core_resources: bool = False) -> Optional[Dict]:
         """Produce a diff of resources only present in both catalouges
 
         Arguments:
@@ -220,12 +232,20 @@ class PuppetCatalog:
 
         """
         diffs = []
-        only_in_other = other.all_resources - self.all_resources
-        only_in_self = self.all_resources - other.all_resources
+        if core_resources:
+            only_in_other = other.core_resources - self.core_resources
+            only_in_self = self.core_resources - other.core_resources
+        else:
+            only_in_other = other.all_resources - self.all_resources
+            only_in_self = self.all_resources - other.all_resources
 
         for resource in resources:
             mine = self.resources.get(resource)
             theirs = other.resources.get(resource)
+            if mine is None or theirs is None:
+                continue
+            if core_resources and not mine.core_type:
+                continue
             # if we don't have a resource in both create an empty one for diffing purposes
             if mine is None:
                 mine = clone_resource(other.resources[resource], False)

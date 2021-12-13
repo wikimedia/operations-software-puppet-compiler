@@ -1,7 +1,7 @@
 {% extends "base.jinja2" %}
 {% block body %}
         <h1>Compilation results for {{ host }}: <span class="{{retcode}}">{{ desc }}</span></h1>
-        {% if retcode == "diff" and diffs %}
+        {% if retcode.endswith("diff") and diffs %}
         {% include "diffs.jinja2" %}
         {% endif %}
         <h2>Relevant files</h2>
@@ -11,8 +11,13 @@
           <li><a href="{{ mode }}.{{ host }}.err">{{ pretty_mode }} errors/warnings</a></li>
           <li><a href="change.{{ host }}.err">Change errors/warnings</a></li>
 {% if page_name == 'fulldiff.html' %}
+          <li><a href="corediff.html">Core Diff</a></li>
           <li><a href="index.html">Standard Diff</a></li>
+{% elif page_name == 'corediff.html' %}
+          <li><a href="index.html">Standard Diff</a></li>
+          <li><a href="fulldiff.html">Full Diff</a></li>
 {% else %}
+          <li><a href="corediff.html">Core Diff</a></li>
           <li><a href="fulldiff.html">Full Diff</a></li>
 {% endif %}
         </ul>

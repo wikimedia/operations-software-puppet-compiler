@@ -35,7 +35,7 @@ class Host:
     def _renderpage(self, page_name: str, diffs: Optional[Dict] = None) -> None:
         _log.debug("Rendering %s for %s", page_name, self.hostname)
         data: Dict[Any, Any] = {"retcode": self.retcode, "host": self.hostname}
-        if self.retcode == "diff" and diffs is not None:
+        if self.retcode.endswith("diff") and diffs is not None:
             data["diffs"] = diffs
         data["desc"] = self._retcode_to_desc()
         data["mode"] = self.mode
@@ -47,11 +47,14 @@ class Host:
         file_path = self.outdir / page_name
         file_path.write_text(page)
 
-    def htmlpage(self, diffs: Optional[Dict] = None, full_diffs: Optional[Dict] = None) -> None:
+    def htmlpage(
+        self, diffs: Optional[Dict] = None, core_diffs: Optional[Dict] = None, full_diffs: Optional[Dict] = None
+    ) -> None:
         """
         Create the html page
         """
         self._renderpage("fulldiff.html", full_diffs)
+        self._renderpage("corediff.html", core_diffs)
         self._renderpage(self.page_name, diffs)
 
 

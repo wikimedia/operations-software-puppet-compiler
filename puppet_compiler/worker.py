@@ -17,6 +17,7 @@ class RunHostResult:
     base_error: bool
     change_error: bool
     has_diff: Optional[bool]
+    has_core_diff: Optional[bool]
 
 
 class HostWorker:
@@ -36,6 +37,7 @@ class HostWorker:
         self.hostname = hostname
         self.diffs: Optional[Dict] = None
         self.full_diffs: Optional[Dict] = None
+        self.core_diffs: Optional[Dict] = None
 
     def facts_file(self) -> Path:
         """Finds facts file for the current hostname"""
@@ -52,7 +54,7 @@ class HostWorker:
         """
         if not self.facts_file():
             _log.error("Unable to find facts for host %s, skipping", self.hostname)
-            return RunHostResult(base_error=True, change_error=True, has_diff=None)
+            return RunHostResult(base_error=True, change_error=True, has_diff=None, has_core_diff=None)
         # Refresh the facts file first
         try:
             utils.refresh_yaml_date(self.facts_file())
@@ -60,23 +62,27 @@ class HostWorker:
             pass
 
         has_diff = None
+        has_core_diff = None
         base_error, change_error = await self._compile_all()
 
         if not base_error and not change_error:
-            has_diff = self._make_diff()
+            has_diff, has_core_diff = self._make_diff()
         try:
             self._make_output()
             state = ChangeState(
                 host=self.hostname,
                 base_error=base_error,
                 change_error=change_error,
+                has_core_diff=has_core_diff,
                 has_diff=has_diff,
             )
             self._build_html(state.name)
         # pylint: disable=broad-except
         except Exception as err:
             _log.exception("Error preparing output for %s: %s", self.hostname, err)
-        return RunHostResult(base_error=base_error, change_error=change_error, has_diff=has_diff)
+        return RunHostResult(
+            base_error=base_error, change_error=change_error, has_diff=has_diff, has_core_diff=has_core_diff
+        )
 
     def _check_if_compiled(self, env: str) -> Optional[bool]:
         """Check if we have allready compiled the host for a specific environment.
@@ -148,30 +154,36 @@ class HostWorker:
             change_error = True
         return base_error, change_error
 
-    def _make_diff(self) -> Optional[bool]:
+    def _make_diff(self) -> Tuple[Optional[bool], Optional[bool]]:
         """Creat the actual diff files
 
         Returns:
-            bool: True if there are diffs
-                  False if diffing failed
-                  None if no diffs are found
+            (bool, bool): A tuple representing has_diff and has_core_diff
+                True if there are diffs
+                False if diffing failed
+                None if no diffs are found
         """
         _log.info("Calculating diffs for %s", self.hostname)
+        has_diff: Optional[bool] = True
+        has_core_diff: Optional[bool] = True
         try:
             original = PuppetCatalog(self._files.file_for(self._envs[0], "catalog"))
             new = PuppetCatalog(self._files.file_for(self._envs[1], "catalog"))
-            self.diffs = original.diff_if_present(new)
             self.full_diffs = original.diff_full_diff(new)
+            self.core_diffs = original.diff_if_present(new, core_resources=True)
+            self.diffs = original.diff_if_present(new, core_resources=False)
         # pylint: disable=broad-except
         except Exception as err:
             _log.error("Diffing the catalogs failed: %s", self.hostname)
             _log.info("Diffing failed with exception %s", err)
             _log.debug(traceback.format_exc())
-            return False
+            return False, False
         else:
             if self.diffs is None:
-                return None
-            return True
+                has_diff = None
+            if self.core_diffs is None:
+                has_core_diff = None
+            return has_diff, has_core_diff
 
     def _make_output(self) -> None:
         """Prepare the node output, copying the relevant files in place in the output directory"""
@@ -191,4 +203,4 @@ class HostWorker:
             retcode: A string representing the result of the compilation run
         """
         host = Host(self.hostname, self._files, retcode)
-        host.htmlpage(self.diffs, self.full_diffs)
+        host.htmlpage(self.diffs, self.core_diffs, self.full_diffs)

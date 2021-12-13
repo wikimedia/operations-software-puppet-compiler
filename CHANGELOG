@@ -1,6 +1,7 @@
 ## UNRELEASED
-### 2.4.*
+### 2.5.*
 * add gerrit change id to output dir
+* add ability to filter for core resources
 
 ## 2022-11-7
 ### 2.4.2

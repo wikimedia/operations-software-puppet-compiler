@@ -71,8 +71,9 @@ class TestHostWorker(AsyncTestCase):
     def test_make_diff(self, puppetcatalog_mock):
         instance_mock = puppetcatalog_mock.return_value
         instance_mock.diff_if_present.return_value = None
-        self.assertIsNone(self.hw._make_diff())
+        self.assertEqual(self.hw._make_diff(), (None, None))
         self.assertIsNone(self.hw.diffs)
+        self.assertIsNone(self.hw.core_diffs)
 
         puppetcatalog_mock.assert_has_calls(
             [
@@ -81,10 +82,22 @@ class TestHostWorker(AsyncTestCase):
             ]
         )
         instance_mock.diff_if_present.return_value = {"foo": "bar"}
-        self.assertTrue(self.hw._make_diff())
+        self.assertEqual(self.hw._make_diff(), (True, True))
         self.assertEqual(self.hw.diffs, {"foo": "bar"})
+        self.assertEqual(self.hw.core_diffs, {"foo": "bar"})
+
+        def diff_side_effects(*args, **kwargs):
+            if kwargs["core_resources"]:
+                return None
+            return {"foo::bar": "foo::bar"}
+
+        instance_mock.diff_if_present.side_effect = diff_side_effects
+        self.assertEqual(self.hw._make_diff(), (True, None))
+        self.assertEqual(self.hw.diffs, {"foo::bar": "foo::bar"})
+        self.assertIsNone(self.hw.core_diffs)
+
         instance_mock.diff_if_present.side_effect = ValueError("ehehe")
-        self.assertFalse(self.hw._make_diff())
+        self.assertEqual(self.hw._make_diff(), (False, False))
 
     @mock.patch("puppet_compiler.directories.HostFiles")
     @mock.patch("puppet_compiler.directories.Path.is_file")
@@ -107,16 +120,18 @@ class TestHostWorker(AsyncTestCase):
     async def test_run_host(self, mocked_refresh_yaml_date: mock.Mock):
         self.hw.facts_file = mock.Mock(return_value=False)
         self.assertEqual(
-            await self.hw.run_host(), worker.RunHostResult(base_error=True, change_error=True, has_diff=None)
+            await self.hw.run_host(),
+            worker.RunHostResult(base_error=True, change_error=True, has_diff=None, has_core_diff=None),
         )
         fname = self.fixtures / "puppet_var" / "yaml" / "facts" / "test.eqiad.wmnet"
         self.hw.facts_file.return_value = fname
         self.hw._compile_all = mock.Mock(return_value=futurized((False, False)))
-        self.hw._make_diff = mock.Mock(return_value=True)
+        self.hw._make_diff = mock.Mock(return_value=(True, True))
         self.hw._make_output = mock.Mock(return_value=None)
         self.hw._build_html = mock.Mock(return_value=None)
         self.assertEqual(
-            await self.hw.run_host(), worker.RunHostResult(base_error=False, change_error=False, has_diff=True)
+            await self.hw.run_host(),
+            worker.RunHostResult(base_error=False, change_error=False, has_diff=True, has_core_diff=True),
         )
         assert mocked_refresh_yaml_date.called
         assert self.hw.facts_file.called
@@ -128,12 +143,14 @@ class TestHostWorker(AsyncTestCase):
         self.hw._make_diff.reset_mock()
         self.hw._compile_all.return_value = futurized((True, False))
         self.assertEqual(
-            await self.hw.run_host(), worker.RunHostResult(base_error=True, change_error=False, has_diff=None)
+            await self.hw.run_host(),
+            worker.RunHostResult(base_error=True, change_error=False, has_diff=None, has_core_diff=None),
         )
         assert not self.hw._make_diff.called
 
         # An exception writing the output doesn't make the payload fail
         self.hw._make_output.side_effect = Exception("Boom!")
         self.assertEqual(
-            await self.hw.run_host(), worker.RunHostResult(base_error=True, change_error=False, has_diff=None)
+            await self.hw.run_host(),
+            worker.RunHostResult(base_error=True, change_error=False, has_diff=None, has_core_diff=None),
         )

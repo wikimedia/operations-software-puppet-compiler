@@ -276,12 +276,20 @@ class Controller:
                 base_error=False,
                 change_error=False,
                 has_diff=False,
+                has_core_diff=False,
                 cancelled=True,
             )
 
         elif isinstance(result, Exception):
             # Run failed for some unexpected reason
-            state = ChangeState(host=hostname, base_error=False, change_error=False, has_diff=False, cancelled=False)
+            state = ChangeState(
+                host=hostname,
+                base_error=False,
+                change_error=False,
+                has_diff=False,
+                has_core_diff=False,
+                cancelled=False,
+            )
             _log.critical("Unexpected error running run_host on %s: %s", hostname, result)
 
         else:
@@ -290,6 +298,7 @@ class Controller:
                 base_error=result.base_error,
                 change_error=result.change_error,
                 has_diff=result.has_diff,
+                has_core_diff=result.has_core_diff,
                 cancelled=False,
             )
 
