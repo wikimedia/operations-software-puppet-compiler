@@ -6,9 +6,8 @@ import shutil
 import tempfile
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from typing import Dict
 
-from puppet_compiler import directories, nodegen, prepare, puppet, utils
+from puppet_compiler import config, directories, nodegen, prepare, puppet, utils
 
 
 def get_args() -> Namespace:
@@ -22,6 +21,7 @@ def get_args() -> Namespace:
     parser.add_argument(
         "--basedir",
         default="/var/lib/catalog-differ",
+        type=Path,
         help="The base dir of the compiler installation",
     )
     parser.add_argument("--debug", action="store_true", default=False, help="Print debug output")
@@ -29,7 +29,7 @@ def get_args() -> Namespace:
     return parser.parse_args()
 
 
-def populate_node(node: str, config: Dict) -> None:
+def populate_node(node: str, cfg: config.ControllerConfig) -> None:
     """Populate puppetdb for this specific node
 
     Arguments:
@@ -41,13 +41,13 @@ def populate_node(node: str, config: Dict) -> None:
     print("Compiling catalog for {}".format(node))
 
     try:
-        utils.refresh_yaml_date(utils.facts_file(config["puppet_var"], node))
+        utils.refresh_yaml_date(utils.facts_file(cfg.puppet_var, node))
     except utils.FactsFileNotFound as error:
         print("ERROR: {}".format(error))
         return
     for manifest_dir in [Path("/dev/null"), None]:
         print(f"manifest_dir: {manifest_dir}")
-        succ, _, err = puppet.compile_storeconfigs(node, Path(config["puppet_var"]), manifest_dir)
+        succ, _, err = puppet.compile_storeconfigs(node, cfg.puppet_var, manifest_dir)
         if succ:
             print("OK")
         else:
@@ -69,32 +69,32 @@ def main():
         datefmt="[ %Y-%m-%dT%H:%M:%S ]",
     )
 
-    config = {
-        "puppet_var": args.basedir / "puppet",
-        "puppet_src": args.basedir / "production",
-        "puppet_private": args.basedir / "private",
-    }
+    cfg = config.ControllerConfig(
+        puppet_var=args.basedir / "puppet",
+        puppet_src=args.basedir / "production",
+        puppet_private=args.basedir / "private",
+    )
     # Do the whole compilation in a dedicated directory.
     tmpdir = tempfile.mkdtemp(prefix="fill-puppetdb")
     jobid = "1"
     directories.FHS.setup(jobid, tmpdir)
-    managecode = prepare.ManageCode(config, jobid, None)
+    managecode = prepare.ManageCode(cfg, jobid, None)
     managecode.base_dir.mkdir(mode=0o755)
     managecode.prod_dir.mkdir(mode=0o755, parents=True)
     managecode._prepare_dir(managecode.prod_dir)  # pylint: disable=protected-access
     srcdir = managecode.prod_dir / "src"
-    nodes = set([args.host]) if args.host else nodegen.get_nodes(config)
+    nodes = set([args.host]) if args.host else nodegen.get_nodes(cfg)
     cloud_nodes = set(n for n in nodes if n.endswith(("wikimedia.cloud", "wmflabs")))
     prod_nodes = nodes - cloud_nodes
     with prepare.pushd(srcdir):
         print(f"{30 * '#'} working on {len(prod_nodes)} prod nodes {30 * '#'}")
         managecode._copy_hiera(managecode.prod_dir, "production")  # pylint: disable=protected-access
         for node in prod_nodes:
-            populate_node(node, config)
+            populate_node(node, cfg)
         print(f"{30 * '#'} working on {len(cloud_nodes)} cloud nodes {30 * '#'}")
         managecode._copy_hiera(managecode.prod_dir, "labs")  # pylint: disable=protected-access
         for node in cloud_nodes:
-            populate_node(node, config)
+            populate_node(node, cfg)
     shutil.rmtree(tmpdir)
 
 
