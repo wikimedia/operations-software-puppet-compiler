@@ -8,7 +8,7 @@ from aiounittest import AsyncTestCase  # type: ignore
 from puppet_compiler import controller
 from puppet_compiler.worker import RunHostResult
 
-PUPPETDB_URI = "http://localhost:8080/pdb/query/v4/resources/Class/{}"
+PUPPETDB_URI = "https://localhost/pdb/query/v4/resources/Class/{}"
 
 
 def get_mocked_response(check=None):

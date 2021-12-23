@@ -3,11 +3,15 @@ import re
 from pathlib import Path
 from typing import Iterable, Pattern, Set
 
+import urllib3  # type: ignore
 from cumin.query import Query  # type: ignore
 from requests import get
 
 from puppet_compiler import _log
 from puppet_compiler.config import ControllerConfig
+
+# TODO: have the CA as a config option
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def get_nodes(config: ControllerConfig) -> Set:
@@ -61,8 +65,9 @@ def get_nodes_puppetdb_class(title: str) -> Set:
     """
     title = "::".join(s.capitalize() for s in title.split("::"))
     params = {"query": '["extract",["certname","tags"]]'}
-    puppetdb_uri = "http://localhost:8080/pdb/query/v4/resources/Class/{}".format(title)
-    nodes_json = get(puppetdb_uri, params=params).json()
+    # TODO: don't hardcode puppetdb
+    puppetdb_uri = "https://localhost/pdb/query/v4/resources/Class/{}".format(title)
+    nodes_json = get(puppetdb_uri, params=params, verify=False).json()
     if not nodes_json:
         _log.warning("no nodes found for class: %s", title)
         return set()
