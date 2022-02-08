@@ -1,3 +1,7 @@
+## 2022-02-08
+### 2.1.0
+* update to prefer yaml facts via routes.yaml file (T248169)
+
 ## 2021-12-23
 ### 2.0.1
 * update nodegen to use https end point
