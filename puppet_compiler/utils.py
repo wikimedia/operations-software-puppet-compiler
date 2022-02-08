@@ -1,10 +1,16 @@
 """Collections of helpers"""
-import re
 import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import yaml
+
 from puppet_compiler import _log
+
+
+def construct_ruby_object(loader, _suffix, node):
+    """YAML construct to map object to dict."""
+    return loader.construct_yaml_map(node)
 
 
 class FactsFileNotFound(Exception):
@@ -41,21 +47,16 @@ def refresh_yaml_date(facts_path: Path) -> None:
     Arguments:
         facts_path: The path to the facts file to refresh
     """
-    # No, we cannot read the yaml. It contains ruby data structures.
+    yaml.add_multi_constructor("!ruby/object:", construct_ruby_object)
     date_format = "%Y-%m-%d %H:%M:%S.%s +00:00"
     _log.debug("Patching %s", facts_path)
-    ts_re = r"(\s+\"_timestamp\":) .*"
-    exp_re = r"(\s+expiration:) .*"
     datetime_facts = datetime.utcnow()
     datetime_exp = datetime_facts + timedelta(days=1)
-    ts_sub = f"\\1 {datetime_facts.strftime(date_format)}"
-    exp_sub = f"\\1 {datetime_exp.strftime(date_format)}"
-    with facts_path.open() as facts_fh:
-        tmp_facts_path = facts_path.parent / (facts_path.name + ".tmp")
-        with tmp_facts_path.open("w") as tmp:
-            for line in facts_fh:
-                line = re.sub(ts_re, ts_sub, line)
-                line = re.sub(exp_re, exp_sub, line)
-                tmp.write(line)
+    data = yaml.load(facts_path.read_text(), Loader=yaml.Loader)
+    data["expiration"] = datetime_exp.strftime(date_format)
+    data["timestamp"] = datetime_facts.strftime(date_format)
+    tmp_facts_path = facts_path.parent / (facts_path.name + ".tmp")
+    new_content = "--- !ruby/object:Puppet::Node::Facts\n" + yaml.safe_dump(data)
+    tmp_facts_path.write_text(new_content)
     # TODO: in python 3.7 theses move expects a str
     shutil.move(str(tmp_facts_path), str(facts_path))

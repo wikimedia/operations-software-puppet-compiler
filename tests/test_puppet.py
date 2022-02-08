@@ -45,6 +45,7 @@ class TestPuppetCalls(AsyncTestCase):
                     "--compile=test.codfw.wmnet",
                     "--color=false",
                     "--yamldir=/var/lib/catalog-differ/puppet/yaml",
+                    "--factpath=/var/lib/catalog-differ/puppet/yaml/facts",
                     f"--manifest={FHS.prod_dir / 'src'}/manifests",
                     f"--environmentpath={FHS.prod_dir / 'src'}/environments",
                 ]
@@ -68,6 +69,7 @@ class TestPuppetCalls(AsyncTestCase):
                     "--compile=test.codfw.wmnet",
                     "--color=false",
                     "--yamldir=/var/lib/catalog-differ/puppet/yaml",
+                    "--factpath=/var/lib/catalog-differ/puppet/yaml/facts",
                     f"--manifest={FHS.change_dir / 'src'}/manifests",
                     f"--environmentpath={FHS.change_dir / 'src'}/environments",
                 ]
@@ -101,6 +103,7 @@ class TestPuppetCalls(AsyncTestCase):
                     "--compile=test.codfw.wmnet",
                     "--color=false",
                     "--yamldir=/var/lib/catalog-differ/puppet/yaml",
+                    "--factpath=/var/lib/catalog-differ/puppet/yaml/facts",
                     f"--manifest={FHS.prod_dir / 'src'}/manifests",
                     f"--environmentpath={FHS.prod_dir / 'src'}/environments",
                     "--dummy",

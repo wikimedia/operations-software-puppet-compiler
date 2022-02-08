@@ -57,7 +57,8 @@ def compile_cmd_env(
     # since we would have errored out earlier if it's
     # unknown.
     factsfile = utils.facts_file(vardir, hostname)
-    yamldir = factsfile.parent.parent
+    factpath = factsfile.parent
+    yamldir = factpath.parent
 
     cmd = [
         "puppet",
@@ -68,6 +69,7 @@ def compile_cmd_env(
         f"--compile={hostname}",
         "--color=false",
         f"--yamldir={yamldir}",
+        f"--factpath={factpath}",
         f"--manifest={manifests_dir}",
         f"--environmentpath={environments_dir}",
     ]
