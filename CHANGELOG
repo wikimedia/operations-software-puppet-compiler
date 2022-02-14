@@ -1,5 +1,5 @@
 ## 2022-02-14
-### UNRELEASED
+### 2.1.1
 * cast PosixPath to str for subprocess.  subprocess doesn't support PosixPath until python3.8
 
 ## 2022-02-08
