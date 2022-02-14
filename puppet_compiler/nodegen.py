@@ -111,7 +111,7 @@ def nodelist(facts_dir: Path) -> Iterable[str]:
         The node name, i.e. the file path with basename with the extension removed
     """
     for node in facts_dir.glob("**/*.yaml"):
-        _log.info("testingting node:  %s", node.stem)
+        _log.debug("testing node:  %s", node.stem)
         yield node.stem
 
 
