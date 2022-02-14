@@ -105,7 +105,7 @@ class TestManageCode(unittest.TestCase):
         self.m.git = mock.MagicMock()
         self.m._prepare_dir(self.m.prod_dir)
         prod_src = self.m.prod_dir / "src"
-        self.m.git.clone.assert_any_call("-q", "https://gerrit.wikimedia.org/r/operations/puppet", prod_src)
+        self.m.git.clone.assert_any_call("-q", "https://gerrit.wikimedia.org/r/operations/puppet", str(prod_src))
         assert 2 == self.m.git.clone.call_count
         mock_copy.assert_called_with(self.m.puppet_var / "ssl", prod_src / "ssl")
         assert 3 == mock_symlink_to.call_count

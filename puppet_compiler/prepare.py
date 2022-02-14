@@ -115,9 +115,9 @@ class ManageCode:
         """
         _log.debug("Cloning directories...")
         src = dirname / "src"
-        self.git.clone("-q", self.puppet_src, src)
+        self.git.clone("-q", str(self.puppet_src), str(src))
         priv = dirname / "private"
-        self.git.clone("-q", self.puppet_private, priv)
+        self.git.clone("-q", str(self.puppet_private), str(priv))
 
         _log.debug("Adding symlinks")
         for module in self.private_modules:

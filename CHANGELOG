@@ -1,3 +1,7 @@
+## 2022-02-14
+### UNRELEASED
+* cast PosixPath to str for subprocess.  subprocess doesn't support PosixPath until python3.8
+
 ## 2022-02-08
 ### 2.1.0
 * update to prefer yaml facts via routes.yaml file (T248169)
