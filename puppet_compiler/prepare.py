@@ -41,6 +41,7 @@ class ManageCode:
         self.base_dir = FHS.base_dir
         self.puppet_src = config.puppet_src
         self.puppet_private = config.puppet_private
+        self.puppet_netbox = config.puppet_netbox
         self.puppet_var = config.puppet_var
         self.change_id = changeid
         self.force = force
@@ -118,6 +119,8 @@ class ManageCode:
         self.git.clone("-q", str(self.puppet_src), str(src))
         priv = dirname / "private"
         self.git.clone("-q", str(self.puppet_private), str(priv))
+        netbox = dirname / "netbox-hiera"
+        self.git.clone("-q", str(self.puppet_netbox), str(netbox))
 
         _log.debug("Adding symlinks")
         for module in self.private_modules:
@@ -147,10 +150,15 @@ class ManageCode:
         """
         hiera_file = Path(f"modules/puppetmaster/files/{realm}.hiera.yaml")
         priv = dirname / "private"
+        netbox = dirname / "netbox-hiera"
         pub = dirname / "src"
         with hiera_file.open() as f_in, Path("hiera.yaml").open("w") as f_out:
             for line in f_in:
-                data = line.replace("/etc/puppet/private", str(priv)).replace("/etc/puppet", str(pub))
+                data = (
+                    line.replace("/etc/puppet/private", str(priv))
+                    .replace("/etc/puppet/netbox", str(netbox))
+                    .replace("/etc/puppet", str(pub))
+                )
                 f_out.write(data)
 
     @staticmethod

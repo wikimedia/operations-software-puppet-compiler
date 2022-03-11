@@ -98,6 +98,7 @@ def main():
         puppet_var=args.basedir / "puppet",
         puppet_src=args.basedir / "production",
         puppet_private=args.basedir / "private",
+        puppet_netbox=args.basedir / "netbox-hiera",
     )
     tmpdir = tempfile.mkdtemp(prefix="fill-puppetdb")
     managecode = setup_environment(tmpdir, cfg)

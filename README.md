@@ -20,6 +20,7 @@ queries
 base: "<PATH_TO_REPO>/.workspace/jenkins-workspace"
 puppet_src: "<PATH_TO_REPO>/.workspace/catalog-differ/production"
 puppet_private: "<PATH_TO_REPO>/.workspace/catalog-differ/private"
+puppet_netbox: "<PATH_TO_REPO>/.workspace/catalog-differ/netbox-hiera"
 http_url: "http://localhost"
 puppet_var: "<PATH_TO_REPO>/.workspace/catalog-differ/puppet"
 ```

@@ -42,6 +42,7 @@ class TestManageCode(unittest.TestCase):
             base=self.base,
             puppet_src="https://gerrit.wikimedia.org/r/operations/puppet",
             puppet_private="https://gerrit.wikimedia.org/r/labs/private",
+            puppet_netbox="https://netbox-exports.wikimedia.org/netbox-hiera",
             puppet_var=self.fixtures / "puppet_var",
         )
         self.m = prepare.ManageCode(config, 19, 227450)
@@ -106,7 +107,7 @@ class TestManageCode(unittest.TestCase):
         self.m._prepare_dir(self.m.prod_dir)
         prod_src = self.m.prod_dir / "src"
         self.m.git.clone.assert_any_call("-q", "https://gerrit.wikimedia.org/r/operations/puppet", str(prod_src))
-        assert 2 == self.m.git.clone.call_count
+        assert 3 == self.m.git.clone.call_count
         mock_copy.assert_called_with(self.m.puppet_var / "ssl", prod_src / "ssl")
         assert 3 == mock_symlink_to.call_count
         exim_priv = self.m.prod_dir / "private/modules/privateexim"

@@ -1,4 +1,8 @@
 ## 2022-02-14
+### 2.2.0
+* Add support for the netbox repo
+
+## 2022-02-14
 ### 2.1.1
 * cast PosixPath to str for subprocess.  subprocess doesn't support PosixPath until python3.8
 

@@ -143,6 +143,8 @@ class Controller:
         self.managecode.refresh(self.config.puppet_src)
         _log.debug("refreshing %s", self.config.puppet_private)
         self.managecode.refresh(self.config.puppet_private)
+        _log.debug("refreshing %s", self.config.puppet_netbox)
+        self.managecode.refresh(self.config.puppet_netbox)
 
         _log.info("Creating directories under %s", self.config.base)
         self.managecode.prepare()

@@ -2,5 +2,6 @@ http_url: http://www.example.com/garbagehere
 base: /base
 puppet_src: /puppet
 puppet_private: /private
+puppet_netbox: /netbox-hiera
 puppet_var: /var
 pool_size: 2

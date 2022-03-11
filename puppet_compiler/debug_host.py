@@ -48,6 +48,7 @@ def main() -> None:
         puppet_var=args.basedir / "puppet",
         puppet_src=args.basedir / "production",
         puppet_private=args.basedir / "private",
+        puppet_netbox=args.basedir / "netbox-hiera",
     )
     # Do the whole compilation in a dedicated directory.
     if args.build_dir:

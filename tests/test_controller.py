@@ -101,6 +101,7 @@ class TestController(AsyncTestCase):
         c.managecode.refresh.reset_mocks()
         c.config.puppet_src = "/src"
         c.config.puppet_private = "/private"
+        c.config.puppet_netbox = "/netbox-hiera"
         run_host_mock.return_value = RunHostResult(base_error=False, change_error=False, has_diff=None)
         with mock.patch("time.sleep"):
             run_failed = await c.run()

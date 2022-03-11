@@ -24,6 +24,7 @@ class ControllerConfig:
     # Location (either on disk, or at a remote HTTP location)
     # of the labs/private repository
     puppet_private: Path = Path("/var/lib/catalog-differ/private")
+    puppet_netbox: Path = Path("/var/lib/catalog-differ/netbox-hiera")
     # Directory hosting all of puppet's runtime files usually
     # under /var/lib/puppet on debian-derivatives
     puppet_var: Path = Path("/var/lib/catalog-differ/puppet")
