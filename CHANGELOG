@@ -1,4 +1,8 @@
 ## 2022-02-14
+### 2.2.1
+* Add support for the vendor_modules path
+
+## 2022-02-14
 ### 2.2.0
 * Add support for the netbox repo
 

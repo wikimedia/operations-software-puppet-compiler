@@ -64,7 +64,7 @@ def compile_cmd_env(
         "puppet",
         "master",
         f"--vardir={vardir}",
-        f"--modulepath={privdir / 'modules'}:{srcdir / 'modules'}",
+        f"--modulepath={privdir / 'modules'}:{srcdir / 'modules'}:{srcdir / 'vendor_modules'}",
         f"--confdir={srcdir}",
         f"--compile={hostname}",
         "--color=false",

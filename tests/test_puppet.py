@@ -19,6 +19,9 @@ class TestPuppetCalls(AsyncTestCase):
         subprocess.create_subprocess_shell.return_value = futurized(proc_mock)
         self.fixtures = Path(__file__).resolve().parent / "fixtures"
         FHS.setup(10, self.fixtures)
+        modulepaths = ["/private/modules", "/src/modules", "/src/vendor_modules"]
+        self.modulepath_prod = ":".join([f"{FHS.prod_dir}{d}" for d in modulepaths])
+        self.modulepath_change = ":".join([f"{FHS.change_dir}{d}" for d in modulepaths])
 
     @patch("puppet_compiler.puppet.SpooledTemporaryFile")
     @patch("puppet_compiler.utils.facts_file")
@@ -40,7 +43,7 @@ class TestPuppetCalls(AsyncTestCase):
                     "puppet",
                     "master",
                     f"--vardir={self.fixtures / 'puppet_var'}",
-                    f"--modulepath={FHS.prod_dir}/private/modules:{FHS.prod_dir}/src/modules",
+                    f"--modulepath={self.modulepath_prod}",
                     f"--confdir={FHS.prod_dir / 'src'}",
                     "--compile=test.codfw.wmnet",
                     "--color=false",
@@ -64,7 +67,7 @@ class TestPuppetCalls(AsyncTestCase):
                     "puppet",
                     "master",
                     f"--vardir={self.fixtures / 'puppet_var'}",
-                    f"--modulepath={FHS.change_dir}/private/modules:{FHS.change_dir}/src/modules",
+                    f"--modulepath={self.modulepath_change}",
                     f"--confdir={FHS.change_dir / 'src'}",
                     "--compile=test.codfw.wmnet",
                     "--color=false",
@@ -98,7 +101,7 @@ class TestPuppetCalls(AsyncTestCase):
                     "puppet",
                     "master",
                     f"--vardir={self.fixtures / 'puppet_var'}",
-                    f"--modulepath={FHS.prod_dir}/private/modules:{FHS.prod_dir}/src/modules",
+                    f"--modulepath={self.modulepath_prod}",
                     f"--confdir={FHS.prod_dir / 'src'}",
                     "--compile=test.codfw.wmnet",
                     "--color=false",
