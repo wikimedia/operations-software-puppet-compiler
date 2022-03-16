@@ -190,6 +190,18 @@ class TestController(AsyncTestCase):
         self.assertEqual(c.cloud_hosts, set(["test.tools.eqiad.wmflabs"]))
         self.assertEqual(c.prod_hosts, set(["test.eqiad.wmnet"]))
 
+    @requests_mock.mock()
+    def test_mixed_host_selectors(self, r_mock):
+        c = controller.Controller(None, 19, 224570, "test.tools.eqiad.wmflabs")
+        r_mock.get(
+            PUPPETDB_URI.format("Role::Grafana"),
+            json=get_mocked_response("role"),
+            status_code=200,
+        )
+        c.pick_hosts("test.tools.eqiad.wmflabs,O:grafana,cumin1001.eqiad.wmnet")
+        self.assertEqual(c.cloud_hosts, set(["test.tools.eqiad.wmflabs"]))
+        self.assertEqual(c.prod_hosts, set(["grafana2001.codfw.wmnet", "cumin1001.eqiad.wmnet"]))
+
     def test_has_failures(self):
         self.assertTrue(controller.Controller.has_failures(results=[Exception()]))
         self.assertTrue(

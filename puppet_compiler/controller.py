@@ -104,26 +104,31 @@ class Controller:
             ControllerNoHostsError: if no hosts found
 
         """
+        hosts = set()
         if not host_list:
             _log.info("No host list provided, generating the nodes list")
             hosts = nodegen.get_nodes(self.config)
-        elif host_list.startswith("re:"):
-            host_regex = host_list[3:]
-            hosts = nodegen.get_nodes_regex(self.config, host_regex)
-        elif host_list.startswith("O:"):
-            role = host_list[2:]
-            hosts = nodegen.get_nodes_puppetdb_class("Role::{}".format(role))
-        elif host_list.startswith("P:"):
-            profile = host_list[2:]
-            hosts = nodegen.get_nodes_puppetdb_class("Profile::{}".format(profile))
-        elif host_list.startswith("C:"):
-            puppet_class = host_list[2:]
-            hosts = nodegen.get_nodes_puppetdb_class(puppet_class)
-        elif host_list.startswith("cumin:"):
-            query = host_list[6:]
-            hosts = nodegen.get_nodes_cumin(query)
         else:
-            hosts = set(host for host in re.split(r"\s*,\s*", host_list) if host)
+            for host_list_part in re.split(r"\s*,\s*", host_list):
+                if host_list_part.startswith("re:"):
+                    host_regex = host_list_part[3:]
+                    hosts.update(nodegen.get_nodes_regex(self.config, host_regex))
+                elif host_list_part.startswith("O:"):
+                    role = host_list_part[2:]
+                    hosts.update(nodegen.get_nodes_puppetdb_class("Role::{}".format(role)))
+                elif host_list_part.startswith("P:"):
+                    profile = host_list_part[2:]
+                    hosts.update(nodegen.get_nodes_puppetdb_class("Profile::{}".format(profile)))
+                elif host_list_part.startswith("C:"):
+                    puppet_class = host_list_part[2:]
+                    hosts.update(nodegen.get_nodes_puppetdb_class(puppet_class))
+                elif host_list_part.startswith("cumin:"):
+                    query = host_list_part[6:]
+                    hosts.update(nodegen.get_nodes_cumin(query))
+                else:
+                    hosts.add(host_list_part)
+        # remove empty strings added by trailing commas
+        hosts.discard("")
 
         if not hosts:
             raise ControllerNoHostsError

@@ -1,4 +1,9 @@
 ## 2022-02-14
+### 2.3.0
+* Allow multiple different host selectors to be used
+** https://gerrit.wikimedia.org/r/c/operations/software/puppet-compiler/+/771483
+
+## 2022-03-15
 ### 2.2.1
 * Add support for the vendor_modules path
 
