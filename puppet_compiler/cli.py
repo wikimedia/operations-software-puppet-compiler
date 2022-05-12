@@ -37,8 +37,30 @@ def main() -> int:
     change = int(os.environ.get("CHANGE", 0))
     nodes = os.environ.get("NODES", "")
     job_id = int(os.environ.get("BUILD_NUMBER", 0))
-    configfile = os.environ.get("PC_CONFIG", "/etc/puppet-compiler.conf")
     nthreads = int(os.environ.get("NUM_THREADS", 2))
+
+    config_name = "puppet-compiler.conf"
+    configfile = None
+    # Acceptable config locations in order of precedence
+    config_files = [
+        # Default to a string to avoid potentially Path()-ing a None type
+        Path(os.environ.get("PC_CONFIG", "")),
+        Path(Path.cwd() / config_name),
+        Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config" / config_name)),
+        Path("/etc") / config_name,
+    ]
+
+    for candidate in config_files:
+        if isinstance(candidate, Path) and candidate.is_file():
+            configfile = candidate
+            break
+
+    if configfile is None:
+        _log.error("Unable to find any config file at:")
+        for file in config_files:
+            _log.error(Path(file))
+        return 1
+
     try:
         args = get_args()
         lvl = logging.DEBUG if args.debug else logging.INFO
