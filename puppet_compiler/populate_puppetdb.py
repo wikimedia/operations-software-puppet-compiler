@@ -72,6 +72,8 @@ def setup_environment(tmpdir, cfg: config.ControllerConfig, jobid: int = 1) -> p
     """
     directories.FHS.setup(jobid, tmpdir)
     managecode = prepare.ManageCode(cfg, jobid, 1)
+    for git_dir in [managecode.puppet_src, managecode.puppet_private]:
+        managecode.refresh(git_dir)
     managecode.base_dir.mkdir(mode=0o755)
     managecode.prod_dir.mkdir(mode=0o755, parents=True)
     managecode._prepare_dir(managecode.prod_dir)  # pylint: disable=protected-access
