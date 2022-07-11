@@ -70,7 +70,7 @@ def main() -> None:
         if not args.build_dir:
             mangecode._fetch_change()  # pylint: disable=protected-access
         mangecode._copy_hiera(mangecode.change_dir, realm)  # pylint: disable=protected-access
-        mangecode._create_puppetconf(mangecode.change_dir, realm)  # pylint: disable=protected-access
+        mangecode._create_puppetconf(realm)  # pylint: disable=protected-access
         try:
             utils.refresh_yaml_date(utils.facts_file(config.puppet_var, args.host))
         except utils.FactsFileNotFound as error:

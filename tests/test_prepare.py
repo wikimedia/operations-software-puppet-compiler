@@ -72,13 +72,17 @@ class TestManageCode(unittest.TestCase):
         with prepare.pushd(self.fixtures):
             if fn.is_file():
                 fn.unlink()
-            self.m._create_puppetconf(self, "production")
-            self.assertFalse(fn.is_file())
-
-            self.m._create_puppetconf(self, "labs")
+            self.m._create_puppetconf("production")
+            self.assertTrue(fn.is_file())
             data = fn.read_text()
+            self.assertIn("storeconfigs = true", data)
             fn.unlink()
-        self.assertIn("node_terminus = exec", data)
+
+            self.m._create_puppetconf("labs")
+            self.assertTrue(fn.is_file())
+            data = fn.read_text()
+            self.assertIn("node_terminus = exec", data)
+            fn.unlink()
 
     @mock.patch("subprocess.check_call")
     def test_fetch_change(self, mocker):
