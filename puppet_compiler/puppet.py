@@ -158,7 +158,7 @@ def compile_debug(hostname: str, vardir: Path) -> bool:
         bool: representing the status of the command
 
     """
-    cmd, env = compile_cmd_env(hostname, "change", vardir, None, "-d")
+    cmd, env = compile_cmd_env(hostname, "change", vardir, None, "--debug")
     stdout = SpooledTemporaryFile()
     stderr = SpooledTemporaryFile()
     success = False
@@ -172,10 +172,10 @@ def compile_debug(hostname: str, vardir: Path) -> bool:
     stdout.seek(0)
     print("Standard Out\n{}".format("=" * 80))
     for line in stdout:
-        print(line.strip())
+        print(line.rstrip().decode())
     stderr.seek(0)
     print("Standard Error\n{}".format("=" * 80))
     for line in stderr:
         if b"cannot collect exported resources without storeconfigs being set not" not in line:
-            print(line.decode().strip())
+            print(line.rstrip().decode())
     return success
