@@ -148,10 +148,7 @@ class ManageCode:
             realm: The realm to use
 
         """
-        hiera_file = Path(f"modules/puppetmaster/files/{realm}.hiera.yaml")
-        # TODO: remove multiple options after 831230 is merged
-        if not hiera_file.is_file():
-            hiera_file = Path(f"modules/puppetmaster/files/hiera/{realm}.yaml")
+        hiera_file = Path(f"modules/puppetmaster/files/hiera/{realm}.yaml")
 
         priv = dirname / "private"
         netbox = dirname / "netbox-hiera"
