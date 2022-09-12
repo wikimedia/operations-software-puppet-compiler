@@ -56,7 +56,7 @@ def main() -> None:
     else:
         tmpdir = tempfile.mkdtemp(prefix="fill-puppetdb")
     jobid = 1
-    realm = "production" if args.host.endswith(("wmnet", "wikimedia.org")) else "labs"
+    realm = "production" if args.host.endswith(("wmnet", "wikimedia.org")) else "wmcs-eqiad1"
 
     directories.FHS.setup(jobid, tmpdir)
     mangecode = prepare.ManageCode(config, jobid, args.change_id)

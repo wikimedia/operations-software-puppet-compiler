@@ -64,7 +64,7 @@ class TestManageCode(unittest.TestCase):
 
     def test_copy_hiera(self):
         self._test_copy_hiera("production")
-        self._test_copy_hiera("labs")
+        self._test_copy_hiera("wmcs-eqiad1")
 
     @mock.patch("puppet_compiler.prepare.LDAP_YAML_PATH", "ldap.yaml")
     def test_create_puppetconf(self):
@@ -78,7 +78,7 @@ class TestManageCode(unittest.TestCase):
             self.assertIn("storeconfigs = true", data)
             fn.unlink()
 
-            self.m._create_puppetconf("labs")
+            self.m._create_puppetconf("wmcs-eqiad1")
             self.assertTrue(fn.is_file())
             data = fn.read_text()
             self.assertIn("node_terminus = exec", data)

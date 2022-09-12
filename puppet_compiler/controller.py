@@ -155,7 +155,7 @@ class Controller:
         self.managecode.prepare()
 
         results = await self.run_hosts(self.prod_hosts, "production")
-        results.extend(await self.run_hosts(self.cloud_hosts, "labs"))
+        results.extend(await self.run_hosts(self.cloud_hosts, "wmcs-eqiad1"))
 
         index = self.generate_summary(
             states_col=self.get_states(hosts=self.prod_hosts.union(self.cloud_hosts), results=results)
@@ -177,7 +177,7 @@ class Controller:
 
         Arguments:
             hosts: The hosts to run the compilation on
-            realm: The realm (labs or production) to work on
+            realm: The realm (wmcs-eqiad1 or production) to work on
 
         """
         if not hosts:

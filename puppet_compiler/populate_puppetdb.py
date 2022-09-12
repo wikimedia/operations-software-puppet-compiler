@@ -114,7 +114,7 @@ def main():
         for node in prod_nodes:
             populate_node(node, cfg, args.debug)
         print(f"{30 * '#'} working on {len(cloud_nodes)} cloud nodes {30 * '#'}")
-        managecode._copy_hiera(managecode.prod_dir, "labs")  # pylint: disable=protected-access
+        managecode._copy_hiera(managecode.prod_dir, "wmcs-eqiad1")  # pylint: disable=protected-access
         for node in cloud_nodes:
             populate_node(node, cfg, args.debug)
     shutil.rmtree(tmpdir)
