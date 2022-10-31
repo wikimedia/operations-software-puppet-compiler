@@ -1,5 +1,6 @@
-## UNRELEASED
-### 2.*.*
+## 2022-10-31
+### 2.4.0
+* Pin setuptools
 * Drop old hiera file locations
 
 ## 2022-09-12

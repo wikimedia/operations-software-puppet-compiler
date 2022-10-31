@@ -24,6 +24,7 @@ extras_require = {
         # This will not be needed once we move to python 3.8+
         # then we can use unittest.IsolatedAsyncioTestCase
         "aiounittest",
+        "setuptools<58.0.0",
     ],
 }
 
