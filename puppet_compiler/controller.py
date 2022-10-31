@@ -122,6 +122,9 @@ class Controller:
                 elif host_list_part.startswith("C:"):
                     puppet_class = host_list_part[2:]
                     hosts.update(nodegen.get_nodes_puppetdb_class(puppet_class))
+                elif host_list_part.startswith("R:"):
+                    puppet_class = host_list_part[2:]
+                    hosts.update(nodegen.get_nodes_puppetdb(nodegen.capitalise_title(puppet_class)))
                 elif host_list_part.startswith("cumin:"):
                     query = host_list_part[6:]
                     hosts.update(nodegen.get_nodes_cumin(query))

@@ -2,6 +2,7 @@
 ### 2.4.0
 * Pin setuptools
 * Drop old hiera file locations
+* Add new selector for resources with R:
 
 ## 2022-09-12
 ### 2.3.4

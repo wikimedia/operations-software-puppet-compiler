@@ -53,36 +53,64 @@ def get_nodes_regex(config: ControllerConfig, regex: str) -> Set:
     return nodes
 
 
-def get_nodes_puppetdb_class(title: str) -> Set:
+def capitalise_title(title: str):
+    """Function to correctly capatalise a puppet resource title.
+
+    Arguments:
+        title: the title to capatailise
+
+    Returns:
+        str: the capatilsed string
+    """
+    return "::".join(s.capitalize() for s in title.split("::"))
+
+
+def get_nodes_puppetdb_class(title: str, deduplicate: bool = True) -> Set:
+    """Get nodes for a specific class."""
+    # TODO: don't hardcode puppetdb
+    title = "Class/" + capitalise_title(title)
+    return get_nodes_puppetdb(title, deduplicate)
+
+
+def get_nodes_puppetdb(title: str, deduplicate: bool = True) -> Set:
     """Return a set of nodes which have the class 'title' applied
 
     Arguments:
         title: The Class title to search for
+        deduplicate: run the de-dupo function on results
 
     Returns
         set: a set of hosts to work on
 
     """
-    title = "::".join(s.capitalize() for s in title.split("::"))
     params = {"query": '["extract",["certname","tags"]]'}
-    # TODO: don't hardcode puppetdb
-    puppetdb_uri = "https://localhost/pdb/query/v4/resources/Class/{}".format(title)
-    nodes_json = get(puppetdb_uri, params=params, verify=False).json()
+    uri = "https://localhost/pdb/query/v4/resources/{}".format(capitalise_title(title))
+    nodes_json = get(uri, params=params, verify=False).json()
     if not nodes_json:
         _log.warning("no nodes found for class: %s", title)
         return set()
     if len(nodes_json) == 1:
         return set([nodes_json[0]["certname"]])
-    # We try to reduce the set of nodes down so that we dont test nodes
-    # which have the same set of classes
-    # The algorithm considers a node unique if it based on the hostname
-    # excluding any integers and the set of tags applied to a resource"""
-    deduplicated_nodes = {}
-    for node in nodes_json:
+    if deduplicate:
+        return deduplicated_nodes(nodes_json)
+    return nodes_json
+
+
+def deduplicated_nodes(nodes: Set):
+    """De-Duplicate a set of nodes.
+
+    We try to reduce the set of nodes down so that we dont test nodes
+    which have the same set of classes
+    The algorithm considers a node unique if it based on the hostname
+    excluding any integers and the set of tags applied to a resource
+    """
+
+    _deduplicated_nodes = {}
+    for node in nodes:
         key = "{}:{}".format(re.split(r"\d", node["certname"], 1)[0], "|".join(node["tags"]))
-        if key not in deduplicated_nodes:
-            deduplicated_nodes[key] = node["certname"]
-    return set(deduplicated_nodes.values())
+        if key not in _deduplicated_nodes:
+            _deduplicated_nodes[key] = node["certname"]
+    return set(_deduplicated_nodes.values())
 
 
 def get_nodes_cumin(query_str: str) -> Set:
