@@ -15,7 +15,7 @@ class TestHost(unittest.TestCase):
         orig = PuppetCatalog(fixtures / "catalog.pson")
         change = PuppetCatalog(fixtures / "catalog-change.pson")
         self.diffs = orig.diff_if_present(change)
-        FHS.setup("10", self.tempdir)
+        FHS.setup(1, 10, self.tempdir)
         self.files = HostFiles("test.example.com")
         self.files.outdir.mkdir(parents=True)
 

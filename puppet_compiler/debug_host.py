@@ -58,7 +58,7 @@ def main() -> None:
     jobid = 1
     realm = "production" if args.host.endswith(("wmnet", "wikimedia.org")) else "wmcs-eqiad1"
 
-    directories.FHS.setup(jobid, tmpdir)
+    directories.FHS.setup(args.change_id, jobid, tmpdir)
     mangecode = prepare.ManageCode(config, jobid, args.change_id)
     if not args.build_dir:
         mangecode.base_dir.mkdir(mode=0o755)

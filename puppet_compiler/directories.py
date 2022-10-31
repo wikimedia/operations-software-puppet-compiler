@@ -14,14 +14,14 @@ class FHS:
     output_dir: Path
 
     @classmethod
-    def setup(cls, job_id: int, base: Union[str, Path]) -> None:
+    def setup(cls, change_id: int, job_id: int, base: Union[str, Path]) -> None:
         """Setup the base file system"""
         base_dir = Path(base) if isinstance(base, str) else base
         cls.base_dir = base_dir / str(job_id)
         cls.prod_dir = cls.base_dir / "production"
         cls.change_dir = cls.base_dir / "change"
         cls.diff_dir = cls.base_dir / "diffs"
-        cls.output_dir = base_dir / "output" / str(job_id)
+        cls.output_dir = base_dir / "output" / str(change_id) / str(job_id)
 
 
 class HostFiles:

@@ -34,7 +34,7 @@ class TestManageCode(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.base = Path(tempfile.mkdtemp(prefix="puppet-compiler"))
-        FHS.setup(19, cls.base)
+        FHS.setup(1, 19, cls.base)
 
     def setUp(self):
         self.fixtures = Path(__file__).parent.resolve() / "fixtures"

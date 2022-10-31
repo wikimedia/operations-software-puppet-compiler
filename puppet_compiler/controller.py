@@ -78,7 +78,7 @@ class Controller:
         self.change_id = change_id
         self.hosts_raw = host_list
         self.pick_hosts(host_list)
-        directories.FHS.setup(job_id, self.config.base)
+        directories.FHS.setup(change_id, job_id, self.config.base)
         self.managecode = prepare.ManageCode(self.config, job_id, change_id, force)
         self.outdir = directories.FHS.output_dir
         # Set up variables to be used by the html output class
@@ -175,9 +175,9 @@ class Controller:
     def index_url(self, index: Index) -> str:
         """Return the index url"""
         if self.config.http_url.startswith("/"):
-            return f"{self.config.http_url}/output/{html.job_id}/{index.url}index.html"
+            return f"{self.config.http_url}/output/{self.change_id}/{html.job_id}/{index.url}index.html"
 
-        return f"{self.config.http_url}/{html.job_id}/{index.url}"
+        return f"{self.config.http_url}/{self.change_id}/{html.job_id}/{index.url}"
 
     async def run_hosts(self, hosts: Set[str], realm: str) -> List[RunTaskResult]:
         """Run  the compilation on a set of hosts

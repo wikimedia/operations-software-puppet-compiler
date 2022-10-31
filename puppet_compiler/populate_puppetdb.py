@@ -70,7 +70,7 @@ def setup_environment(tmpdir, cfg: config.ControllerConfig, jobid: int = 1) -> p
          srcdir: The path to the created src directory
 
     """
-    directories.FHS.setup(jobid, tmpdir)
+    directories.FHS.setup(1, jobid, tmpdir)
     managecode = prepare.ManageCode(cfg, jobid, 1)
     for git_dir in [managecode.puppet_src, managecode.puppet_private]:
         managecode.refresh(git_dir)

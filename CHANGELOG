@@ -1,3 +1,7 @@
+## UNRELEASED
+### 2.4.*
+* add gerrit change id to output dir
+
 ## 2022-11-7
 ### 2.4.2
 * For auto selector only analyse manifest fils

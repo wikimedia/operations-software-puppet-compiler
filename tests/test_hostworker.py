@@ -17,7 +17,7 @@ class TestHostWorker(AsyncTestCase):
         self.c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
         # TODO: there should be an easier way to reset the working dir
         self.c.config.puppet_var = self.fixtures / "puppet_var"
-        FHS.setup(19, base)
+        FHS.setup(1, 19, base)
         self.c.config.base = FHS.base_dir
         self.c.outdir = FHS.output_dir
         self.hw = worker.HostWorker(self.c.config.puppet_var, "test.example.com")

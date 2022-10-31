@@ -6,11 +6,11 @@ from puppet_compiler.directories import FHS, HostFiles
 
 class TestHostFiles(unittest.TestCase):
     def setUp(self):
-        FHS.setup(19, "/mnt/jenkins-workspace")
+        FHS.setup(1, 19, "/mnt/jenkins-workspace")
         self.hostfiles = HostFiles("test.example.com")
 
     def test_outdir(self):
-        self.assertEqual(self.hostfiles.outdir, Path("/mnt/jenkins-workspace/output/19/test.example.com"))
+        self.assertEqual(self.hostfiles.outdir, Path("/mnt/jenkins-workspace/output/1/19/test.example.com"))
 
     def test_file_for(self):
         self.assertEqual(
@@ -39,5 +39,5 @@ class TestHostFiles(unittest.TestCase):
     def test_outfile_for(self):
         self.assertEqual(
             self.hostfiles.outfile_for("prod", "catalog"),
-            Path("/mnt/jenkins-workspace/output/19/test.example.com/prod.test.example.com.pson"),
+            Path("/mnt/jenkins-workspace/output/1/19/test.example.com/prod.test.example.com.pson"),
         )

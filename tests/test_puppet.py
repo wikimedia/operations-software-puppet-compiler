@@ -18,7 +18,7 @@ class TestPuppetCalls(AsyncTestCase):
         proc_mock.returncode = 0
         subprocess.create_subprocess_shell.return_value = futurized(proc_mock)
         self.fixtures = Path(__file__).resolve().parent / "fixtures"
-        FHS.setup(10, self.fixtures)
+        FHS.setup(1, 10, self.fixtures)
         modulepaths = ["/private/modules", "/src/modules", "/src/vendor_modules"]
         self.modulepath_prod = ":".join([f"{FHS.prod_dir}{d}" for d in modulepaths])
         self.modulepath_change = ":".join([f"{FHS.change_dir}{d}" for d in modulepaths])
