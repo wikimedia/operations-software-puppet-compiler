@@ -3,7 +3,7 @@ import shutil
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from puppet_compiler import _log, puppet, utils
 from puppet_compiler.differ import PuppetCatalog
@@ -21,10 +21,6 @@ class RunHostResult:
 
 class HostWorker:
     """Class for compiling a host"""
-
-    E_OK = 0
-    E_BASE = 1
-    E_CHANGED = 2
 
     def __init__(self, vardir: Path, hostname: str):
         """Class for compiling a host.
@@ -63,14 +59,11 @@ class HostWorker:
         except utils.FactsFileNotFound:
             pass
 
-        errors = await self._compile_all()
+        has_diff = None
+        base_error, change_error = await self._compile_all()
 
-        if errors == self.E_OK:
+        if not base_error and not change_error:
             has_diff = self._make_diff()
-        else:
-            has_diff = None
-        base_error = bool(errors & self.E_BASE)
-        change_error = bool(errors & self.E_CHANGED)
         try:
             self._make_output()
             state = ChangeState(
@@ -141,20 +134,19 @@ class HostWorker:
 
         return True
 
-    async def _compile_all(self) -> int:
+    async def _compile_all(self) -> Tuple[bool, bool]:
         """Does the grindwork of compiling the catalogs.
 
         Returns:
-            int: An integer indicating the status
+            (bool,bool): An integer indicating the status base and change compile
         """
-        errors = self.E_OK
+        base_error, change_error = False, False
         args: List[str] = []
-        # TODO: shouldn't we be using boolean math here
         if not await self._compile(self._envs[0], args):
-            errors += self.E_BASE
+            base_error = True
         if not await self._compile(self._envs[1], args):
-            errors += self.E_CHANGED
-        return errors
+            change_error = True
+        return base_error, change_error
 
     def _make_diff(self) -> Optional[bool]:
         """Creat the actual diff files

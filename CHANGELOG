@@ -4,6 +4,7 @@
 * Drop old hiera file locations
 * Add new selector for resources with R:
 * Add new auto discover feature
+* minor change to how we track errors
 
 ## 2022-09-12
 ### 2.3.4

@@ -45,13 +45,14 @@ class TestHostWorker(AsyncTestCase):
             mock.call("test.example.com", "change", self.c.config.puppet_var, None),
         ]
         compile_mock.assert_has_calls(calls)
-        self.assertEqual(err, 0)
+        self.assertEqual(err, (False, False))
 
         # Verify all compilation is wrong
         compile_mock.reset_mock()
         compile_mock.side_effect = puppet.CompilationFailedError(command=["dummy", "command"], return_code=30)
-        err = await self.hw._compile_all()
-        self.assertEqual(err, 3)
+        base_error, change_error = await self.hw._compile_all()
+        self.assertEqual(base_error, True)
+        self.assertEqual(change_error, True)
 
         # Verify only the change is wrong
         async def complicated_side_effect(*args, **kwdargs):
@@ -62,8 +63,9 @@ class TestHostWorker(AsyncTestCase):
 
         compile_mock.reset_mock()
         compile_mock.side_effect = complicated_side_effect
-        err = await self.hw._compile_all()
-        self.assertEqual(err, 2)
+        base_error, change_error = await self.hw._compile_all()
+        self.assertEqual(base_error, False)
+        self.assertEqual(change_error, True)
 
     @mock.patch("puppet_compiler.worker.PuppetCatalog")
     def test_make_diff(self, puppetcatalog_mock):
@@ -109,7 +111,7 @@ class TestHostWorker(AsyncTestCase):
         )
         fname = self.fixtures / "puppet_var" / "yaml" / "facts" / "test.eqiad.wmnet"
         self.hw.facts_file.return_value = fname
-        self.hw._compile_all = mock.Mock(return_value=futurized(0))
+        self.hw._compile_all = mock.Mock(return_value=futurized((False, False)))
         self.hw._make_diff = mock.Mock(return_value=True)
         self.hw._make_output = mock.Mock(return_value=None)
         self.hw._build_html = mock.Mock(return_value=None)
@@ -124,7 +126,7 @@ class TestHostWorker(AsyncTestCase):
         assert self.hw._build_html.called
 
         self.hw._make_diff.reset_mock()
-        self.hw._compile_all.return_value = futurized(1)
+        self.hw._compile_all.return_value = futurized((True, False))
         self.assertEqual(
             await self.hw.run_host(), worker.RunHostResult(base_error=True, change_error=False, has_diff=None)
         )
