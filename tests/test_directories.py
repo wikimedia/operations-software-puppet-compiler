@@ -15,7 +15,7 @@ class TestHostFiles(unittest.TestCase):
     def test_file_for(self):
         self.assertEqual(
             self.hostfiles.file_for("prod", "catalog"),
-            Path("/mnt/jenkins-workspace/19/production/catalogs/test.example.com.pson"),
+            Path("/mnt/jenkins-workspace/19/production/catalogs/test.example.com.pson.gz"),
         )
         self.assertEqual(
             self.hostfiles.file_for("prod", "errors"),
@@ -23,7 +23,7 @@ class TestHostFiles(unittest.TestCase):
         )
         self.assertEqual(
             self.hostfiles.file_for("change", "catalog"),
-            Path("/mnt/jenkins-workspace/19/change/catalogs/test.example.com.pson"),
+            Path("/mnt/jenkins-workspace/19/change/catalogs/test.example.com.pson.gz"),
         )
         self.assertEqual(
             self.hostfiles.file_for("change", "diff"),
@@ -39,5 +39,5 @@ class TestHostFiles(unittest.TestCase):
     def test_outfile_for(self):
         self.assertEqual(
             self.hostfiles.outfile_for("prod", "catalog"),
-            Path("/mnt/jenkins-workspace/output/1/19/test.example.com/prod.test.example.com.pson"),
+            Path("/mnt/jenkins-workspace/output/1/19/test.example.com/prod.test.example.com.pson.gz"),
         )

@@ -1,4 +1,5 @@
 """Class for compiling a host"""
+import gzip
 import shutil
 import traceback
 from dataclasses import dataclass
@@ -194,7 +195,12 @@ class HostWorker:
                 filename = self._files.file_for(env, label)
                 if filename.is_file():
                     newname = self._files.outfile_for(env, label)
-                    shutil.copy(filename, newname)
+                    if label == "catalog":
+                        with filename.open("rb") as unziped:
+                            with gzip.open(newname, "wb") as zipped:
+                                shutil.copyfileobj(unziped, zipped)
+                    else:
+                        shutil.copy(filename, newname)
 
     def _build_html(self, retcode: str) -> None:
         """Build the HTML output

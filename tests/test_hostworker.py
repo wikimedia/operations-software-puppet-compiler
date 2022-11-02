@@ -77,8 +77,8 @@ class TestHostWorker(AsyncTestCase):
 
         puppetcatalog_mock.assert_has_calls(
             [
-                mock.call(self.c.config.base / "production/catalogs/test.example.com.pson"),
-                mock.call(self.c.config.base / "change/catalogs/test.example.com.pson"),
+                mock.call(self.c.config.base / "production/catalogs/test.example.com.pson.gz"),
+                mock.call(self.c.config.base / "change/catalogs/test.example.com.pson.gz"),
             ]
         )
         instance_mock.diff_if_present.return_value = {"foo": "bar"}
@@ -103,7 +103,8 @@ class TestHostWorker(AsyncTestCase):
     @mock.patch("puppet_compiler.directories.Path.is_file")
     @mock.patch("puppet_compiler.directories.Path.mkdir")
     @mock.patch("shutil.copy")
-    def test_make_output(self, mock_copy, mkdir_mock, is_file_mock, host_files_mock):
+    @mock.patch("shutil.copyfileobj")
+    def test_make_output(self, mock_copyfileobj, mock_copy, mkdir_mock, is_file_mock, host_files_mock):
         is_file_mock.return_value = False
         source = self.c.config.base / "change/catalogs/test.example.com.err"
         dest = self.c.outdir / "test.example.com" / "change.test.example.com.err"
@@ -113,7 +114,10 @@ class TestHostWorker(AsyncTestCase):
         mkdir_mock.assert_called_with(mode=0o755, parents=True)
         assert not mock_copy.called
         is_file_mock.return_value = True
-        self.hw._make_output()
+        with mock.patch("puppet_compiler.directories.Path.open", mock.mock_open()):
+            with mock.patch("gzip.open"):
+                self.hw._make_output()
+                mock_copyfileobj.assert_called
         mock_copy.assert_called_with(source, dest)
 
     @mock.patch("puppet_compiler.utils.refresh_yaml_date")

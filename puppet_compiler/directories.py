@@ -56,7 +56,7 @@ class HostFiles:
             base = FHS.change_dir
 
         if what == "catalog":
-            ext = ".pson"
+            ext = ".pson.gz"
         elif what == "errors":
             ext = ".err"
         else:
