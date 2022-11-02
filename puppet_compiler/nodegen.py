@@ -33,7 +33,7 @@ def get_type_and_title(path: Path) -> Tuple[str, Optional[str]]:
                 continue
             words = line.strip().split()
             puppet_type = words[0]
-            title = words[1].rstrip("(")
+            title = words[1].split("(")[0]
             return puppet_type, title
     return "unknown", None
 

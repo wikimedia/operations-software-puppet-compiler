@@ -1,3 +1,7 @@
+## 2022-11-1
+### 2.4.1
+* Fix title parsing
+
 ## 2022-10-31
 ### 2.4.0
 * Pin setuptools
