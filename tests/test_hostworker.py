@@ -125,7 +125,9 @@ class TestHostWorker(AsyncTestCase):
         self.hw.facts_file = mock.Mock(return_value=False)
         self.assertEqual(
             await self.hw.run_host(),
-            worker.RunHostResult(base_error=True, change_error=True, has_diff=None, has_core_diff=None),
+            worker.RunHostResult(
+                hostname="test.example.com", base_error=True, change_error=True, has_diff=None, has_core_diff=None
+            ),
         )
         fname = self.fixtures / "puppet_var" / "yaml" / "facts" / "test.eqiad.wmnet"
         self.hw.facts_file.return_value = fname
@@ -135,7 +137,9 @@ class TestHostWorker(AsyncTestCase):
         self.hw._build_html = mock.Mock(return_value=None)
         self.assertEqual(
             await self.hw.run_host(),
-            worker.RunHostResult(base_error=False, change_error=False, has_diff=True, has_core_diff=True),
+            worker.RunHostResult(
+                hostname="test.example.com", base_error=False, change_error=False, has_diff=True, has_core_diff=True
+            ),
         )
         assert mocked_refresh_yaml_date.called
         assert self.hw.facts_file.called
@@ -148,7 +152,9 @@ class TestHostWorker(AsyncTestCase):
         self.hw._compile_all.return_value = futurized((True, False))
         self.assertEqual(
             await self.hw.run_host(),
-            worker.RunHostResult(base_error=True, change_error=False, has_diff=None, has_core_diff=None),
+            worker.RunHostResult(
+                hostname="test.example.com", base_error=True, change_error=False, has_diff=None, has_core_diff=None
+            ),
         )
         assert not self.hw._make_diff.called
 
@@ -156,5 +162,7 @@ class TestHostWorker(AsyncTestCase):
         self.hw._make_output.side_effect = Exception("Boom!")
         self.assertEqual(
             await self.hw.run_host(),
-            worker.RunHostResult(base_error=True, change_error=False, has_diff=None, has_core_diff=None),
+            worker.RunHostResult(
+                hostname="test.example.com", base_error=True, change_error=False, has_diff=None, has_core_diff=None
+            ),
         )

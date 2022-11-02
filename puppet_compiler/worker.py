@@ -15,6 +15,7 @@ from puppet_compiler.state import ChangeState
 
 @dataclass(frozen=True)
 class RunHostResult:
+    hostname: str
     base_error: bool
     change_error: bool
     has_diff: Optional[bool]
@@ -55,7 +56,9 @@ class HostWorker:
         """
         if not self.facts_file():
             _log.error("Unable to find facts for host %s, skipping", self.hostname)
-            return RunHostResult(base_error=True, change_error=True, has_diff=None, has_core_diff=None)
+            return RunHostResult(
+                hostname=self.hostname, base_error=True, change_error=True, has_diff=None, has_core_diff=None
+            )
         # Refresh the facts file first
         try:
             utils.refresh_yaml_date(self.facts_file())
@@ -64,7 +67,13 @@ class HostWorker:
 
         has_diff = None
         has_core_diff = None
-        base_error, change_error = await self._compile_all()
+        base_error = True
+        change_error = True
+        try:
+            base_error, change_error = await self._compile_all()
+        # pylint: disable=broad-except
+        except Exception as err:
+            _log.exception("Error preparing compiling for %s: %s", self.hostname, err)
 
         if not base_error and not change_error:
             has_diff, has_core_diff = self._make_diff()
@@ -82,7 +91,11 @@ class HostWorker:
         except Exception as err:
             _log.exception("Error preparing output for %s: %s", self.hostname, err)
         return RunHostResult(
-            base_error=base_error, change_error=change_error, has_diff=has_diff, has_core_diff=has_core_diff
+            hostname=self.hostname,
+            base_error=base_error,
+            change_error=change_error,
+            has_diff=has_diff,
+            has_core_diff=has_core_diff,
         )
 
     def _check_if_compiled(self, env: str) -> Optional[bool]:

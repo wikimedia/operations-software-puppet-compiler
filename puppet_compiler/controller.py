@@ -253,9 +253,18 @@ class Controller:
 
     def get_states(self, hosts: Iterable[str], results: List[RunTaskResult]) -> StatesCollection:
         states_col = StatesCollection()
-        for host, result in zip(hosts, results):
-            states_col.add(self.result_to_state(hostname=host, result=result))
-
+        completed = set()
+        for result in results:
+            if result is None:
+                continue
+            # TODO: we should catch theses earlier and create a proper RunHostResult
+            if isinstance(result, Exception):
+                _log.critical("Unexpected error running run_host: %s", result)
+                continue
+            states_col.add(self.result_to_state(hostname=result.hostname, result=result))
+            completed.add(result.hostname)
+        for hostname in set(hosts) - completed:
+            states_col.add(self.result_to_state(hostname=hostname))
         return states_col
 
     def generate_summary(self, states_col: StatesCollection, partial: bool = False) -> str:
@@ -268,7 +277,7 @@ class Controller:
         _log.info(states_col.summary(partial=partial))
         return self.index_url(index)
 
-    def result_to_state(self, hostname: str, result: RunTaskResult) -> ChangeState:
+    def result_to_state(self, hostname: str, result: Optional[worker.RunHostResult] = None) -> ChangeState:
         if result is None:
             # Run was cancelled, probably fail_fast, or we have not finished the run yet
             state = ChangeState(
@@ -279,19 +288,6 @@ class Controller:
                 has_core_diff=False,
                 cancelled=True,
             )
-
-        elif isinstance(result, Exception):
-            # Run failed for some unexpected reason
-            state = ChangeState(
-                host=hostname,
-                base_error=False,
-                change_error=False,
-                has_diff=False,
-                has_core_diff=False,
-                cancelled=False,
-            )
-            _log.critical("Unexpected error running run_host on %s: %s", hostname, result)
-
         else:
             state = ChangeState(
                 host=hostname,

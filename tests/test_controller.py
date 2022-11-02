@@ -90,7 +90,7 @@ class TestController(AsyncTestCase):
         # TODO: Improve this tests
         c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
         run_host_mock.return_value = RunHostResult(
-            base_error=False, change_error=False, has_diff=False, has_core_diff=False
+            hostname="test.eqiad.wmflabs", base_error=False, change_error=False, has_diff=False, has_core_diff=False
         )
         c.managecode.prepare = mock.MagicMock(return_value=True)
         c.managecode.refresh = mock.MagicMock(return_value=True)
@@ -105,7 +105,7 @@ class TestController(AsyncTestCase):
         c.config.puppet_private = "/private"
         c.config.puppet_netbox = "/netbox-hiera"
         run_host_mock.return_value = RunHostResult(
-            base_error=False, change_error=False, has_diff=None, has_core_diff=None
+            hostname="test.eqiad.wmflabs", base_error=False, change_error=False, has_diff=None, has_core_diff=None
         )
         with mock.patch("time.sleep"):
             run_failed = await c.run()
@@ -210,28 +210,68 @@ class TestController(AsyncTestCase):
         self.assertTrue(controller.Controller.has_failures(results=[Exception()]))
         self.assertTrue(
             controller.Controller.has_failures(
-                results=[RunHostResult(base_error=True, change_error=False, has_diff=False, has_core_diff=False)]
+                results=[
+                    RunHostResult(
+                        hostname="test.tools.eqiad.wmflabs",
+                        base_error=True,
+                        change_error=False,
+                        has_diff=False,
+                        has_core_diff=False,
+                    )
+                ]
             )
         )
         self.assertTrue(
             controller.Controller.has_failures(
-                results=[RunHostResult(base_error=False, change_error=True, has_diff=False, has_core_diff=False)]
+                results=[
+                    RunHostResult(
+                        hostname="test.tools.eqiad.wmflabs",
+                        base_error=False,
+                        change_error=True,
+                        has_diff=False,
+                        has_core_diff=False,
+                    )
+                ]
             )
         )
 
         self.assertFalse(controller.Controller.has_failures(results=[None]))
         self.assertFalse(
             controller.Controller.has_failures(
-                results=[RunHostResult(base_error=False, change_error=False, has_diff=False, has_core_diff=False)]
+                results=[
+                    RunHostResult(
+                        hostname="test.tools.eqiad.wmflabs",
+                        base_error=False,
+                        change_error=False,
+                        has_diff=False,
+                        has_core_diff=False,
+                    )
+                ]
             )
         )
         self.assertFalse(
             controller.Controller.has_failures(
-                results=[RunHostResult(base_error=False, change_error=False, has_diff=True, has_core_diff=False)]
+                results=[
+                    RunHostResult(
+                        hostname="test.tools.eqiad.wmflabs",
+                        base_error=False,
+                        change_error=False,
+                        has_diff=True,
+                        has_core_diff=False,
+                    )
+                ]
             )
         )
         self.assertFalse(
             controller.Controller.has_failures(
-                results=[RunHostResult(base_error=False, change_error=False, has_diff=False, has_core_diff=True)]
+                results=[
+                    RunHostResult(
+                        hostname="test.tools.eqiad.wmflabs",
+                        base_error=False,
+                        change_error=False,
+                        has_diff=False,
+                        has_core_diff=True,
+                    )
+                ]
             )
         )
