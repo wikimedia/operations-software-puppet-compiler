@@ -154,7 +154,7 @@ class PuppetResource:
             return None
 
         out = {"resource": str(self)}
-        if self.content != other.content and self.resource_type == "File":
+        if self.content != other.content and self.resource_type in ["File", "Concat_fragment"]:
             other_content = self.parse_file_content(other.content)
             my_content = self.parse_file_content(self.content)
             out["content"] = "\n".join(
