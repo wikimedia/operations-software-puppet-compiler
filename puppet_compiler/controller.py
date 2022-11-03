@@ -62,6 +62,7 @@ class Controller:
         nthreads: int = 2,
         force: bool = False,
         fail_fast: bool = False,
+        change_private_id: Optional[int] = None,
     ):
 
         # Let's first detect the installed puppet version
@@ -76,10 +77,11 @@ class Controller:
 
         self.count = 0
         self.change_id = change_id
+        self.change_private_id = change_private_id
         self.hosts_raw = host_list
         self.pick_hosts(host_list)
         directories.FHS.setup(change_id, job_id, self.config.base)
-        self.managecode = prepare.ManageCode(self.config, job_id, change_id, force)
+        self.managecode = prepare.ManageCode(self.config, job_id, change_id, force, change_private_id)
         self.outdir = directories.FHS.output_dir
         # Set up variables to be used by the html output class
         html.change_id = change_id

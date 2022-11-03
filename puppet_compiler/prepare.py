@@ -5,6 +5,7 @@ import shutil
 import subprocess
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Optional
 
 import requests
 
@@ -35,7 +36,9 @@ class ManageCode:
 
     private_modules = ["passwords", "contacts", "privateexim"]
 
-    def __init__(self, config: ControllerConfig, jobid: int, changeid: int, force=False):
+    def __init__(
+        self, config: ControllerConfig, jobid: int, changeid: int, force=False, change_private_id: Optional[int] = None
+    ):
         # TODO: jobid is unused
         self.jobid = jobid
         self.base_dir = FHS.base_dir
@@ -44,6 +47,7 @@ class ManageCode:
         self.puppet_netbox = config.puppet_netbox
         self.puppet_var = config.puppet_var
         self.change_id = changeid
+        self.change_private_id = change_private_id
         self.force = force
 
         self.change_dir = FHS.change_dir
@@ -77,7 +81,12 @@ class ManageCode:
         self._prepare_dir(self.change_dir)
         change_src = self.change_dir / "src"
         with pushd(change_src):
-            self._fetch_change()
+            self._fetch_change(self.change_id)
+        if self.change_private_id is not None:
+            with pushd(self.prod_dir / "private"):
+                self._fetch_change(self.change_private_id)
+            with pushd(self.change_dir / "private"):
+                self._fetch_change(self.change_private_id)
 
     def update_config(self, realm: str) -> None:
         """update hiera and puppet config files
@@ -186,11 +195,11 @@ storeconfigs_backend = puppetdb
         Path("puppet.conf").write_text(config)
         _log.debug("Wrote puppet.conf with puppet-enc settings")
 
-    def _fetch_change(self) -> None:
+    def _fetch_change(self, change_id: int) -> None:
         """get changes from the change directly"""
         headers = {"Accept": "application/json", "Content-Type": "application/json; charset=UTF-8"}
         change = requests.get(
-            "https://gerrit.wikimedia.org/r/changes/%d?o=CURRENT_REVISION" % self.change_id, headers=headers
+            "https://gerrit.wikimedia.org/r/changes/%d?o=CURRENT_REVISION" % change_id, headers=headers
         )
         change.raise_for_status()
 
@@ -199,8 +208,8 @@ storeconfigs_backend = puppetdb
         res = json.loads(json_data)
         revision = list(res["revisions"].values())[0]["_number"]
         project = res["project"]
-        ref = "refs/changes/%02d/%d/%d" % (self.change_id % 100, self.change_id, revision)
-        _log.debug("Downloading patch for project %s, change %d, revision %d", project, self.change_id, revision)
+        ref = "refs/changes/%02d/%d/%d" % (change_id % 100, change_id, revision)
+        _log.debug("Downloading patch for project %s, change %d, revision %d", project, change_id, revision)
 
         # Assumption:
         # Gerrit suported repo names and branches:
@@ -208,6 +217,9 @@ storeconfigs_backend = puppetdb
         if project == "operations/puppet":
             self._checkout_gerrit_revision(project, ref)
             self._pull_rebase_origin("production")
+        elif project == "labs/private":
+            self._checkout_gerrit_revision(project, ref)
+            self._pull_rebase_origin("master")
         else:
             raise RuntimeError("Unsupported Gerrit project: " + project)
 

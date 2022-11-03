@@ -87,7 +87,7 @@ class TestManageCode(unittest.TestCase):
     @mock.patch("subprocess.check_call")
     def test_fetch_change(self, mocker):
         """The change can be downloaded"""
-        self.m._fetch_change()
+        self.m._fetch_change(self.m.change_id)
         calls = [
             mock.call(
                 ["git", "fetch", "-q", "https://gerrit.wikimedia.org/r/operations/puppet", "refs/changes/50/227450/1"]
@@ -97,8 +97,7 @@ class TestManageCode(unittest.TestCase):
         ]
         mocker.assert_has_calls(calls)
         # Now test a change to another repository
-        self.m.change_id = 363216
-        self.assertRaises(RuntimeError, self.m._fetch_change)
+        self.assertRaises(RuntimeError, self.m._fetch_change, 363216)
 
     @mock.patch("puppet_compiler.prepare.Path.symlink_to")
     @mock.patch("shutil.copytree")

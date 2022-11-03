@@ -68,7 +68,7 @@ def main() -> None:
     srcdir = mangecode.change_dir / "src"
     with prepare.pushd(srcdir):
         if not args.build_dir:
-            mangecode._fetch_change()  # pylint: disable=protected-access
+            mangecode._fetch_change(args.change_id)  # pylint: disable=protected-access
         mangecode._copy_hiera(mangecode.change_dir, realm)  # pylint: disable=protected-access
         mangecode._create_puppetconf(realm)  # pylint: disable=protected-access
         try:

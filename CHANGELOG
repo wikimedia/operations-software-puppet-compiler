@@ -3,6 +3,7 @@
 * add gerrit change id to output dir
 * add ability to filter for core resources
 * Add support for concat_fragment content
+* Add support for specifying different private repo change if - T265633
 * Store pson catalogs as gziped files
 * Fix issue resulting in hosts getting shifted to the wrong list - T224977
 

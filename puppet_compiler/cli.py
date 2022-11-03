@@ -35,6 +35,10 @@ def main() -> int:
     """Main entry point"""
 
     change = int(os.environ.get("CHANGE", 0))
+    try:
+        change_private = int(os.environ["CHANGE_PRIVATE"])
+    except KeyError:
+        change_private = None
     nodes = os.environ.get("NODES", "")
     job_id = int(os.environ.get("BUILD_NUMBER", 0))
     nthreads = int(os.environ.get("NUM_THREADS", 2))
@@ -89,6 +93,7 @@ def main() -> int:
                 nthreads=nthreads,
                 force=args.force,
                 fail_fast=args.fail_fast,
+                change_private_id=change_private,
             )
             run_failed = asyncio.run(controller.run())
             if run_failed:
