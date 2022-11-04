@@ -14,6 +14,7 @@ How data are organized:
 import asyncio
 import os
 import re
+import socket
 import subprocess
 from pathlib import Path
 from typing import Callable, Iterable, List, Optional, Set, Union
@@ -131,6 +132,11 @@ class Controller:
                 elif host_list_part.startswith("cumin:"):
                     query = host_list_part[6:]
                     hosts.update(nodegen.get_nodes_cumin(query))
+                elif host_list_part == "basic":
+                    # Use our self as a simple wmcs host
+                    hosts.add(socket.getfqdn())
+                    # User one of the sretest hosts for production
+                    hosts.update(nodegen.get_nodes_puppetdb_class("Profile::Sretest"))
                 elif host_list_part == "auto":
                     gerrit_node_finder = nodegen.GerritNodeFinder(self.change_id, "gerrit.wikimedia.org", self.config)
                     hosts.update(gerrit_node_finder.run_hosts)

@@ -1,7 +1,7 @@
-## UNRELEASED
-### 2.5.*
-* add gerrit change id to output dir
-* add ability to filter for core resources
+### 2.5.0
+* Add option to run against one production and one cloud host - T289666
+* Add gerrit change id to output dir
+* Add ability to filter for core resources
 * Add support for concat_fragment content
 * Add support for specifying different private repo change if - T265633
 * Store pson catalogs as gziped files
