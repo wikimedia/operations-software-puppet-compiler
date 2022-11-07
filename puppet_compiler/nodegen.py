@@ -214,6 +214,11 @@ class GerritNodeFinder:
         return self._changed_files
 
     @property
+    def changed_manifest_files(self):
+        """Return a list of all puppet manifest files"""
+        return set(changed for changed in self.changed_files if re.match(r"modules/[^\/]+/manifests", changed))
+
+    @property
     def changed_hieradata(self):
         """return the list of change modules"""
         return set(changed for changed in self.changed_files if changed.startswith("hieradata"))
@@ -228,7 +233,7 @@ class GerritNodeFinder:
         """Return a unique list of hosts this change should run on"""
         if self._run_hosts is None:
             run_hosts = []
-            for puppet_file in self.changed_files:
+            for puppet_file in self.changed_manifest_files:
                 puppet_type, title = get_type_and_title(self._config.puppet_src / puppet_file)
                 if title is None:
                     continue

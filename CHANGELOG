@@ -1,3 +1,7 @@
+## 2022-11-7
+### 2.4.2
+* For auto selector only analyse manifest fils
+
 ## 2022-11-1
 ### 2.4.1
 * Fix title parsing
