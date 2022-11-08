@@ -10,8 +10,8 @@ extras_require = {
     "tests": [
         "bandit>=1.5.1",
         "flake8>=3.6.0",
-        "prospector[with_everything]>=1.4.1",
         "mock",
+        "mypy",
         "pytest",
         "pytest-cov",
         "requests_mock",
@@ -24,7 +24,11 @@ extras_require = {
         # This will not be needed once we move to python 3.8+
         # then we can use unittest.IsolatedAsyncioTestCase
         "aiounittest",
-        "setuptools<58.0.0",
+    ],
+    "prospector": [
+        "prospector[with_everything]>=0.12.4",
+        "pytest>=3.10.1",
+        "requests-mock>=1.5.2",
     ],
 }
 

@@ -54,7 +54,7 @@ class ChangeState:
 class StatesCollection:
     """Helper class that is used to store the state of each host."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.states: Dict[str, Set[str]] = {}
 
     def add(self, state: ChangeState) -> None:
