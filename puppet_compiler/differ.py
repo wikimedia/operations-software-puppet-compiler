@@ -121,7 +121,7 @@ class PuppetResource:
     @property
     def core_type(self):
         """Indicate if the resource is a core type"""
-        return "::" not in self.resource_type
+        return "::" not in self.resource_type and self.resource_type != "Class"
 
     @staticmethod
     def parse_file_content(content: Union[str, Dict]) -> List[str]:

@@ -1,4 +1,9 @@
 ### 2.5.0
+## 2022-11-15
+* Fix: Exclude Class from core type
+
+## 2022-11-15
+### 2.5.0
 * Add option to run against one production and one cloud host - T289666
 * Add gerrit change id to output dir
 * Add ability to filter for core resources
