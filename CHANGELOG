@@ -6,6 +6,7 @@
 * Add support for specifying different private repo change if - T265633
 * Store pson catalogs as gziped files
 * Fix issue resulting in hosts getting shifted to the wrong list - T224977
+* Fix issue when only one result is returned
 
 ## 2022-11-7
 ### 2.4.2

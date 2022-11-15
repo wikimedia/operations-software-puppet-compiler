@@ -113,8 +113,6 @@ def get_nodes_puppetdb(title: str, deduplicate: bool = True) -> Set:
     if not nodes_json:
         _log.warning("no nodes found for class: %s", title)
         return set()
-    if len(nodes_json) == 1:
-        return set([nodes_json[0]["certname"]])
     if deduplicate:
         return deduplicated_nodes(nodes_json)
     return nodes_json
