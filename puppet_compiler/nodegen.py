@@ -25,6 +25,8 @@ def get_type_and_title(path: Path) -> Tuple[str, Optional[str]]:
     Returns:
         the puppet type
     """
+    if not path.is_file():
+        return "unknown", None
     with path.open("r") as file_handle:
         line = file_handle.readline()
         while line:
