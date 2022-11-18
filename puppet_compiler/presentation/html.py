@@ -22,7 +22,14 @@ class Host:
     page_name: str = "index.html"
     mode: str = "prod"
     pretty_mode: str = "Production"
-    retcode_descriptions: Dict[str, str] = {"noop": "no change", "diff": "changes detected", "error": "change fails"}
+    retcode_descriptions: Dict[str, str] = {
+        "cancelled": "Cancelled",
+        "fail": "Both fail",
+        "noop": "No change",
+        "error": "Change fails",
+        "core_diff": "System changes detected",
+        "diff": "None system changes detected",
+    }
 
     def __init__(self, hostname: str, files: HostFiles, retcode: str):
         self.retcode = retcode

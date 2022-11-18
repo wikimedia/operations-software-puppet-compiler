@@ -1,7 +1,11 @@
-### 2.5.0
+### 2.5.2
+## 2022-11-18
+* Fix: Skip new files when processing auto selector - T323282
+* Fix: add additional return code descriptions
+
+### 2.5.1
 ## 2022-11-15
 * Fix: Exclude Class from core type
-* Fix: Skip new files when processing auto selector - T323282
 
 ## 2022-11-15
 ### 2.5.0
