@@ -37,7 +37,7 @@ def main() -> int:
     change = int(os.environ.get("CHANGE", 0))
     try:
         change_private = int(os.environ["CHANGE_PRIVATE"])
-    except KeyError:
+    except (KeyError, ValueError):
         change_private = None
     nodes = os.environ.get("NODES", "")
     job_id = int(os.environ.get("BUILD_NUMBER", 0))

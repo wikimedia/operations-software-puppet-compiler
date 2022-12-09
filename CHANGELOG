@@ -1,3 +1,7 @@
+### 2.5.3
+## 2022-12-09
+* Fix: handle a blank CHANGE_PRIVATE gracefully
+
 ### 2.5.2
 ## 2022-11-18
 * Fix: Skip new files when processing auto selector - T323282
