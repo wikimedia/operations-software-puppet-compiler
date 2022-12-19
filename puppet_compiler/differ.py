@@ -242,9 +242,7 @@ class PuppetCatalog:
         for resource in resources:
             mine = self.resources.get(resource)
             theirs = other.resources.get(resource)
-            if mine is None or theirs is None:
-                continue
-            if core_resources and not mine.core_type:
+            if core_resources and mine is not None and not mine.core_type:
                 continue
             # if we don't have a resource in both create an empty one for diffing purposes
             if mine is None:
