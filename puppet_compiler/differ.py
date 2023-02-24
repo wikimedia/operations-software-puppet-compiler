@@ -121,7 +121,10 @@ class PuppetResource:
     @property
     def core_type(self):
         """Indicate if the resource is a core type"""
-        return "::" not in self.resource_type and self.resource_type != "Class"
+        # The following is a list of core resources that always result in  a noop
+        # as such for the purpose of pcc don't mark them as core
+        core_resource_whitelist = ("Notify", "Class", "Stage")
+        return "::" not in self.resource_type and self.resource_type not in core_resource_whitelist
 
     @staticmethod
     def parse_file_content(content: Union[str, Dict]) -> List[str]:

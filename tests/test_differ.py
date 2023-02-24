@@ -21,6 +21,7 @@ class TestPuppetResource(unittest.TestCase):
                 "nope": None,
             },
         }
+
         self.r = PuppetResource(
             self.raw_resource,
         )
@@ -82,11 +83,29 @@ class TestPuppetCatalog(unittest.TestCase):
         self.assertEqual(self.orig.name, "test123.test")
         self.assertIsInstance(self.orig.resources, dict)
 
+    def test_core_resources(self):
+        """Test core resources."""
+        # The lists below are not exhaustive and only contain resources in the test catalogue
+        invalid_core_resources = ("Class", "Notify", "Systemd::Unit", "Stage")
+        valid_core_resources = ("File", "Package", "Exec")
+        for resource in self.orig.core_resources:
+            assert not resource.startswith(invalid_core_resources)
+            assert resource.startswith(valid_core_resources)
+
     def test_diff_is_present(self):
         self.assertIsNone(self.orig.diff_if_present(self.orig))
         diffs = self.orig.diff_if_present(self.change)
-        self.assertEqual(diffs["total"], 22)
-        self.assertEqual(diffs["only_in_self"], set(["Class[Sslcert]"]))
-        self.assertEqual(diffs["only_in_other"], set(["Class[Sslcert3]"]))
-        self.assertEqual(len(diffs["resource_diffs"]), 2)
-        self.assertEqual(diffs["perc_changed"], "18.18%")
+        self.assertEqual(diffs["total"], 24)
+        self.assertEqual(diffs["only_in_self"], set(["Class[Sslcert]", "Package[orig_catalog]"]))
+        self.assertEqual(diffs["only_in_other"], set(["Class[Sslcert3]", "Package[other_catalog]"]))
+        self.assertEqual(len(diffs["resource_diffs"]), 3)
+        self.assertEqual(diffs["perc_changed"], "29.17%")
+
+    def test_diff_is_present_core(self):
+        self.assertIsNone(self.orig.diff_if_present(self.orig, True))
+        diffs = self.orig.diff_if_present(self.change, True)
+        self.assertEqual(diffs["total"], 24)
+        self.assertEqual(diffs["only_in_self"], set(["Package[orig_catalog]"]))
+        self.assertEqual(diffs["only_in_other"], set(["Package[other_catalog]"]))
+        self.assertEqual(len(diffs["resource_diffs"]), 1)
+        self.assertEqual(diffs["perc_changed"], "12.50%")

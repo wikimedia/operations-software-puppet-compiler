@@ -33,12 +33,6 @@
       }
     },
     {
-      "type": "Node",
-      "title": "test123.test",
-      "tags": ["node","test123.test","class"],
-      "exported": false
-    },
-    {
       "type": "Class",
       "title": "Role::Configcluster",
       "tags": ["class","role::configcluster","role","configcluster","node","test123.test"],
@@ -244,6 +238,32 @@
       }
     },
     {
+      "type": "Package",
+      "title": "orig_catalog",
+      "tags": ["package","debdeploy-minion","class","base::debdeploy","base","debdeploy","profile::base","profile","standard","role::configcluster","role","configcluster","node","test123.test"],
+      "file": "/tmp/testspc/change/src/modules/base/manifests/debdeploy.pp",
+      "line": 10,
+      "exported": false,
+      "parameters": {
+        "ensure": "present"
+      }
+    },
+    {
+      "type": "Systemd::Unit",
+      "title": "database-backups-snapshots.timer",
+      "tags": ["systemd::unit", "systemd", "unit", "database-backups-snapshots.timer", "systemd::service", "service", "database-backups-snapshots", "systemd::timer", "timer", "systemd::timer::job", "job", "class", "profile::dbbackups::transfer", "profile", "dbbackups", "transfer", "role::cluster::management", "role", "cluster", "management" ],
+      "line": 77,
+      "exported": false,
+      "parameters": {
+        "ensure": "present",
+        "content": "[Unit]\nDescription=Periodic execution of database-backups-snapshots.service\n\n[Timer]\nUnit=database-backups-snapshots.service\n# Accuracy sets the maximum time interval around the execution time we want to allow\nAccuracySec=15sec\nOnCalendar=Mon,Wed,Thu,Sat *-*-* 00:00:00\nRandomizedDelaySec=0\n\n[Install]\nWantedBy=multi-user.target\n",
+        "override": false,
+        "override_filename": "puppet-override.conf",
+        "restart": false,
+        "unit": "database-backups-snapshots.timer"
+      }
+    },
+    {
       "type": "Salt::Grain",
       "title": "debdeploy-etcd-codfw",
       "tags": ["salt::grain","salt","grain","debdeploy-etcd-codfw","class","base::debdeploy","base","debdeploy","profile::base","profile","standard","role::configcluster","role","configcluster","node","test123.test"],
@@ -254,6 +274,12 @@
         "ensure": "present",
         "replace": false
       }
+    },
+    {
+      "type": "Notify",
+      "title": "Some message",
+      "tags": ["profile","standard","role::configcluster","role","configcluster","node","test123.test"],
+      "exported": false
     }
   ],
   "metadata": {
