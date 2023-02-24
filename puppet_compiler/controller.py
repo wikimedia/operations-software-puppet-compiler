@@ -65,7 +65,6 @@ class Controller:
         fail_fast: bool = False,
         change_private_id: Optional[int] = None,
     ):
-
         # Let's first detect the installed puppet version
         self.set_puppet_version()
         configfile = Path(configfile) if isinstance(configfile, str) else configfile

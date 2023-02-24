@@ -23,7 +23,6 @@ class TestHostWorker(AsyncTestCase):
         self.hw = worker.HostWorker(self.c.config.puppet_var, "test.example.com")
 
     def test_initialize(self):
-
         self.assertEqual(self.hw.hostname, "test.example.com")
         self.assertCountEqual(["prod", "change"], self.hw._envs)
         self.assertIsNone(self.hw.diffs)
