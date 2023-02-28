@@ -1,3 +1,7 @@
+### 2.5.5
+## 2022-12-19
+* Add Stage and Notify to the exclusion list for core resources (T330484)
+
 ### 2.5.4
 ## 2022-12-19
 * Fix: Correct fulldiff
