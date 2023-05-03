@@ -88,11 +88,11 @@ class TestManageCode(unittest.TestCase):
     def test_fetch_change(self, mocker):
         """The change can be downloaded"""
         self.m._fetch_change(self.m.change_id)
+        ref = "refs/changes/50/227450/1"
         calls = [
-            mock.call(
-                ["git", "fetch", "-q", "https://gerrit.wikimedia.org/r/operations/puppet", "refs/changes/50/227450/1"]
-            ),
-            mock.call(["git", "checkout", "FETCH_HEAD"]),
+            mock.call(["git", "fetch", "-q", "https://gerrit.wikimedia.org/r/operations/puppet", ref]),
+            mock.call(["git", "checkout", "-B", ref, "FETCH_HEAD"]),
+            mock.call(["git", "log", "--oneline", "-n1"]),
             mock.call(["git", "pull", "--rebase", "origin", "production"]),
         ]
         mocker.assert_has_calls(calls)

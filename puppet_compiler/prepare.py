@@ -225,7 +225,8 @@ storeconfigs_backend = puppetdb
 
     def _checkout_gerrit_revision(self, project: str, revision: str) -> None:
         self.git.fetch("-q", f"https://gerrit.wikimedia.org/r/{project}", revision)
-        self.git.checkout("FETCH_HEAD")
+        self.git.checkout("-B", revision, "FETCH_HEAD")
+        self.git.log("--oneline", "-n1")
 
     def _pull_rebase_origin(self, origin_branch: str) -> None:
         self.git.pull("--rebase", "origin", origin_branch)
