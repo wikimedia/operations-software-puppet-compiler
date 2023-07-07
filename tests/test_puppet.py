@@ -19,7 +19,7 @@ class TestPuppetCalls(AsyncTestCase):
         subprocess.create_subprocess_shell.return_value = futurized(proc_mock)
         self.fixtures = Path(__file__).resolve().parent / "fixtures"
         FHS.setup(1, 10, self.fixtures)
-        modulepaths = ["/private/modules", "/src/modules", "/src/vendor_modules"]
+        modulepaths = ["/private/modules", "/src/modules", "/src/vendor_modules", "/src/core_modules"]
         self.modulepath_prod = ":".join([f"{FHS.prod_dir}{d}" for d in modulepaths])
         self.modulepath_change = ":".join([f"{FHS.change_dir}{d}" for d in modulepaths])
 
@@ -41,16 +41,18 @@ class TestPuppetCalls(AsyncTestCase):
             " ".join(
                 [
                     "puppet",
-                    "master",
+                    "catalog",
+                    "compile",
+                    "--facts_terminus=yaml",
                     f"--vardir={self.fixtures / 'puppet_var'}",
                     f"--modulepath={self.modulepath_prod}",
                     f"--confdir={FHS.prod_dir / 'src'}",
-                    "--compile=test.codfw.wmnet",
                     "--color=false",
                     "--yamldir=/var/lib/catalog-differ/puppet/yaml",
                     "--factpath=/var/lib/catalog-differ/puppet/yaml/facts",
                     f"--manifest={FHS.prod_dir / 'src'}/manifests",
                     f"--environmentpath={FHS.prod_dir / 'src'}/environments",
+                    "test.codfw.wmnet",
                 ]
             ),
             env=env,
@@ -65,16 +67,18 @@ class TestPuppetCalls(AsyncTestCase):
             " ".join(
                 [
                     "puppet",
-                    "master",
+                    "catalog",
+                    "compile",
+                    "--facts_terminus=yaml",
                     f"--vardir={self.fixtures / 'puppet_var'}",
                     f"--modulepath={self.modulepath_change}",
                     f"--confdir={FHS.change_dir / 'src'}",
-                    "--compile=test.codfw.wmnet",
                     "--color=false",
                     "--yamldir=/var/lib/catalog-differ/puppet/yaml",
                     "--factpath=/var/lib/catalog-differ/puppet/yaml/facts",
                     f"--manifest={FHS.change_dir / 'src'}/manifests",
                     f"--environmentpath={FHS.change_dir / 'src'}/environments",
+                    "test.codfw.wmnet",
                 ]
             ),
             env=env,
@@ -99,16 +103,18 @@ class TestPuppetCalls(AsyncTestCase):
             " ".join(
                 [
                     "puppet",
-                    "master",
+                    "catalog",
+                    "compile",
+                    "--facts_terminus=yaml",
                     f"--vardir={self.fixtures / 'puppet_var'}",
                     f"--modulepath={self.modulepath_prod}",
                     f"--confdir={FHS.prod_dir / 'src'}",
-                    "--compile=test.codfw.wmnet",
                     "--color=false",
                     "--yamldir=/var/lib/catalog-differ/puppet/yaml",
                     "--factpath=/var/lib/catalog-differ/puppet/yaml/facts",
                     f"--manifest={FHS.prod_dir / 'src'}/manifests",
                     f"--environmentpath={FHS.prod_dir / 'src'}/environments",
+                    "test.codfw.wmnet",
                     "--dummy",
                 ]
             ),

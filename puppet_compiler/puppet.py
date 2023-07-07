@@ -62,16 +62,18 @@ def compile_cmd_env(
 
     cmd = [
         "puppet",
-        "master",
+        "catalog",
+        "compile",
+        "--facts_terminus=yaml",
         f"--vardir={vardir}",
-        f"--modulepath={privdir / 'modules'}:{srcdir / 'modules'}:{srcdir / 'vendor_modules'}",
+        f"--modulepath={privdir / 'modules'}:{srcdir / 'modules'}:{srcdir / 'vendor_modules'}:{srcdir / 'core_modules'}",
         f"--confdir={srcdir}",
-        f"--compile={hostname}",
         "--color=false",
         f"--yamldir={yamldir}",
         f"--factpath={factpath}",
         f"--manifest={manifests_dir}",
         f"--environmentpath={environments_dir}",
+        hostname,
     ]
     cmd.extend(extra_flags)
     return (cmd, env)
