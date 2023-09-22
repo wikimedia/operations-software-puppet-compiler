@@ -35,7 +35,7 @@
     <dl>
 {% if diff.parameters %}
       <dd> Parameters differences:
-        <pre>{{ diff.parameters }}</pre>
+        <pre>{{ diff.parameters|e }}</pre>
       </dd>
 {% endif %}
 {% if diff.content %}
