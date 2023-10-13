@@ -1,7 +1,13 @@
+### Unreleased
+## 2023-09-22
+* improve output of debug_host
+
+
 ### 3.0.0
-## 2020-09-22
+## 2023-09-22
 ### Breaking changes
 * drop support for puppet < 6
+
 ### Features
 * Add support puppet version > 6.
 
