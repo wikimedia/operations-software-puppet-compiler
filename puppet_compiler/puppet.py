@@ -158,24 +158,14 @@ def compile_debug(hostname: str, vardir: Path) -> bool:
         bool: representing the status of the command
 
     """
-    cmd, env = compile_cmd_env(hostname, "change", vardir, None, "--debug")
-    stdout = SpooledTemporaryFile()
-    stderr = SpooledTemporaryFile()
+    cmd, env = compile_cmd_env(hostname, "change", vardir, None, "--debug", "--color=true")
     success = False
 
     try:
-        subprocess.check_call(cmd, stdout=stdout, stderr=stderr, env=env)
+        subprocess.run(cmd, env=env)
         success = True
     except subprocess.CalledProcessError as err:
-        _log.exception("Compilation failed for host %s: %s", hostname, err)
+        _log.exception("Compilation failed for host %s: %s\n%s", hostname, err, " ".join(cmd))
+    _log.info("produced with cmd: %s", " ".join(cmd))
 
-    stdout.seek(0)
-    print("Standard Out\n{}".format("=" * 80))
-    for line in stdout:
-        print(line.rstrip().decode())
-    stderr.seek(0)
-    print("Standard Error\n{}".format("=" * 80))
-    for line in stderr:
-        if b"cannot collect exported resources without storeconfigs being set not" not in line:
-            print(line.rstrip().decode())
     return success
