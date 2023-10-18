@@ -2,6 +2,7 @@
 ## 2023-09-22
 * improve output of debug_host
 * tox: remove envdir optimizations (no more supported by tox v4)
+* tox: add commands to allowlist_externals
 
 ### 2.5.7
 ## 2022-05-03
