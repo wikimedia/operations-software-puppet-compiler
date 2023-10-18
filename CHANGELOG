@@ -3,6 +3,7 @@
 * improve output of debug_host
 * tox: remove envdir optimizations (no more supported by tox v4)
 * tox: add commands to allowlist_externals
+* debug_host: rename mangecode to managecode (typo)
 
 ### 2.5.7
 ## 2022-05-03
