@@ -4,6 +4,8 @@
 * tox: remove envdir optimizations (no more supported by tox v4)
 * tox: add commands to allowlist_externals
 * debug_host: rename mangecode to managecode (typo)
+* New: `pcc-debug-presentation` script to render HTML templates without a
+  compilation, to be used to quickly test Jinja2 rendering.
 
 ### 2.5.7
 ## 2022-05-03
