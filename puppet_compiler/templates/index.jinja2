@@ -18,14 +18,14 @@
     <h2>Hosts that were skipped (fail fast)</h2>
     <ul>
       {% for host in cancelled_hosts|sort %}
-        <li> {{ host }}</a>
+        <li> {{ host }}
       {% endfor %}
     </ul>
     {% endif %}
 
     {% if state.core_diff %}
     <h2>Hosts that compile with differences to core resources</h2>
-    <h3>(changes to the system)
+	<h3>(changes to the system)</h3>
     <ul>
       {% for host in state.core_diff|sort %}
         <li> <a href="{{ host }}/{{ page_name }}">{{ host }}</a>
@@ -33,12 +33,12 @@
     </ul>
     {% else %}
     <h2>No hosts compile with differences to core resources</h2>
-    <h3>(changes to the system)
+	<h3>(changes to the system)</h3>
     {% endif %}
 
     {% if state.diff %}
     <h2>Hosts that compile with differences to puppet defined resources</h2>
-    <h3>(only changing class parameters and similar, but no changes to the system)
+	<h3>(only changing class parameters and similar, but no changes to the system)</h3>
     <ul>
       {% for host in state.diff|sort %}
         <li> <a href="{{ host }}/{{ page_name }}">{{ host }}</a>
@@ -46,7 +46,7 @@
     </ul>
     {% else %}
     <h2>No hosts compile with differences to puppet defined resource</h2>
-    <h3>(only changing class parameters and similar, but no changes to the system)
+	<h3>(only changing class parameters and similar, but no changes to the system)</h3>
     {% endif %}
 
     {% if state.error %}
