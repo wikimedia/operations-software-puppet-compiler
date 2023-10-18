@@ -6,6 +6,8 @@
 * debug_host: rename mangecode to managecode (typo)
 * New: `pcc-debug-presentation` script to render HTML templates without a
   compilation, to be used to quickly test Jinja2 rendering.
+* Use Jinja2 macros for links to Gerrit and Jenkins and capitalize them since
+  they are proper nouns.
 
 ### 2.5.7
 ## 2022-05-03

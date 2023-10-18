@@ -1,3 +1,9 @@
+{%- macro link_gerrit_change(change_num, text=change_num) -%}
+<a href="https://gerrit.wikimedia.org/r/#/c/{{ change_num }}/" target="_blank">{{ text }}</a>
+{%- endmacro -%}
+{%- macro link_jenkins_job(job_id, text='Back to Jenkins job') -%}
+<a href="https://integration.wikimedia.org/ci/job/operations-puppet-catalog-compiler/{{ job_id }}/" target="_blank">{{ text }}</a>
+{%- endmacro -%}
 <!doctype html>
 <html lang="en">
   <head>
@@ -28,11 +34,11 @@
     {% endblock %}
     </main>
     <footer role="contentinfo" class="footer">
-        <h3>you can use the <a href="https://wikitech.wikimedia.org/wiki/Help:Puppet-compiler#Catalog_compiler_local_run_(pcc_utility)">pcc utility</a> to re-run this test locally with the following command</h3>
+        <h3>You can use the <a href="https://wikitech.wikimedia.org/wiki/Help:Puppet-compiler#Catalog_compiler_local_run_(pcc_utility)">pcc utility</a> to re-run this test locally with the following command</h3>
         <pre>./utils/pcc {{ chid }} {{ hosts_raw }}</pre>
         <div id="footer">
-          <a href="https://integration.wikimedia.org/ci/job/operations-puppet-catalog-compiler/{{ jid }}/" target="_blank">Back to jenkins job</a>
-          <a href="https://gerrit.wikimedia.org/r/#/c/{{ chid }}/" target="_blank">See gerrit change</a>
+          {{ link_jenkins_job(jid) }}
+          {{ link_gerrit_change(chid, text='See Gerrit change') }}
         </div>
     </footer>
   </body>
