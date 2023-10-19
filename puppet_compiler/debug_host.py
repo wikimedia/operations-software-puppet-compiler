@@ -59,18 +59,18 @@ def main() -> None:
     realm = "production" if args.host.endswith(("wmnet", "wikimedia.org")) else "wmcs-eqiad1"
 
     directories.FHS.setup(args.change_id, jobid, tmpdir)
-    mangecode = prepare.ManageCode(config, jobid, args.change_id)
+    managecode = prepare.ManageCode(config, jobid, args.change_id)
     if not args.build_dir:
-        mangecode.base_dir.mkdir(mode=0o755)
-        mangecode.change_dir.mkdir(mode=0o755, parents=True)
-        (mangecode.change_dir / "catalogs").mkdir(mode=0o755, parents=True)
-        mangecode._prepare_dir(mangecode.change_dir)  # pylint: disable=protected-access
-    srcdir = mangecode.change_dir / "src"
+        managecode.base_dir.mkdir(mode=0o755)
+        managecode.change_dir.mkdir(mode=0o755, parents=True)
+        (managecode.change_dir / "catalogs").mkdir(mode=0o755, parents=True)
+        managecode._prepare_dir(managecode.change_dir)  # pylint: disable=protected-access
+    srcdir = managecode.change_dir / "src"
     with prepare.pushd(srcdir):
         if not args.build_dir:
-            mangecode._fetch_change(args.change_id)  # pylint: disable=protected-access
-        mangecode._copy_hiera(mangecode.change_dir, realm)  # pylint: disable=protected-access
-        mangecode._create_puppetconf(realm)  # pylint: disable=protected-access
+            managecode._fetch_change(args.change_id)  # pylint: disable=protected-access
+        managecode._copy_hiera(managecode.change_dir, realm)  # pylint: disable=protected-access
+        managecode._create_puppetconf(realm)  # pylint: disable=protected-access
         try:
             utils.refresh_yaml_date(utils.facts_file(config.puppet_var, args.host))
         except utils.FactsFileNotFound as error:

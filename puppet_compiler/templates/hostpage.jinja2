@@ -24,8 +24,8 @@
       {% endblock %}
       {% block extnav %}
         <p>
-          <a href="https://integration.wikimedia.org/ci/job/operations-puppet-catalog-compiler/{{ jid }}/" target="_blank">Back to jenkins job</a>
-          <a href="https://gerrit.wikimedia.org/r/#/c/{{ chid }}/" target="_blank">See gerrit change</a>
+          {{ link_jenkins_job(jid) }}
+          {{ link_gerrit_change(chid, text='See Gerrit change') }}
         </p>
       {% endblock %}
     </div>

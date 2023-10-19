@@ -1,7 +1,6 @@
-### Unreleased
+### 3.1.0
 ## 2023-09-22
-* improve output of debug_host
-
+* merge 2.6.0 changes
 
 ### 3.0.0
 ## 2023-09-22
@@ -10,6 +9,21 @@
 
 ### Features
 * Add support puppet version > 6.
+#
+### 2.6.0
+## 2023-10-19
+* improve output of debug_host
+* tox: remove envdir optimizations (no more supported by tox v4)
+* tox: add commands to allowlist_externals
+* debug_host: rename mangecode to managecode (typo)
+* New: `pcc-debug-presentation` script to render HTML templates without a
+  compilation, to be used to quickly test Jinja2 rendering.
+* Use Jinja2 macros for links to Gerrit and Jenkins and capitalize them since
+  they are proper nouns.
+* New: add style to HTML output
+* Fix: cancelled hosts in HTML output had a lonely </a>
+* Fix: close h3 elements in HTML output index page.
+* Add some flow control for parameter diffs
 
 ### 2.5.7
 ## 2022-05-03

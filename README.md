@@ -50,3 +50,19 @@ and also set up a tunnle to the cloud puppetmaster (notice the different port nu
     * ssh -N -L8100:localhost:8101 cloud-puppetmaster-03.cloudinfra.eqiad.wmflabs
 Finaly add the following to /etc/hosts
     * `127.0.0.1 puppetmaster.cloudinfra.wmflabs.org`
+
+## Testing HTML rendering
+
+The compilation output adds a presentation layer suitable for humans
+consumption. You can trigger a dummy rendering to a "tmpdir" directory (which
+will be deleted) using:
+```
+$ python3 -m puppet_compiler.debug_presentation -o tmpdir --force
+...
+Rendered files:
+tmpdir/output/1911/42/srv001.example.org/index.html
+tmpdir/output/1911/42/srv001.example.org/fulldiff.html
+tmpdir/output/1911/42/srv001.example.org/corediff.html
+```
+
+The rendering comes from Jinja2 templates in `./puppet_compiler/templates`.

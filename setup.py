@@ -57,6 +57,7 @@ setup(
             "puppet-compiler = puppet_compiler.cli:main",
             "puppetdb-populate = puppet_compiler.populate_puppetdb:main",
             "pcc-debug-host = puppet_compiler.debug_host:main",
+            "pcc-debug-presentation = puppet_compiler.debug_presentation:main",
         ],
     },
 )

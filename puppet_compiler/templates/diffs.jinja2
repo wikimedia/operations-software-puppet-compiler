@@ -35,7 +35,9 @@
     <dl>
 {% if diff.parameters %}
       <dd> Parameters differences:
-        <pre>{{ diff.parameters|e }}</pre>
+        <div style="overflow-x: scroll">
+          <pre>{{ diff.parameters|e }}</pre>
+        <div>
       </dd>
 {% endif %}
 {% if diff.content %}

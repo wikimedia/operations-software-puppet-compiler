@@ -1,3 +1,9 @@
+{%- macro link_gerrit_change(change_num, text=change_num) -%}
+<a href="https://gerrit.wikimedia.org/r/#/c/{{ change_num }}/" target="_blank">{{ text }}</a>
+{%- endmacro -%}
+{%- macro link_jenkins_job(job_id, text='Back to Jenkins job') -%}
+<a href="https://integration.wikimedia.org/ci/job/operations-puppet-catalog-compiler/{{ job_id }}/" target="_blank">{{ text }}</a>
+{%- endmacro -%}
 <!doctype html>
 <html lang="en">
   <head>
@@ -5,8 +11,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Compilation results for {{ host }}</title>
     <style type="text/css">
-      h1, h2, h3, h4 {
-         font-family: "HelveticaNeue-CondensedBold","Helvetica Neue","Arial Narrow",Arial,sans-serif;
+      html {
+        background-color: #eaecf0;
+        height: 100%;
+      }
+      body {
+        /** border: 1px solid transparent; */
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 100%;
+
+        padding: 0em;
+        margin: 0em 4em;
+        background-color: white;
+        font-family: "HelveticaNeue-CondensedBold","Helvetica Neue","Arial Narrow",Arial,sans-serif;
+      }
+      main {
+        padding: 0 2em;
+      }
+      aside#pcc-util {
+        padding: 0 2em;
+      }
+      footer {
+        border-top: 1px dashed;
+        padding: 0.5em 0;
+        margin-top: auto;
+      }
+      footer ul {
+        margin: 0;
+        padding: 0;
+      }
+      footer ul li {
+        list-style-type: none;
+        display: inline;
+      }
+      footer ul li:after {
+        margin: 0.2em;
+        content: "]";
+      }
+      footer ul li:before {
+        margin: 0.2em;
+        content: "[";
+      }
+      a {
+        color: #36c;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      a[href$=".pson.gz"]:after {
+        vertical-align: top;
+        margin-left: 0.2em;
+        font-size: 80%;
+        content: '(pson)';
+      }
+
+      li {
+        list-style-type: square;
       }
       .source {
           font-family: Consolas, "Andale Mono", "Courier New", monospace
@@ -27,13 +90,15 @@
     {% block body %}
     {% endblock %}
     </main>
-    <footer role="contentinfo" class="footer">
-        <h3>you can use the <a href="https://wikitech.wikimedia.org/wiki/Help:Puppet-compiler#Catalog_compiler_local_run_(pcc_utility)">pcc utility</a> to re-run this test locally with the following command</h3>
+    <aside id="pcc-util">
+        <h3>You can use the <a href="https://wikitech.wikimedia.org/wiki/Help:Puppet-compiler#Catalog_compiler_local_run_(pcc_utility)">pcc utility</a> to re-run this test locally with the following command:</h3>
         <pre>./utils/pcc {{ chid }} {{ hosts_raw }}</pre>
-        <div id="footer">
-          <a href="https://integration.wikimedia.org/ci/job/operations-puppet-catalog-compiler/{{ jid }}/" target="_blank">Back to jenkins job</a>
-          <a href="https://gerrit.wikimedia.org/r/#/c/{{ chid }}/" target="_blank">See gerrit change</a>
-        </div>
+    </aside>
+    <footer>
+      <ul>
+        <li>{{ link_jenkins_job(jid) }}</li>
+        <li>{{ link_gerrit_change(chid, text='See Gerrit change') }}</li>
+      </ul>
     </footer>
   </body>
 </html>
