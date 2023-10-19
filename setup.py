@@ -4,7 +4,13 @@ from typing import List
 
 from setuptools import find_packages, setup  # type: ignore
 
-install_requires = ["cumin", "jinja2", "requests", "pyyaml"]
+install_requires = [
+    "cumin",
+    "jinja2",
+    "typing_extensions; python_version<'3.8'",  # for typing.TypedDict
+    "requests",
+    "pyyaml",
+]
 extras_require = {
     # Test dependencies
     "tests": [

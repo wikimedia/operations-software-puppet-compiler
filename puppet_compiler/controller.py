@@ -23,7 +23,7 @@ import yaml
 
 from puppet_compiler import _log, directories, nodegen, prepare, worker
 from puppet_compiler.config import ControllerConfig
-from puppet_compiler.presentation import html
+from puppet_compiler.presentation import html, json
 from puppet_compiler.presentation.html import Index
 from puppet_compiler.state import ChangeState, StatesCollection
 
@@ -83,9 +83,11 @@ class Controller:
         directories.FHS.setup(change_id, job_id, self.config.base)
         self.managecode = prepare.ManageCode(self.config, job_id, change_id, force, change_private_id)
         self.outdir = directories.FHS.output_dir
-        # Set up variables to be used by the html output class
+        # Set up variables to be used by the presentation classes
         html.change_id = change_id
         html.job_id = job_id
+        json.change_id = change_id
+        json.job_id = job_id
 
     @staticmethod
     def set_puppet_version() -> None:
@@ -276,7 +278,11 @@ class Controller:
 
     def generate_summary(self, states_col: StatesCollection, partial: bool = False) -> str:
         index = Index(outdir=self.outdir, hosts_raw=self.hosts_raw)
+        build_json = json.Build(outdir=self.outdir, hosts_raw=self.hosts_raw)
+
         index.render(states_col, partial=partial)
+        build_json.render(states_col)
+
         _log.info(
             "Index updated, you can see detailed progress for your work at %s",
             self.index_url(index),

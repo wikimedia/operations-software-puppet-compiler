@@ -3,6 +3,7 @@
 <h1>Results for change {{ link_gerrit_change(chid) }}</h1>
   <div id="list">
     <h2>Hosts were compiled using puppet version {{ puppet_version }}</h2>
+    You can retrieve this state(s) from <a href="build.json">build.json</a>.
     {% if ok_hosts %}
     <h2>Hosts that have no differences (or compile correctly only with the change)</h2>
     <ul>

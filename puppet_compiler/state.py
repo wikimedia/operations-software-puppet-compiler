@@ -72,6 +72,22 @@ class StatesCollection:
         else:
             self.states[state.name].add(state.host)
 
+    # FIXME state_name type is ChangeState.name but MyPy does not recognize
+    # the type returned by a property getter (fget)
+    # https://github.com/python/mypy/issues/8085
+    #
+    # Go for `str` which is good enough unless we somehow define a new type
+    # with a fixed list of recognized states.
+    def getHosts(self, state_name: str) -> Set[str]:
+        """
+        Return of a set of hostname for the request state
+
+        Arguments:
+          state_name - ChangeState.name to retrieve hosts for.
+
+        """
+        return self.states.get(state_name, set())
+
     def summary(self, partial: bool = False) -> str:
         """Outputs a summary of the status."""
         output = "Nodes: "

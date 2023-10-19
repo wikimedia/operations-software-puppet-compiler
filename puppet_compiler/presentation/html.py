@@ -87,10 +87,10 @@ class Index:
         """
         Render the index page with info coming from state
         """
-        ok_hosts: Set[str] = states_col.states.get("noop", set())
-        fail_hosts: Set[str] = states_col.states.get("fail", set())
-        cancelled_hosts: Set[str] = set() if partial else states_col.states.get("cancelled", set())
-        unfinished_hosts: Set[str] = states_col.states.get("cancelled", set()) if partial else set()
+        ok_hosts: Set[str] = states_col.getHosts("noop")
+        fail_hosts: Set[str] = states_col.getHosts("fail")
+        cancelled_hosts: Set[str] = set() if partial else states_col.getHosts("cancelled")
+        unfinished_hosts: Set[str] = states_col.getHosts("cancelled") if partial else set()
 
         _log.debug("Rendering the main index page")
         tpl = env.get_template(self.tpl)

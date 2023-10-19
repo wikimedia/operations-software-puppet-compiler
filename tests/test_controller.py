@@ -84,9 +84,10 @@ class TestController(AsyncTestCase):
         mocker.assert_called_with(["puppet", "--version"])
         self.assertEqual(os.environ["PUPPET_VERSION"], "3")
 
+    @mock.patch("puppet_compiler.presentation.json.Build.render")
     @mock.patch("puppet_compiler.presentation.html.Index.render")
     @mock.patch("puppet_compiler.worker.HostWorker.run_host")
-    async def test_run_single_host(self, run_host_mock, _):
+    async def test_run_single_host(self, run_host_mock, _html, _json):
         # TODO: Improve this tests
         c = controller.Controller(None, 19, 224570, "test.eqiad.wmnet")
         run_host_mock.return_value = RunHostResult(
