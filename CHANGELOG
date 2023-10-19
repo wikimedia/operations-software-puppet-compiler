@@ -11,6 +11,7 @@
 * New: add style to HTML output
 * Fix: cancelled hosts in HTML output had a lonely </a>
 * Fix: close h3 elements in HTML output index page.
+* Add some flow control for parameter diffs
 
 ### 2.5.7
 ## 2022-05-03
