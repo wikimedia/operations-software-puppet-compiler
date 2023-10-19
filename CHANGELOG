@@ -1,5 +1,5 @@
-### Unreleased
-## 2023-09-22
+### 2.6.0
+## 2023-10-19
 * improve output of debug_host
 * tox: remove envdir optimizations (no more supported by tox v4)
 * tox: add commands to allowlist_externals
