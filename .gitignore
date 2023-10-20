@@ -5,6 +5,7 @@
 *.sw?
 .coverage
 .vscode
-build/
+/build/
+/htmlcov/
 .workspace/
 .docker_tmp/

@@ -1,3 +1,7 @@
+### Unreleased
+## YYYY-MM-DD
+* tox: add HTML and branch coverage to pytest (written to `./htmlcov`)
+
 ### 2.6.0
 ## 2023-10-19
 * improve output of debug_host
