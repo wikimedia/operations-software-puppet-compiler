@@ -10,6 +10,7 @@ from puppet_compiler import _log, puppet, utils
 from puppet_compiler.differ import PuppetCatalog
 from puppet_compiler.directories import HostFiles
 from puppet_compiler.presentation.html import Host
+from puppet_compiler.presentation.json import Host as JsonHost
 from puppet_compiler.state import ChangeState
 
 
@@ -87,6 +88,7 @@ class HostWorker:
                 has_diff=has_diff,
             )
             self._build_html(state.name)
+            self._build_json(state.name)
         # pylint: disable=broad-except
         except Exception as err:
             _log.exception("Error preparing output for %s: %s", self.hostname, err)
@@ -223,3 +225,11 @@ class HostWorker:
         """
         host = Host(self.hostname, self._files, retcode)
         host.htmlpage(self.diffs, self.core_diffs, self.full_diffs)
+
+    def _build_json(self, retcode: str) -> None:
+        """Build the JSON output
+        Arguments:
+            retcode: A string representing the result of the compilation run
+        """
+        json_host = JsonHost(self.hostname, self._files, retcode)
+        json_host.render(self.diffs, self.core_diffs, self.full_diffs)

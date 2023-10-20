@@ -10,6 +10,7 @@ else:
     from typing import TypedDict
 
 from puppet_compiler import _log
+from puppet_compiler.directories import HostFiles
 from puppet_compiler.state import StatesCollection
 
 change_id: Optional[int] = None
@@ -23,6 +24,62 @@ state_description = {
     "fail": "Both catalogs failed to compile or diff errored",
     "noop": "No difference or change fixed compilation",
 }
+
+
+def json_iter_to_sorted_list(obj):
+    """
+    Convert iterables (set) to list to allow their json serialization
+
+    The resulting list is sorted.
+
+    Non iterables are passed to the base default handler.
+
+    Taken from Python documentation for `json.JSONEncoder.default`
+
+    Example:
+      >>> json.dumps(set(3, 2, 1))
+      TypeError: Object of type set is not JSON serializable
+      >>> json.dumps(set(3, 2, 1), default=json_iter_to_list)
+      "{[1, 2, 3]}"
+    """
+    try:
+        iterable = iter(obj)
+    except TypeError:
+        pass
+    else:
+        return sorted(list(iterable))
+
+    # Pass anything else to the base default
+    return json.JSONEncoder.default(obj)
+
+
+class Host:
+    """Outcome of a host compilation"""
+
+    def __init__(self, hostname: str, files: HostFiles, retcode: str):
+        self.retcode = retcode
+        self.hostname = hostname
+        self.outfile = files.outdir / "host.json"
+
+    def render(
+        self, diffs: Optional[Dict] = None, core_diffs: Optional[Dict] = None, full_diffs: Optional[Dict] = None
+    ) -> None:
+        host = {
+            "host": self.hostname,
+            "state": self.retcode,
+            "description": state_description.get(self.retcode, "Undescribed state"),
+            "diff": {
+                "full": full_diffs,
+                "core": core_diffs,
+                "main": diffs,
+            },
+        }
+
+        _log.debug("Generating %s", self.outfile)
+
+        host_json = json.dumps(host, sort_keys=False, default=json_iter_to_sorted_list)
+        with open(self.outfile, "w") as outfile:
+            outfile.write(host_json)
 
 
 class Build:

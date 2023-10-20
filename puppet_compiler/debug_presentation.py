@@ -91,6 +91,7 @@ def main() -> None:
         )
 
         html.Host(hostname=hostname, files=hostfiles, retcode=retcode).htmlpage()
+        json.Host(hostname=hostname, files=hostfiles, retcode=retcode).render()
 
     index = html.Index(outdir=FHS.output_dir, hosts_raw=",".join(hostnames))
     build_json = json.Build(outdir=FHS.output_dir, hosts_raw=",".join(hostnames))

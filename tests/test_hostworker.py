@@ -134,6 +134,7 @@ class TestHostWorker(AsyncTestCase):
         self.hw._make_diff = mock.Mock(return_value=(True, True))
         self.hw._make_output = mock.Mock(return_value=None)
         self.hw._build_html = mock.Mock(return_value=None)
+        self.hw._build_json = mock.Mock(return_value=None)
         self.assertEqual(
             await self.hw.run_host(),
             worker.RunHostResult(
@@ -146,6 +147,7 @@ class TestHostWorker(AsyncTestCase):
         assert self.hw._make_diff.called
         assert self.hw._make_output.called
         assert self.hw._build_html.called
+        assert self.hw._build_json.called
 
         self.hw._make_diff.reset_mock()
         self.hw._compile_all.return_value = futurized((True, False))

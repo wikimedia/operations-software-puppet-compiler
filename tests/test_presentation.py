@@ -1,4 +1,7 @@
+import json as python_json
 from unittest.mock import MagicMock, mock_open, patch
+
+from test_html import TestHost
 
 from puppet_compiler.presentation import json
 from puppet_compiler.state import ChangeState, StatesCollection
@@ -58,4 +61,43 @@ def test_json_render():
                 ' {"description": "Differences to core resources",'
                 ' "hosts": ["hostAaa"]}}}'
             )
+        )
+
+
+class TestJsonHost(TestHost):
+    def test_init(self):
+        h = json.Host("srv1001.example.org", self.files, "diff")
+        self.assertEqual(h.retcode, "diff")
+        self.assertEqual(h.hostname, "srv1001.example.org")
+        self.assertEqual(h.outfile, self.files.outdir / "host.json")
+
+    def test_render(self):
+        h = json.Host("srv1002.example.org", self.files, "diff")
+        h.render(self.diffs)
+        assert h.outfile.is_file()
+
+        with open(h.outfile) as f:
+            j = python_json.load(f)
+
+        self.assertDictContainsSubset(
+            {
+                "description": "Differences to Puppet defined resources",
+                "host": "srv1002.example.org",
+                "state": "diff",
+            },
+            j,
+        )
+        self.assertIn("diff", j)
+
+        self.assertDictContainsSubset(
+            {
+                "core": None,
+                "full": None,
+            },
+            j["diff"],
+        )
+        self.assertIn("main", j.get("diff", {}))
+
+        self.assertEquals(
+            {"only_in_other", "only_in_self", "perc_changed", "resource_diffs", "total"}, set(list(j["diff"]["main"]))
         )

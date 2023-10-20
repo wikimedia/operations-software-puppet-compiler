@@ -1,6 +1,7 @@
 {% extends "base.jinja2" %}
 {% block body %}
         <h1>Compilation results for {{ host }}: <span class="{{retcode}}">{{ desc }}</span></h1>
+        You can retrieve this result from <a href="host.json">host.json</a>.
         {% if retcode.endswith("diff") and diffs %}
         {% include "diffs.jinja2" %}
         {% endif %}

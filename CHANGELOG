@@ -3,6 +3,7 @@
 * tox: add HTML and branch coverage to pytest (written to `./htmlcov`)
 * tox: flake8 now excludes `/build` and `/venv` directories
 * New: add a `build.json` to represent the output of a build
+* New: add a `host.json` to the output directory of each host
 
 ### 2.6.0
 ## 2023-10-19
