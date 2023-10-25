@@ -49,7 +49,7 @@ def get_templates() -> List[str]:
 
 setup(
     name="puppet_compiler",
-    version="2.7.0",
+    version="3.2.0",
     description="Tools to compile puppet catalogs as a service",
     author="Joe",
     author_email="glavagetto@wikimedia.org",
