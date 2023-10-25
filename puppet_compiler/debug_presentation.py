@@ -10,7 +10,7 @@ from unittest.mock import DEFAULT, patch
 from puppet_compiler.config import ControllerConfig
 from puppet_compiler.directories import FHS, HostFiles
 from puppet_compiler.prepare import ManageCode
-from puppet_compiler.presentation import html
+from puppet_compiler.presentation import html, json
 from puppet_compiler.state import ChangeState, StatesCollection
 
 
@@ -58,8 +58,12 @@ def main() -> None:
             log.error("Use --force to have old directories cleaned up")
             sys.exit(e.errno)
 
+    # Init presentations modules
     html.change_id = CHANGE_ID
     html.job_id = JOB_ID
+    json.change_id = CHANGE_ID
+    json.job_id = JOB_ID
+
     hosts_outputs = []
     hostnames = []
     state_cols = StatesCollection()
@@ -87,11 +91,14 @@ def main() -> None:
         )
 
         html.Host(hostname=hostname, files=hostfiles, retcode=retcode).htmlpage()
+        json.Host(hostname=hostname, files=hostfiles, retcode=retcode).render()
 
     index = html.Index(outdir=FHS.output_dir, hosts_raw=",".join(hostnames))
+    build_json = json.Build(outdir=FHS.output_dir, hosts_raw=",".join(hostnames))
     os.environ.update({"PUPPET_VERSION_FULL": "42.99"})
 
     index.render(state_cols)
+    build_json.render(state_cols)
 
     print("Rendered files:")
     hosts_outputs.sort()

@@ -4,7 +4,13 @@ from typing import List
 
 from setuptools import find_packages, setup  # type: ignore
 
-install_requires = ["cumin", "jinja2", "requests", "pyyaml"]
+install_requires = [
+    "cumin",
+    "jinja2",
+    "typing_extensions; python_version<'3.8'",  # for typing.TypedDict
+    "requests",
+    "pyyaml",
+]
 extras_require = {
     # Test dependencies
     "tests": [
@@ -43,7 +49,7 @@ def get_templates() -> List[str]:
 
 setup(
     name="puppet_compiler",
-    version="2.5.7",
+    version="2.7.0",
     description="Tools to compile puppet catalogs as a service",
     author="Joe",
     author_email="glavagetto@wikimedia.org",

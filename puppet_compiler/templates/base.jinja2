@@ -9,7 +9,11 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Compilation results for {{ host }}</title>
+{%- if host is defined %}
+    <title>PCC {{ host }} results</title>
+{%- else %}
+    <title>PCC change {{ chid }} results</title>
+{%- endif %}
     <style type="text/css">
       html {
         background-color: #eaecf0;
