@@ -1,5 +1,5 @@
-### Unreleased
-## YYYY-MM-DD
+### 2.7.0
+## 2023-10-23
 * tox: add HTML and branch coverage to pytest (written to `./htmlcov`)
 * tox: flake8 now excludes `/build` and `/venv` directories
 * New: add a `build.json` to represent the output of a build
