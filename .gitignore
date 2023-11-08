@@ -5,6 +5,7 @@
 *.sw?
 .coverage
 .vscode
+.venv
 /build/
 /htmlcov/
 .workspace/

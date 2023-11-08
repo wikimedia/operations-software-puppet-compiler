@@ -30,12 +30,23 @@ puppet_private: "<PATH_TO_REPO>/.workspace/catalog-differ/private"
 puppet_netbox: "<PATH_TO_REPO>/.workspace/catalog-differ/netbox-hiera"
 http_url: "http://localhost"
 puppet_var: "<PATH_TO_REPO>/.workspace/catalog-differ/puppet"
+store_configs: False
 ```
 
 * sudo apt-get install ruby-httpclient ruby-ldap ruby-rgen ruby-multi-json puppet
 * ./utils/setup_workspace.sh
 * ./utils/fetch_facts.sh
 
+## Installing Python dependencies
+The puppet compile have a few Python dependencies, which can be installed using:
+
+```
+$ python3 -mvenv .venv
+$ pip install -r requirements.txt
+```
+
+This creates a new virtualenv and installes the required dependencies. Alternatively these can be installed using apt.
+You can also use tools like pyenv or Conda rather than virtualenv if that is your preferred way of managing Python dependencies. 
 
 ## Running the CI tests locally
 You can easily run the same tests that CI is running using the script:
