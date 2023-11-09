@@ -58,6 +58,8 @@ class ManageCode:
         self.git = Git()
 
     def cleanup(self) -> None:
+        _log.info("Cleaning up temporary directory %s", FHS.base_dir)
+
         """Remove the whole change tree."""
         shutil.rmtree(self.base_dir, True)
 

@@ -84,25 +84,25 @@ def main() -> int:
         _log.info("Working on change %d", change)
         _log.info("run manually with: ./utils/pcc %d %s", change, nodes)
 
-        try:
-            controller = Controller(
-                Path(configfile),
-                job_id,
-                change,
-                host_list=nodes,
-                nthreads=nthreads,
-                force=args.force,
-                fail_fast=args.fail_fast,
-                change_private_id=change_private,
-            )
-            run_failed = asyncio.run(controller.run())
-            if run_failed:
+        with Controller(
+            Path(configfile),
+            job_id,
+            change,
+            host_list=nodes,
+            nthreads=nthreads,
+            force=args.force,
+            fail_fast=args.fail_fast,
+            change_private_id=change_private,
+        ) as controller:
+            try:
+                run_failed = asyncio.run(controller.run())
+                if run_failed:
+                    return 1
+            except ControllerNoHostsError:
+                _log.warning("No hosts found matching `%s` unable to do anything", nodes)
+                return 2
+            except ControllerError:
                 return 1
-        except ControllerNoHostsError:
-            _log.warning("No hosts found matching `%s` unable to do anything", nodes)
-            return 2
-        except ControllerError:
-            return 1
     except Exception as err:
         _log.critical("Build run failed: %s", err, exc_info=True)
         return 1

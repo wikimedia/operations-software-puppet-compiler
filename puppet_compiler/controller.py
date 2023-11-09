@@ -14,6 +14,7 @@ How data are organized:
 import asyncio
 import os
 import re
+import signal
 import socket
 import subprocess
 from pathlib import Path
@@ -88,6 +89,19 @@ class Controller:
         html.job_id = job_id
         json.change_id = change_id
         json.job_id = job_id
+
+    def __enter__(self):
+        signal.signal(signal.SIGTERM, self._handel_signal)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.managecode.cleanup()
+
+    def _handel_signal(self, sig_no, frame):
+        # Raising SystemExit will drop us out of the current context,
+        # "with Controller(...) as controller " and call __exit__ on
+        # the controller / context object.
+        raise SystemExit(sig_no)
 
     @staticmethod
     def set_puppet_version() -> None:
@@ -177,8 +191,6 @@ class Controller:
             states_col=self.get_states(hosts=self.prod_hosts.union(self.cloud_hosts), results=results)
         )
         _log.info("Run finished; see your results at %s", index)
-        # Remove the source and the diffs etc, we just need the output.
-        self.managecode.cleanup()
         return self.has_failures(results)
 
     def index_url(self, index: Index) -> str:
