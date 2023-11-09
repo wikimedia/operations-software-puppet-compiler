@@ -31,6 +31,9 @@ class ControllerConfig:
     pool_size: int = 2
     fail_fast: bool = False
 
+    # Disables PuppetDB when set to False
+    storeconfigs: bool = True
+
     @classmethod
     def from_file(cls, configfile: Optional[Path], overrides: Dict[str, Any]) -> "ControllerConfig":
         try:
