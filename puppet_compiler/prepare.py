@@ -200,6 +200,10 @@ storeconfigs_backend = puppetdb
 [master]
 """
 
+        # We don't have a running puppetserver, so we can't make rest
+        # calls to grab files, instead we use the file_server terminus
+        # which resolves files locally
+        config = config + "default_file_terminus = file_server\n"
         Path("puppet.conf").write_text(config)
         _log.debug("Wrote puppet.conf with puppet-enc settings")
 
