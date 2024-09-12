@@ -130,14 +130,14 @@ class PuppetResource:
     def parse_file_content(content: Union[str, Dict]) -> List[str]:
         """Parse a resource content object and return the content string.
         content objects are either a string or a hash of the form.
-        content = { "__pcore_type__": "", "__pcore_value__": ""}
+        content = { "__ptype": "", "__pvalue": ""}
         """
         if isinstance(content, dict):
-            if content.get("__pcore_type__") == "Binary":
+            if content.get("__ptype") == "Binary":
                 # Prefix the content so we can detect when the type changes
-                parsed = f"Puppet::Pops::Types::PBinaryType::Binary\n{content.get('__pcore_value__')}"
+                parsed = f"Puppet::Pops::Types::PBinaryType::Binary\n{content.get('__pvalue')}"
             else:
-                LOGGER.error("Unrecognized type: %s", content.get("__pcore_type__"))
+                LOGGER.error("Unrecognized type: %s", content.get("__ptype"))
                 return []
         else:
             parsed = content
