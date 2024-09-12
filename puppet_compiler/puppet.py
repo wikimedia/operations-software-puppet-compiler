@@ -65,6 +65,7 @@ def compile_cmd_env(
         "catalog",
         "compile",
         "--facts_terminus=yaml",
+        "--render-as=rich_data_json",
         f"--vardir={vardir}",
         f"--modulepath={privdir / 'modules'}:{srcdir / 'modules'}:{srcdir / 'vendor_modules'}:{srcdir / 'core_modules'}",
         f"--confdir={srcdir}",
